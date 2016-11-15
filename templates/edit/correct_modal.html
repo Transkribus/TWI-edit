@@ -1,0 +1,38 @@
+{% load i18n %}
+
+<div id="correctModal" class="modal fade" >
+    <div class="modal-dialog">
+        <div class="modal-content">
+			<div class="modal-body line-content">
+	            <table>
+		            <tr>
+		            	<td colspan="3">
+		            		<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+	            		</td>		            	
+		            </tr>
+		            <tr>
+		            	<td style="padding: 5px; vertical-align: top;">
+			            	<a class="add-line" href="#"><span class="glyphicon glyphicon-plus"></span></a><br/>
+			            	<a class="remove-line" href="#"><span class="glyphicon glyphicon-minus"></span></a>
+			           	</td>
+						<td style="width: 100%; padding: 0px;">
+			            	<ul class="line-list">
+			            	</ul>
+		            		<div id="lineText"></div>
+		            		<div id="editableLine"></div>
+			            </td>
+		            	<td style="padding: 5px; vertical-align: top;">
+				            <a class="typewriter-previous" href="#"><span class="glyphicon glyphicon-arrow-up"></span></a><br/>
+				            <a class="typewriter-next" href="#"><span class="glyphicon glyphicon-arrow-down"></span></a>
+			           	</td>
+		            </tr>
+		            <tr>
+		            	<td colspan="3" style="text-align: right;">
+                		<button id="closeButton" type="button" class="btn btn-default" data-dismiss="modal">{% trans "Close" %}</button>
+			           	</td>
+		            </tr>
+				</table>
+			</div>
+        </div>
+    </div>
+</div>

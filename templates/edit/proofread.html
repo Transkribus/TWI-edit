@@ -1,0 +1,95 @@
+{% extends "navi_base.html" %}
+{% load i18n %}
+
+{% load staticfiles %}
+
+{% block nav_buttons_out %}
+{% include "nav_buttons.html" with out=True %}
+{% endblock %}
+
+{% block nav_buttons_in %}
+{% include "nav_buttons.html" with out=False %}
+{% endblock %}
+
+{% block content %}
+
+<link href="{% static "css/correct.css" %}" rel="stylesheet">
+
+<div class="container">
+    <div class="row">
+        <h1>
+            {% trans "Proofreading Interface (working title)" %}
+        </h1>
+	</div>
+	<div class="row row-centered">
+		<div class="col-md-3">	
+			<div class="radio">
+			  <label>
+			    <input type="radio" name="version" value="original">
+			    	{% trans "Original version" %}
+			  </label>
+			</div>
+		</div>
+	    <div class="col-md-3">
+			<div class="radio">
+			  <label>
+			    <input type="radio" name="version" value="your" checked>
+			    	{% trans "Your version" %}
+			  </label>
+			</div>
+		</div>
+	    <div class="col-md-3">
+			<div id="message"></div>
+		</div>
+		<div class="col-md-3">
+			<a href="#" class="btn btn-primary" data-target="#saveChanges">{% trans "Save changes" %}</a><br/><br/><br/>{# TODO CSS for this purpose. #}
+		</div>
+	</div>
+    <div class="row">
+		<div class="col-md-6 collapse version" id="original">
+			{% for line in lines %}
+				<div class="col-md-1">{{forloop.counter}}</div>
+				<div class="col-md-11" spellcheck="false">{{line|get_item:"Unicode"}}</div>
+			{% endfor %}			
+		</div>
+		<div class="col-md-6 version" id="your">
+			{% for line in lines %}
+				<div class="col-md-1">{{forloop.counter}}</div>
+				<div class="col-md-11 editable-line" contenteditable="true" id="{{line|get_item:"id"}}" spellcheck="false">{{line|get_item:"Unicode"}}</div>
+			{% endfor %}			
+		</div>
+		<div class="col-md-6">
+			<img src="{{imageUrl}}" usemap="#transcriptMap"  id="transcriptImage" class="transcript-img" style="position: absolute; z-index: 999;">
+		</div>
+	</div>
+</div>
+
+<script src="{% static "js/proofread.js" %}"></script>
+<script src="{% static "js/diff.js" %}"></script>
+
+<script>
+	var lines= {
+		{% for line in lines %}
+			"{{ line|get_item:"id"}}": "{{line|get_item:"Unicode"}}",
+		{% endfor %}
+	};
+	var changedLines = {};
+	
+	var transUnsavedChanges = "{% trans "You have unsaved changes." %}";
+
+	$("input[name$='version']").click(function(event) {
+		$(".version").hide();
+		$("#" + $(this).val()).show();
+	});
+	
+	$("a[data-target='#saveChanges']").click(function(event) {
+    	event.preventDefault();
+    	$.post(window.location.href, {content: JSON.stringify(changedLines), csrfmiddlewaretoken: '{{ csrf_token }}'}, function( data ) {
+    		setMessage(data);
+    		changed = false;
+		});
+    	{# TODO Handle failures here or are we happy with the current solution? #}
+	});
+</script>
+
+{% endblock %}

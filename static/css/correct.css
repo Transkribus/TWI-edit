@@ -1,0 +1,35 @@
+/* Draggable modal: */
+.modal {
+    overflow: hidden;
+}
+
+.modal-dialog{
+    margin-right: 0;
+    margin-left: 0;
+}
+
+/* We crop the image like this... */
+.transcript-div {
+	background-color: gray;
+	overflow: hidden;
+}
+
+/* And in order to move the map along with the image, we have this div... */
+.transcript-map-div {
+	overflow: hidden;
+	position: relative;
+	transform-origin: 0px 0px;// Required by the zoom transform...
+}
+
+/* We make the transcript fit neatly... */
+.transcript-img {
+	max-width: 100% !important;
+}
+
+.modal-backdrop {
+	background: none;
+}
+
+li {
+    list-style-type: none; 
+}

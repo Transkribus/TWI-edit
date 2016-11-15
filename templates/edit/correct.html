@@ -1,0 +1,200 @@
+{% extends "navi_base.html" %}
+{% load i18n %}
+
+{% load staticfiles %}
+
+{% block nav_buttons_out %}
+{% include "nav_buttons.html" with out=True %}
+{% endblock %}
+
+{% block nav_buttons_in %}
+{% include "nav_buttons.html" with out=False %}
+{% endblock %}
+
+{% block content %}
+
+<link href="{% static "css/correct.css" %}" rel="stylesheet">
+
+<div class="container col-md-12">
+    <div class="row">
+        <h1>
+            {% trans "Correction Interface, Line by Line (working title)" %}
+        </h1>
+	</div>
+    <div class="row row-centered">
+		<div class="col-md-3">		
+	    	<a class="scroll-up btn-lg" href="#"><span class="glyphicon glyphicon-arrow-up"></span></a><a class="scroll-down btn-lg" href="#"><span class="glyphicon glyphicon-arrow-down"></span></a>
+		</div>
+	    <div class="col-md-3">
+	    	<a class="zoom-in btn-lg" href="#"><span class="glyphicon glyphicon-zoom-in"></span></a><a class="zoom-out btn-lg" href="#"><span class="glyphicon glyphicon-zoom-out"></span></a>
+		</div>
+	    <div class="col-md-3">
+			<div id="message"></div>
+		</div>
+		<div class="col-md-3">
+			{# TODO Restore this when saving no longer breaks tags! <a href="#" class="btn btn-primary" data-target="#saveChanges">{% trans "Save changes" %}</a><br/><br/><br/>{# TODO CSS for this purpose. #}
+		</div>
+	</div>
+	<div class="transcript-div">
+		<div class="transcript-map-div">
+			<map name="transcriptMap" id="transcriptMap">
+				{% for line in lines %}
+						<area line-key="{{ line|get_item:"id"}}" id="{{ line|get_item:"id"}}"  href="{{ line|get_item:"id"}}"  shape="poly" coords="{{line|get_item:"crop"|coords_for_imagemap}}" >
+				{% endfor %}
+			</map>
+			<canvas id="transcriptCanvas" style="position: absolute; z-index: 998; pointer-events: none;"></canvas>
+			<img src="{{imageUrl}}" usemap="#transcriptMap" id="transcriptImage" class="transcript-img"  style="z-index: 999;"> 
+		</div>
+	</div>
+</div>
+
+{% include "edit/correct_modal.html" %}
+
+<script src="{% static "js/correct.js" %}"></script>
+<script>
+	var readyToZoom = false;{# If the user begins to zoom before the page has fully loaded, it won't function normally. #}
+	var contentArray= [[0, '', [0, 0, 0, 0, 0, 0, 0, 0]]
+		{% for line in lines %}
+			,['{{ line|get_item:"id"}}', '{{line|get_item:"Unicode"}}', [{{line|get_item:"crop"|coords_for_imagemap}}]]
+		{% endfor %}
+	];
+	var transUnsavedChanges = "{% trans "You have unsaved changes." %}";
+	var previousInnerWidth = window.innerWidth;
+	var isDragged = false;
+	var triggerTime;
+	
+	$("a[data-target='#saveChanges']").click(function(event) {
+    	event.preventDefault();
+    	$.post(window.location.href, {content: getContent(), csrfmiddlewaretoken: '{{ csrf_token }}'}, function( data ) {
+    		setMessage(data);
+    		changed = false;
+		});
+    	{# TODO Handle failures here or are we happy with the current solution? #}
+	});
+	$('#correctModal').draggable({
+       handle: $('.modal-dialog')
+	});
+	$('.transcript-map-div').draggable({
+		start: function() {
+			isDragged = true;
+		},
+		stop: function() {
+			setTimeout(function() { {# A hack to avoid triggering clicks on the map if clicking a region when dragging. #}
+				isDragged = false;
+			}, 250);
+			{# We prefer to keep it simple and let accumExtra* contain the offsets regardless of how they were created (i.e. also when the user has dragged the image): #}
+			accumExtraY -= Math.round(parseInt($( ".transcript-map-div" ).css("top"), 10));
+			accumExtraX -= Math.round(parseInt($( ".transcript-map-div" ).css("left"), 10));
+			$(".transcript-map-div" ).css("top", "0px");
+			$(".transcript-map-div" ).css("left", "0px");
+			$(".transcript-map-div" ).css("transform",  "translate(" + -accumExtraX +"px, " + -accumExtraY+ "px) scale(" + (1 + zoomFactor) + ")");// Note, the CSS is set to "transform-origin: 0px 0px"
+		}
+	});
+	$('#correctModal').on('hidden.bs.modal', function () {
+		setCurrentLineId(null);
+		resetCanvas();
+		$(".line-list").html('');
+		ignoreLeave = false;
+	});
+	$( "#transcriptMap  area" ).on('click', function(e) {
+    	e.preventDefault();
+		updateModalPosition(e.originalEvent.clientX, e.originalEvent.clientY);
+		if (isDragged) {# We ignore clicks if the user has been dragging the image, we assume that that's what the user wants. #}
+			return;
+		ignoreLeave = true; {# We don't want the original selection "unhighlighted" when the user moves the mouse to the modal. #}
+		setCurrentLineId($(this).attr("line-key"));
+		$("#correctModal").modal({
+        	backdrop: "static", {# TODO Figure out whether to allow updating of the text by clicking elsewhere. false allows that but works poorly. #}
+        	//keyboard: false {# TODO Needed? #}
+    	});
+		buildLineList();
+	});
+	$('area').mouseenter(function(e) { 
+		highlightLine(e.target.id);
+	});
+	$('area').mouseleave(function(e) {
+		if (!ignoreLeave) 
+			resetCanvas();
+	});
+	$( ".scroll-up" ).on('click', function(e) {
+		scrollToPreviousTop();
+	});
+	$( ".scroll-down" ).on('click', function(e) {
+		scrollToNextTop();
+	});
+	$('#correctModal').keydown(function(e){
+	    if (e.keyCode == 13) {
+	        typewriterNext();
+	    }
+	});
+	$( ".typewriter-previous" ).on('click', function(e) {
+		typewriterPrevious();
+	});
+	$( ".typewriter-next" ).on('click', function(e) {
+		typewriterNext();
+	});	
+	$( ".zoom-in" ).on('click', function(e) {
+		setZoom(10);
+	});
+	$( ".zoom-out" ).on('click', function(e) {
+		setZoom(-10);
+	});
+	$( ".add-line" ).on('click', function(e) {
+		surroundingCount++;
+		buildLineList();
+	});
+	$( ".remove-line" ).on('click', function(e) {
+		surroundingCount--;
+		if (surroundingCount >= 0)
+			buildLineList();
+		else
+			surroundingCount = 0;
+	});
+    $('.transcript-div').on('mousewheel DOMMouseScroll', function(e) {
+    	e.preventDefault();
+    	var mouseZoom;
+    	if (e.originalEvent.detail > 0)
+			mouseZoom = -20;        	
+		else
+			mouseZoom = 20;
+    	setZoom(mouseZoom, e.originalEvent.pageX - $( ".transcript-map-div" ).offset().left, e.originalEvent.pageY - $( ".transcript-map-div" ).offset().top);
+    });
+    $(window).resize(function() {
+    	{# We don't want to respond until the window has finished resizing. #}
+	   	triggerTime = new Date().getTime();
+    	setTimeout(function() {
+			if (new Date().getTime() > (triggerTime + 480)) {
+			   	var widthFactor = window.innerWidth/previousInnerWidth;
+		    	var oldWidth = initialWidth;
+			    previousInnerWidth = window.innerWidth;
+		    	initialWidth = document.getElementById('transcriptImage').width;
+				initialWidth = $('#transcriptImage').width();
+				initialHeight = $('#transcriptImage').height();
+				naturalWidth = $('#transcriptImage').get(0).naturalWidth;
+				initialScale = initialWidth / naturalWidth;	
+				
+				{# We have to update these too in case the image has gotten resized along with the window: #}
+				accumExtraX = initialWidth * accumExtraX / oldWidth;
+				accumExtraY = initialWidth * accumExtraY / oldWidth;
+			    
+			    $( ".modal-dialog" ).css("width", parseInt($( ".modal-dialog" ).css("width"))*widthFactor + 'px');
+			    $( ".modal" ).css("left", parseInt($( ".modal" ).css("left"))*widthFactor + 'px');
+				$(".transcript-map-div").css("transform",  "translate(" + -accumExtraX +"px, " + -accumExtraY+ "px) scale(" + (1 + zoomFactor) + ")");// Note, the CSS is set to "transform-origin: 0px 0px"
+				console.log("init w: " + initialWidth);
+			}			
+		}, 500);
+	});
+	$('#transcriptImage').load(function() {
+			initialWidth = $('#transcriptImage').width();
+			initialHeight = $('#transcriptImage').height();
+			naturalWidth = $('#transcriptImage').get(0).naturalWidth;
+			initialScale = initialWidth / naturalWidth;
+						
+			$( ".modal-dialog" ).css("width", initialWidth*0.8 + 'px'); {# Reasonable default? #}
+			resetCanvas();
+			calculateAreas(initialScale);
+			readyToZoom = true;
+	});
+</script>
+
+{% endblock %}
