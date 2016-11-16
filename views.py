@@ -19,21 +19,26 @@ from django.template.loader import render_to_string
 from django.utils.html import escape
 
 #Imports pf read modules
-from read.decorators import t_login_required
-from read.services import *
-from read.utils import crop
+from apps.utils.decorators import t_login_required
+from apps.utils.services import *
+from apps.utils.utils import crop
 #t_collection, t_register,
 
 #Imports from app (library)
-import library.settings
-import library.navigation# TODO Fix this import!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-from library.forms import RegisterForm, IngestMetsUrlForm, MetsFileForm
+import settings
+import apps.navigation.navigation# TODO Fix this import!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+#from library.forms import RegisterForm, IngestMetsUrlForm, MetsFileForm
 
 #from profiler import profile #profile is a decorator, but things get circular if I include it in decorators.py so...
 
 @t_login_required
-def proofread(request, collId, docId, page, transcriptId):# TODO Decide whether to select which transcript to work with unless it should always be the newest?
+def proofread(request, collId, docId, page, transcriptId=None):# TODO Decide whether to select which transcript to work with unless it should always be the newest?
     current_transcript = t_current_transcript(request, collId, docId, page)
+    #If we have asked for  data from transkribus but we have a request as a reponse, 
+    #then something has gone awry we should return the reponse from the view
+    if isinstance(current_transcript,HttpResponse):
+        return current_transcript
+
     transcript = t_transcript(request, current_transcript.get("tsId"), current_transcript.get("url"))
     transcriptId = str(transcript.get("tsId"))
     if request.method == 'POST':# This is by JQuery...
@@ -81,14 +86,28 @@ def proofread(request, collId, docId, page, transcriptId):# TODO Decide whether 
                 line['id'] = line_id
                 line['Unicode'] = line.get('TextEquiv').get('Unicode')
         
+    page_data=proc_page(request,collId,docId,page)
+       
     return render(request, 'edit/proofread.html', {
-        'imageUrl': t_document(request, collId, docId, -1).get('pageList').get('pages')[int(page) - 1].get("url"),
-        'lines': lineList
-        })
+             'imageUrl': page_data.get("page").get("url"),
+             'lines': lineList,
+             'nav_up': page_data.get('up'),
+             'nav_up_content': page_data.get('up_content'),
+             'nav_next': page_data.get('next'),
+             'nav_next_content': page_data.get('next_content'),
+             'nav_prev': page_data.get('prev'),
+             'nav_prev_content': page_data.get('prev_content')
+    })
 
 @t_login_required
 def correct(request, collId, docId, page, transcriptId=None):# TODO Decide whether to select which transcript to work with unless it should always be the newest?
     current_transcript = t_current_transcript(request, collId, docId, page)
+    #If we have asked for  data from transkribus but we have a request as a reponse, 
+    #then something has gone awry we should return the reponse from the view
+    if isinstance(current_transcript,HttpResponse):
+        return current_transcript
+
+    t_log("CURRENT TRANSCRIPT: %s" % current_transcript.get("tsId"))
     transcript = t_transcript(request, current_transcript.get("tsId"), current_transcript.get("url"))
     transcriptId = str(transcript.get("tsId"))
     if request.method == 'POST':# This is by JQuery...
@@ -132,8 +151,46 @@ def correct(request, collId, docId, page, transcriptId=None):# TODO Decide wheth
                 line_id = line.get("@id")
                 line['id'] = line_id
                 line['Unicode'] = line.get('TextEquiv').get('Unicode')
+
+        page_data=proc_page(request,collId,docId,page)
+       
         return render(request, 'edit/correct.html', {
-             'imageUrl': t_document(request, collId, docId, -1).get('pageList').get('pages')[int(page) - 1].get("url"),
+             'imageUrl': page_data.get("page").get("url"),
              'lines': lineList,
-             'content': json.dumps(content_dict)
+             'content': json.dumps(content_dict),
+             'nav_up': page_data.get('up'),
+             'nav_up_content': page_data.get('up_content'),
+             'nav_next': page_data.get('next'),
+             'nav_next_content': page_data.get('next_content'),
+             'nav_prev': page_data.get('prev'),
+             'nav_prev_content': page_data.get('prev_content')
             })
+
+def proc_page(request,collId,docId,page) :
+    document = t_document(request, collId, docId, -1)
+    prev=None
+    prev_content=None
+    next=None
+    next_content=None
+    stop_next=False
+    #TODO possibly we can make use of the fact that in this case we are dealing with page numbers rather than ids
+    for p in document.get('pageList').get('pages'):
+        if stop_next:
+            next=p.get('pageNr')
+            next_content=p.get('pageNr')
+            break
+        if  p.get('pageNr') == int(page) :
+            page_obj = p
+            stop_next=True
+        else :
+            prev=p.get('pageNr')
+            prev_content=p.get('pageNr')
+ 
+    return {'page' : page_obj,
+		'up': 'dashboard/'+collId+'/'+docId, 
+		'up_content': "Up to document", 
+		'next': next, 
+		'next_content': next_content,
+		'prev' : prev,
+		'prev_content': prev_content }
+
