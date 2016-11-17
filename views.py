@@ -19,14 +19,14 @@ from django.template.loader import render_to_string
 from django.utils.html import escape
 
 #Imports pf read modules
-from apps.utils.decorators import t_login_required
-from apps.utils.services import *
-from apps.utils.utils import crop
+from mc.apps.utils.decorators import t_login_required
+from mc.apps.utils.services import *
+from mc.apps.utils.utils import crop
 #t_collection, t_register,
 
 #Imports from app (library)
 import settings
-import apps.navigation.navigation# TODO Fix this import!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+import mc.apps.navigation.navigation# TODO Fix this import!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 #from library.forms import RegisterForm, IngestMetsUrlForm, MetsFileForm
 
 #from profiler import profile #profile is a decorator, but things get circular if I include it in decorators.py so...
