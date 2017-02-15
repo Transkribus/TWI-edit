@@ -1,38 +1,55 @@
 {% load i18n %}
 
-<div id="correctModal" class="modal fade" >
-    <div class="modal-dialog">
-        <div class="modal-content">
-			<div class="modal-body line-content">
-	            <table>
-		            <tr>
-		            	<td colspan="3">
-		            		<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
-	            		</td>		            	
-		            </tr>
-		            <tr>
-		            	<td style="padding: 5px; vertical-align: top;">
-			            	<a class="add-line" href="#"><span class="glyphicon glyphicon-plus"></span></a><br/>
-			            	<a class="remove-line" href="#"><span class="glyphicon glyphicon-minus"></span></a>
-			           	</td>
-						<td style="width: 100%; padding: 0px;">
-			            	<ul class="line-list">
-			            	</ul>
-		            		<div id="lineText"></div>
-		            		<div id="editableLine"></div>
-			            </td>
-		            	<td style="padding: 5px; vertical-align: top;">
-				            <a class="typewriter-previous" href="#"><span class="glyphicon glyphicon-arrow-up"></span></a><br/>
-				            <a class="typewriter-next" href="#"><span class="glyphicon glyphicon-arrow-down"></span></a>
-			           	</td>
-		            </tr>
-		            <tr>
-		            	<td colspan="3" style="text-align: right;">
-                		<button id="closeButton" type="button" class="btn btn-default" data-dismiss="modal">{% trans "Close" %}</button>
-			           	</td>
-		            </tr>
-				</table>
-			</div>
-        </div>
-    </div>
+<div id="correctModal" style="display: none; z-index: 1999; overflow: hidden;" 
+	title=' {# We (ab)use the Gijgo Dialog like this to get a custom header with more buttons. #}
+		{% trans "Edit line" %}
+		<button type="button" class="close" data-dismiss="modal" aria-hidden="true"></button>
+		<span id="dockButton"></span>{# The fabulous JavaScript manages the button here. #} 
+	'>
+	<div data-role="body">
+		<div class="row tool-row">
+			<div class="col-xs-12">
+				<span class="editbutton-group">
+					<div class="btn-group">				
+			    		<button type="button" class="add-line btn btn-default btn-sm">
+			    			<span class="glyphicon glyphicon-plus" aria-hidden="true"></span>
+						</button>
+			    		<button type="button" class="remove-line btn btn-default btn-sm">
+			    			<span class="glyphicon glyphicon-minus" aria-hidden="true"></span>
+						</button>
+				    </div>
+				</span>
+				<span class="editbutton-group">
+				    <div class="btn-group">
+			    		<button type="button" class="typewriter-previous btn btn-default btn-sm">
+			    			<span class="glyphicon glyphicon-arrow-up" aria-hidden="true"></span>
+						</button>
+			    		<button type="button" class="typewriter-next btn btn-default btn-sm">
+			    			<span class="glyphicon glyphicon-arrow-down" aria-hidden="true"></span>
+						</button>
+			    	</div>
+			    </span>
+				<span class="editbutton-group">
+				    <div class="btn-group">
+			    		<button type="button" class="enlarge-text btn btn-default btn-sm">
+			    			<span class="glyphicon glyphicon-font" aria-hidden="true" id="spy"></span>
+						</button>
+			    		<button type="button" class="shrink-text btn btn-default btn-sm">
+			    			<span class="glyphicon glyphicon-font" aria-hidden="true" style="font-size: xx-small; width: 12px;"></span>
+						</button>
+					</div>
+				</span>
+		    </div>
+		</div>
+		<div class="row content-row">
+			<div class="col-xs-12 line-list-div">
+				<ul class="line-list" contenteditable="true">
+					{% for line in lines %}
+						{# TODO Precautions to make safe safe below #}
+						<li class="content-line" id="text_{{line|get_item:"id"}}" spellcheck="false">{{line|get_item:"Unicode"|safe}}</li>
+					{% endfor %}
+				</ul>
+	        </div>
+	    </div>
+	</div>
 </div>

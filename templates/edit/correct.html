@@ -3,30 +3,76 @@
 
 {% load staticfiles %}
 
+{% block nav_buttons_out %}
+{% include "nav_buttons.html" with out=True %}
+{% endblock %}
+
+{% block nav_buttons_in %}
+{% include "nav_buttons.html" with out=False %}
+{% endblock %}
+
 {% block content %}
 
 <link href="{% static "css/correct.css" %}" rel="stylesheet">
+<link href="{% static "css/gijgo.min.css" %}" rel="stylesheet">
 
-<div class="container col-md-12">
+<div class="top-div col-md-12">
     <div class="row">
         <h1>
             {% trans "Correction Interface, Line by Line (working title)" %}
         </h1>
 	</div>
     <div class="row row-centered">
-		<div class="col-md-3">		
-	    	<a class="scroll-up btn-lg" href="#"><span class="glyphicon glyphicon-arrow-up"></span></a><a class="scroll-down btn-lg" href="#"><span class="glyphicon glyphicon-arrow-down"></span></a>
+	    <div class="col-md-1">
+	    	<div class="input-group input-group-sm">
+	    		<span class="input-group-addon">
+	    			<a class="zoom-in btn-sm" href="#"><span class="glyphicon glyphicon-zoom-in"></span></a>
+	    		</span>
+	    		<span class="input-group-addon">
+	    			<a class="zoom-out btn-sm" href="#"><span class="glyphicon glyphicon-zoom-out"></span></a>
+	    		</span>
+	    	</div>
 		</div>
-	    <div class="col-md-3">
-	    	<a class="zoom-in btn-lg" href="#"><span class="glyphicon glyphicon-zoom-in"></span></a><a class="zoom-out btn-lg" href="#"><span class="glyphicon glyphicon-zoom-out"></span></a>
+		<div class="col-md-1">
+			<div class="input-group input-group-sm">
+				<span class="input-group-addon">
+	    			<a class="scroll-up btn-sm" href="#"><span class="glyphicon glyphicon-arrow-up"></span></a>
+	    		</span>
+	    		<span class="input-group-addon">
+	    			<a class="scroll-down btn-sm" href="#"><span class="glyphicon glyphicon-arrow-down"></span></a>
+	    		</span>
+    		</div>
 		</div>
-	    <div class="col-md-3">
+	    <div class="col-md-6">
 			<div id="message"></div>
-		</div>
-		<div class="col-md-3">
 			{# TODO Restore this when saving no longer breaks tags! <a href="#" class="btn btn-primary" data-target="#saveChanges">{% trans "Save changes" %}</a><br/><br/><br/>{# TODO CSS for this purpose. #}
 		</div>
+		<div class="col-md-4">
+			<div class="input-group input-group-sm">
+				<span class="input-group-addon">
+					<a class="first-page btn-sm" href="#"><span class="glyphicon glyphicon-step-backward"></span></a>
+					<a class="previous-page btn-sm" href="#"><span class="glyphicon glyphicon-triangle-left"></span></a>
+				</span>
+				<input type="text" class="form-control" id="pageNumber">
+				<span class="input-group-addon">
+					<a class="next-page btn-sm" href="#"><span class="glyphicon glyphicon-triangle-right"></span></a>
+					<a class="last-page btn-sm" href="#"><span class="glyphicon glyphicon-step-forward"></span></a>
+				</span>
+				<span class="input-group-addon">
+					<a class="btn-sm" data-toggle="collapse" href="#thumbDiv" aria-expanded="false" aria-controls="thumbDiv"><span class="glyphicon glyphicon-th-large"></span></a>
+				</span>
+			</div>
+		</div>
 	</div>
+	<div class="collapse" id="thumbDiv" style="background-color: black;">
+		<div>
+			<table>
+				<tr id="thumbTR">
+					{# The lovely JavaScript generates a thumbnail bar for navigation and inserts it here. #}
+				</tr>
+			</table>
+		</div>
+    </div>
 	<div class="transcript-div">
 		<div class="transcript-map-div">
 			<map name="transcriptMap" id="transcriptMap">
@@ -43,28 +89,23 @@
 {% include "edit/correct_modal.html" %}
 
 <script src="{% static "js/correct.js" %}"></script>
+<!-- gijgo js can't be included here, it must come after everything else -->
 <script>
-	var readyToZoom = false;{# If the user begins to zoom before the page has fully loaded, it won't function normally. #}
-	var contentArray= [[0, '', [0, 0, 0, 0, 0, 0, 0, 0]]
+	var contentArray= [[0, '', [0, 0, 0, 0, 0, 0, 0, 0], 0]
 		{% for line in lines %}
-			,['{{ line|get_item:"id"}}', '{{line|get_item:"Unicode"}}', [{{line|get_item:"crop"|coords_for_imagemap}}]]
+			,['{{ line|get_item:"id"}}', '{{line|get_item:"Unicode"}}', [{{line|get_item:"crop"|coords_for_imagemap}}], {{line|get_item:"regionWidth"}}]
 		{% endfor %}
 	];
+	var thumbArray = {{ thumbArray | safe }};{# We assume that this is safe because each url is escape()d in the for loop in the view #}
 	var transUnsavedChanges = "{% trans "You have unsaved changes." %}";
-	var previousInnerWidth = window.innerWidth;
-	var isDragged = false;
-	var triggerTime;
 	
-	$("a[data-target='#saveChanges']").click(function(event) {
-    	event.preventDefault();
+	$("a[data-target='#saveChanges']").click(function(e) {
+    	e.preventDefault();
     	$.post(window.location.href, {content: getContent(), csrfmiddlewaretoken: '{{ csrf_token }}'}, function( data ) {
     		setMessage(data);
     		changed = false;
 		});
     	{# TODO Handle failures here or are we happy with the current solution? #}
-	});
-	$('#correctModal').draggable({
-       handle: $('.modal-dialog')
 	});
 	$('.transcript-map-div').draggable({
 		start: function() {
@@ -82,32 +123,33 @@
 			$(".transcript-map-div" ).css("transform",  "translate(" + -accumExtraX +"px, " + -accumExtraY+ "px) scale(" + (1 + zoomFactor) + ")");// Note, the CSS is set to "transform-origin: 0px 0px"
 		}
 	});
-	$('#correctModal').on('hidden.bs.modal', function () {
-		setCurrentLineId(null);
-		resetCanvas();
-		$(".line-list").html('');
-		ignoreLeave = false;
-	});
 	$( "#transcriptMap  area" ).on('click', function(e) {
     	e.preventDefault();
-		updateModalPosition(e.originalEvent.clientX, e.originalEvent.clientY);
 		if (isDragged) {# We ignore clicks if the user has been dragging the image, we assume that that's what the user wants. #}
 			return;
-		ignoreLeave = true; {# We don't want the original selection "unhighlighted" when the user moves the mouse to the modal. #}
-		setCurrentLineId($(this).attr("line-key"));
-		$("#correctModal").modal({
-        	backdrop: "static", {# TODO Figure out whether to allow updating of the text by clicking elsewhere. false allows that but works poorly. #}
-        	//keyboard: false {# TODO Needed? #}
-    	});
-		buildLineList();
+		//ignoreLeave = true; {# We don't want the original selection "unhighlighted" when the user moves the mouse to the modal. #}
+		updateDialog($(this).attr("line-key")); 
+		updateCanvas();
+		processTags($(this).attr("line-key"));
 	});
 	$('area').mouseenter(function(e) { 
 		highlightLine(e.target.id);
 	});
 	$('area').mouseleave(function(e) {
-		if (!ignoreLeave) 
-			resetCanvas();
+		updateCanvas();
 	});
+	$( ".previous-page" ).on('click', function(e) {
+		gotoPage(pageNo - 1);
+	});
+	$( ".next-page" ).on('click', function(e) {
+		gotoPage(pageNo * 1 + 1);
+	});
+	$( ".first-page" ).on('click', function(e) {
+		gotoPage(1);
+	});
+	$( ".last-page" ).on('click', function(e) {
+		gotoPage(Number.MAX_SAFE_INTEGER);
+	});	
 	$( ".scroll-up" ).on('click', function(e) {
 		scrollToPreviousTop();
 	});
@@ -116,6 +158,7 @@
 	});
 	$('#correctModal').keydown(function(e){
 	    if (e.keyCode == 13) {
+	    	e.preventDefault(); // Prevent line breaks...
 	        typewriterNext();
 	    }
 	});
@@ -135,13 +178,25 @@
 		surroundingCount++;
 		buildLineList();
 	});
+	$( ".enlarge-text" ).on('click', function(e) {
+		resizeText(10);
+	});
+	$( ".shrink-text" ).on('click', function(e) {
+		resizeText(-10);
+	});
 	$( ".remove-line" ).on('click', function(e) {
-		surroundingCount--;
+		surroundingCount--; {# TODO A function instead? #}
 		if (surroundingCount >= 0)
 			buildLineList();
 		else
 			surroundingCount = 0;
 	});
+	$( ".thumbs-left" ).on('click', function(e) {
+		scrollThumbsLeft();
+	});
+	$( ".thumbs-right" ).on('click', function(e) {
+		scrollThumbsRight();
+	});	
     $('.transcript-div').on('mousewheel DOMMouseScroll', function(e) {
     	e.preventDefault();
     	var mouseZoom;
@@ -156,37 +211,64 @@
 	   	triggerTime = new Date().getTime();
     	setTimeout(function() {
 			if (new Date().getTime() > (triggerTime + 480)) {
-			   	var widthFactor = window.innerWidth/previousInnerWidth;
-		    	var oldWidth = initialWidth;
-			    previousInnerWidth = window.innerWidth;
-		    	initialWidth = document.getElementById('transcriptImage').width;
-				initialWidth = $('#transcriptImage').width();
-				initialHeight = $('#transcriptImage').height();
-				naturalWidth = $('#transcriptImage').get(0).naturalWidth;
-				initialScale = initialWidth / naturalWidth;	
-				
-				{# We have to update these too in case the image has gotten resized along with the window: #}
-				accumExtraX = initialWidth * accumExtraX / oldWidth;
-				accumExtraY = initialWidth * accumExtraY / oldWidth;
-			    
-			    $( ".modal-dialog" ).css("width", parseInt($( ".modal-dialog" ).css("width"))*widthFactor + 'px');
-			    $( ".modal" ).css("left", parseInt($( ".modal" ).css("left"))*widthFactor + 'px');
-				$(".transcript-map-div").css("transform",  "translate(" + -accumExtraX +"px, " + -accumExtraY+ "px) scale(" + (1 + zoomFactor) + ")");// Note, the CSS is set to "transform-origin: 0px 0px"
-				console.log("init w: " + initialWidth);
+				resizeContents();
 			}			
 		}, 500);
+	});
+	$("#pageNumber").focus(function() {
+   		$(this).select();
+	});
+	$("#pageNumber").change(function() {
+   		checkPageNumberInput();
 	});
 	$('#transcriptImage').load(function() {
 			initialWidth = $('#transcriptImage').width();
 			initialHeight = $('#transcriptImage').height();
 			naturalWidth = $('#transcriptImage').get(0).naturalWidth;
 			initialScale = initialWidth / naturalWidth;
-						
-			$( ".modal-dialog" ).css("width", initialWidth*0.8 + 'px'); {# Reasonable default? #}
-			resetCanvas();
-			calculateAreas(initialScale);
+			
+			pathWithoutPage = window.location.pathname;
+			var split = window.location.pathname.lastIndexOf('/') + 1;
+			pageNo = pathWithoutPage.substring(split);
+			pathWithoutPage = pathWithoutPage.substring(0, split);
+			var search = window.location.search + 'tco=0';// just to avoid NaN below
+			thumbCountOffset = parseInt(search.substring(search.indexOf('tco=') + 4)); // "tco=".length = 4
+
+			// If the current page isn't among the thumbs first shown, we change the offset to make it so 
+			thumbCountOffset = Math.max(thumbCountOffset, -pageNo + 1);
+			thumbCountOffset = Math.min(thumbCountOffset, -pageNo + THUMBS_TO_SHOW); 
+			
+			// Show the current page number 
+			checkPageNumberInput();
+
+			updateCanvas();
+			calculateAreas();
 			readyToZoom = true;
+			loadThumbs();
+			
+			correctModal = $("#correctModal").dialog({
+				autoOpen: false,
+			    uiLibrary: 'bootstrap',
+	            resizable: true,
+			    closed: function(e) {
+			        setCurrentLineId(null);
+					updateCanvas();
+					ignoreLeave = false;
+			    },
+			    resize: function (e) {
+					modalHeight = parseInt(this.style.height, 10);			    	
+		        	calculateLineListDimensions();
+        		},
+        		resizeStart: function (e) {
+        			updateDockingStatus(false);
+        		},
+        		dragStart: function (e) {
+        			updateDockingStatus(false);
+        		}
+	        });
 	});
 </script>
+
+<script src="{% static "js/gijgo.min.js" %}"></script>
 
 {% endblock %}
