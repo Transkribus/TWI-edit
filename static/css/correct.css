@@ -1,13 +1,3 @@
-/* Draggable modal: */
-.modal {
-    overflow: hidden;
-}
-
-.modal-dialog{
-    margin-right: 0;
-    margin-left: 0;
-}
-
 /* We crop the image like this... */
 .transcript-div {
 	background-color: gray;
@@ -18,7 +8,7 @@
 .transcript-map-div {
 	overflow: hidden;
 	position: relative;
-	transform-origin: 0px 0px;// Required by the zoom transform...
+	transform-origin: 0px 0px;/* Required by the zoom transform... */
 }
 
 /* We make the transcript fit neatly... */
@@ -26,10 +16,36 @@
 	max-width: 100% !important;
 }
 
-.modal-backdrop {
-	background: none;
+/* Thumbnails: */
+.thumb-row {
+	overflow: hidden;
 }
-
+.thumbs {
+    transition: transform 1s;
+}
+.thumb-current {
+    padding: 3%;
+    background-color: red;
+}
+.thumb-img:hover {
+    padding: 3%;
+    background-color: blue;
+}
+.thumb-img {
+    padding: 3%;
+    background-color: white;
+}
+.content-line {
+	display: none;
+}
+.line-list-div {
+	overflow: auto;
+}
+ul {
+	list-style: none;
+	padding-left: 0px;
+}
 li {
-    list-style-type: none; 
+    list-style-type: none;
+    white-space: nowrap; 
 }

@@ -3,6 +3,14 @@
 
 {% load staticfiles %}
 
+{% block nav_buttons_out %}
+{% include "nav_buttons.html" with out=True %}
+{% endblock %}
+
+{% block nav_buttons_in %}
+{% include "nav_buttons.html" with out=False %}
+{% endblock %}
+
 {% block content %}
 
 <link href="{% static "css/correct.css" %}" rel="stylesheet">
@@ -51,6 +59,7 @@
 			{% endfor %}			
 		</div>
 		<div class="col-md-6">
+			TODO Implement some navigation?</br>
 			<img src="{{imageUrl}}" usemap="#transcriptMap"  id="transcriptImage" class="transcript-img" style="position: absolute; z-index: 999;">
 		</div>
 	</div>
