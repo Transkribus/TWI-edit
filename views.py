@@ -18,16 +18,17 @@ from django.utils.translation import ugettext_lazy as _
 from django.template.loader import render_to_string
 from django.utils.html import escape
 
-#Imports pf read modules
-from read.decorators import t_login_required
-from read.services import *
-from read.utils import crop
-#t_collection, t_register,
+#Imports pf <del>read</del> utils modules
+from apps.utils.decorators import t_login_required
+from apps.utils.services import *
+from apps.utils.utils import crop
+import settings
+import apps.edit.settings
 
 #Imports from app (library)
-import library.settings
-import library.navigation# TODO Fix this import!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-from library.forms import RegisterForm, IngestMetsUrlForm, MetsFileForm
+#import library.settings
+#import library.navigation# TODO Fix this import!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+#from library.forms import RegisterForm, IngestMetsUrlForm, MetsFileForm
 
 #from profiler import profile #profile is a decorator, but things get circular if I include it in decorators.py so...
 
