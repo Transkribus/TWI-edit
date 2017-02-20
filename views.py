@@ -136,13 +136,14 @@ def correct(request, collId, docId, page, transcriptId=None):# TODO Decide wheth
                 line['id'] = line_id
                 unicode_string = line.get('TextEquiv').get('Unicode')
                 line_tags = []
-                for custom in line.get("@custom").replace(' ', '').split('}'):
-                    tag_data = custom.split('{')
-                    if tag_data[0] and tag_data[0] != "readingOrder": # Skip readingOrder (anything else to skip?)
-                        offset_and_length = tag_data[1].lstrip("offset:").split(";length:")
-                        start = int(offset_and_length[0])
-                        end = start + int(offset_and_length[1].split(';')[0])
-                        line_tags.extend([{'offset': start, 'tag': tag_data[0], 'open': True}, {'offset': end, 'tag': tag_data[0], 'open': False}]) # opening and closing tag
+                if line.get("@custom"):
+                    for custom in line.get("@custom").replace(' ', '').split('}'):
+                        tag_data = custom.split('{')
+                        if tag_data[0] and tag_data[0] != "readingOrder": # Skip readingOrder (anything else to skip?)
+                            offset_and_length = tag_data[1].lstrip("offset:").split(";length:")
+                            start = int(offset_and_length[0])
+                            end = start + int(offset_and_length[1].split(';')[0])
+                            line_tags.extend([{'offset': start, 'tag': tag_data[0], 'open': True}, {'offset': end, 'tag': tag_data[0], 'open': False}]) # opening and closing tag
                 if line_tags:
                     line_tags.sort(key = lambda tag: tag['offset'])
                     tag_stack = [] # TODO Some other data structure?
