@@ -5,7 +5,6 @@ var surroundingCount = 1;
 var currentLineId;
 var modalFromMouse = 50;// TODO Decide whether to calculate this or have a simple default. Note pages with text near the lower edge...
 var modalHeight = 250;// TODO Consider whether to calculate this somehow, this value is just a rough guess...
-var modalWidth = null;
 var modalMinWidth, modalMinHeight, modalTextMaxHeight, dockedHeight = 250;// TODO Decide how to calculate this.
 var ballRadius = 50;// TODO Decide how to set this. 
 var ignoreLeave = false;
@@ -22,10 +21,7 @@ var THUMBS_TO_SHOW = 10; // "static" variable for playing around with the no. of
 var thumbCountOffset = 0;
 var thumbWidth;
 var toLoadCount;
-var newInputFontSize;
-var newInputLineHeight;
-var newLineFontSize;
-var newLineLineHeight;
+var contentLineFontSize;
 var correctModal;
 var docked = false;
 var dialogX, dialogY;
@@ -34,46 +30,108 @@ var dialogWidth, dialogHeight = 250; // This is 250 for no particular reason. TO
 // Just for testing...
 var tagColors = {// TODO tag colours from the view (array to the template?), also decide whether to use numbers or strings...
 								"abbrev": "ff0000",
-								"textStyle": "00ff00",
+								"textStyle": "000f00",
 								"blackening": "0000ff",
-								"place": "00f0ff"
+								"place": "00f0ff",
+								"person": "010101"
 							};
 
-function processTags(tagLineId) {
-	// create a "tag stack" with all tags in this line
-	var tags = $("." + tagLineId + "_tag");
-	var tagStack = new Array();
-	tags.each(function () { 
-		var tag = $(this).attr("tag");
-		var notYetIn = true; // set to false if the tag is already found in the stack
-		for (var i = 0; notYetIn && i < tagStack.length; i++) {
-			if (tagStack[i] == tag)
-				notYetIn = false;
-		}
-		if (notYetIn)
-			tagStack.push(tag);
-	});
-	
-	// generate SVGs with the right height to be used as a background and a 1 px "long" line corresponding to each tag
-	var lineY = Math.round(1.5 * parseInt($('.content-line').css("font-size"), 10)); // TODO Store font size globally since it's used in many places?
+function getLineLiWithTags(tagLineId) { // generates a line with spans matching the tags and generates and applies the relevant CSS/SVG to show them
+	// tag graphics stuff:	
+	// values for creating SVGs with the right height to be used as a background and a 1 px "long" line corresponding to each tag
+	var lineY = Math.round(1.5 * contentLineFontSize);
 	var lineThickness = Math.round(lineY / 6);// TODO Test what looks good...
 	var thicknessAndSpacing = lineThickness + Math.round(lineY / 8);// TODO Test what looks good...
-	var svgRectsJSON = '';// JSON-2-B with the rect for each line
-	var backgroundHeight = lineY + tagStack.length * (thicknessAndSpacing);// spacing is added above each tag
-	var i = 0
-	for (; i < tagStack.length; i++) {
-		svgRectsJSON += '"' + tagStack[i] + '":' + "\"<rect x='0' y='" + lineY + "' width='1' height='" + lineThickness + "' style='fill: %23" + tagColors[tagStack[i]] + ";' />\""; // # must be %23
-		lineY +=thicknessAndSpacing;
-		svgRectsJSON += ',';
+	var svgRectsJSON = ''; // JSON-2-B with the rect for each line
+	var backgroundHeight = lineY;// enough for the first tag graphic
+	
+	// "tags"-2-tags:
+	var tagLineIndex = getIndexFromLineId(tagLineId);
+	var custom = contentArray[getIndexFromLineId(tagLineId)][4].replace(/\s+/g, '').split('}');
+	var customTagArray = [];
+	var lineUnicode = contentArray[tagLineIndex][1];
+	var tagGfxStack = [];
+	var highlightCurrent = "";
+	if (tagLineId == currentLineId)
+		 highlightCurrent = ' style="color: green;" '; // A quick and dirty solution for highlighting the current line
+	
+	// TODO Can we return sooner when there aren't any tags?
+	if ("None" != custom) {
+		custom.forEach(function(attribute) { // turn "tags" into something closer to actual tags (=spans)
+			attribute = attribute.split('{');
+			if ("" != attribute && "readingOrder" != attribute[0]) { // we have no use for readingOrder for now...
+				var split = attribute[1].split("offset:")[1].split(";length:");
+				var start = parseInt(split[0]);
+				var end = start + parseInt(split[1]); // parseInt doesn't care about what comes after the first int
+				customTagArray.push({"offset": start, "tag": attribute[0], "open": true});
+				customTagArray.push({"offset": end, "tag": attribute[0], "open": false});
+			}
+		});
 	}
-	svgRectsJSON = svgRectsJSON.substring(0, svgRectsJSON.length - 1); // remove the comma in the end
-	svgRectsJSON = JSON.parse("{" +svgRectsJSON + "}");
-	tags.each(function () {
-		$(this).css("background",  "url(\"data:image/svg+xml;utf8, <svg xmlns='http://www.w3.org/2000/svg' width='1' height='" + backgroundHeight + "'>" + svgRectsJSON[$(this).attr("tag")] + "</svg>\") repeat-x");
-		$(this).css("height", "50px");// TODO Calculate... (from the SVG!?)
-		$(this).css("line-height", "70px");// TODO Calculate... (from the SVG!?) 
-		$(this).css("padding-bottom", "30px");// TODO Calculate... (from the SVG!?)
-	});
+	if (customTagArray.length > 0) { // sort the tags, if any
+		customTagArray.sort(function (tagA, tagB) {
+			return tagA.offset - tagB.offset;
+		});
+		customTagArray.forEach(function (tag) { // generate a graphical representations for each tag type
+			var notYetIn = true; // set to false if the tag is already found in the stack
+			for (var i = 0; notYetIn && i < tagGfxStack.length; i++) {
+				if (tagGfxStack[i] == tag.tag)
+					notYetIn = false;
+			}
+			if (notYetIn) { // create a graphical representation of this tag
+				tagGfxStack.push(tag.tag);
+				svgRectsJSON += '"' + tag.tag + '":' + "\"<rect x=\\\\'0\\\\' y=\\\\'" + lineY + "\\\\' width=\\\\'1\\\\' height=\\\\'" + lineThickness + "\\\\' style=\\\\'fill: %23" + tagColors[tag.tag] + ";\\\\' />\""; // # must be %23 and yes \\\\ [sic!]
+				lineY +=thicknessAndSpacing;
+				svgRectsJSON += ',';
+			}
+		});
+
+		svgRectsJSON = svgRectsJSON.substring(0, svgRectsJSON.length - 1); // remove the comma in the end
+		svgRectsJSON = JSON.parse("{" +svgRectsJSON + "}");
+		
+		var bottomPadding = (1 + tagGfxStack.length) * thicknessAndSpacing;
+		var backgroundHeight = lineY + bottomPadding;
+
+		// TODO Remove tagLineId + _tag below, no longer necessary!?
+		
+		var tagStack = [];
+		var tagString = '<li id="text_' + tagLineId + '" spellcheck="false"' + highlightCurrent + '><div style="padding-bottom: ' + bottomPadding + 'px;"' + '>';
+		var rangeBegin = -1;
+		var keepOpenStack = [];
+		customTagArray.forEach(function (tag) {
+			var currentTag = tag.tag;
+			var offset = tag.offset;
+			if (offset != rangeBegin) { // has this tag already been closed when closing an outer tag? If so, we don't need to open it again...
+				keepOpenStack.forEach(function (keepTag) { // open any temporarily closed tags
+					tagString += "<span class='" + tagLineId + "_tag' tag='" + keepTag + "' " // a "tag" = span with a tag attribute
+											+ "style=\"background-image: url('data:image/svg+xml; utf8, <svg xmlns=\\'http://www.w3.org/2000/svg\\' width=\\'1\\' height=\\'" + backgroundHeight + "\\'>" + svgRectsJSON[keepTag] + "</svg>'); padding-bottom: " + bottomPadding + "px;\""
+											+ ">";
+					tagStack.push(keepTag);
+				});
+				tagString += lineUnicode.substring(rangeBegin, offset);
+				if (tag.open) { // if the tag opens, just add it
+					tagString += "<span class='" + tagLineId + "_tag' tag='" + currentTag + "' " //" // a "tag" = span with a tag attribute
+											+ "style=\"background-image: url('data:image/svg+xml; utf8, <svg xmlns=\\'http://www.w3.org/2000/svg\\' width=\\'1\\' height=\\'" + backgroundHeight + "\\'>" + svgRectsJSON[currentTag] + "</svg>'); padding-bottom: " + bottomPadding + "px;\""
+											+ ">";
+					tagStack.push(currentTag);
+				} else { // if the tag closes, we have to close all open tags until we reach the "original" opening tag
+					var previousTag = tagStack.pop();
+					while (currentTag != previousTag) {
+						keepOpenStack.push(previousTag);
+						tagString += "</span>"; // easy to close since we don't need to care about what the opening tag type was...
+						previousTag = tagStack.pop();
+					}
+					tagString += "</span>";
+				}
+				// TODO Solve the issue with tags like <blah></blah> after other tags as a consequence of them being closed above....
+			}
+			rangeBegin = offset;
+		});
+		
+		tagString += lineUnicode.substring(rangeBegin, lineUnicode.length) + "</div></li>";
+		return tagString;
+	} else
+		return '<li id="text_' + tagLineId + '" spellcheck="false"' + highlightCurrent + '><div>' + lineUnicode + '</div></li>';
 }
 
 function getContent() { //"JSON.stringifies" contentArray and also strips out content which does not need to be submitted.
@@ -88,7 +146,7 @@ function getContent() { //"JSON.stringifies" contentArray and also strips out co
 	return content;
 }
 
-function checkPageNumberInput() { // Tries to parse input to see if it's a valid page number to go to. If not, resets the contents to show the current page. 
+function checkPageNumberInput() { // Tries to parse input to see if it's a valid page number to go to. If not, resets the contents to show the current page.
 	var value = parseInt($("#pageNumber").val());
 	if (value > 0 && value < thumbArray.length - 1)
 		gotoPage(value);
@@ -112,12 +170,14 @@ function resizeContents() { // Call to perform necessary updates of contents and
 	// We have to update these too in case the image has gotten resized by the browser along with the window:
 	accumExtraX = initialWidth * accumExtraX / oldWidth;
 	accumExtraY = initialWidth * accumExtraY / oldWidth;
-    
+	
 	$(".transcript-map-div").css("transform",  "translate(" + -accumExtraX +"px, " + -accumExtraY+ "px) scale(" + (1 + zoomFactor) + ")");// Note, the CSS is set to "transform-origin: 0px 0px"
 
 	calculateAreas();
 	generateThumbGrid();
 	updateCanvas();
+	updateDialog();
+	updateDocking();
 }
 
 // Thumbnail functions
@@ -188,11 +248,12 @@ function updateDocking(dock) { // docks (true) / undocks (false) the dialog. Whe
 	if (docked) { 
 		saveDialog();
 		var leftOffset = $("#sidebar-wrapper").width();
-		$("#correctModal").css("left", leftOffset);
-		$("#correctModal").css("width", document.body.clientWidth - leftOffset);
+		$("#correctModal").css("left", 0);
+		$("#correctModal").css("width", document.body.clientWidth);
 		$("#correctModal").css("height", dockedHeight);
 		$("#correctModal").css("position", "fixed");
 		$("#correctModal").css("top", $(window).height() - dockedHeight + "px");// using "bottom" is problematic
+		console.log("dialog top: " + $("#correctModal").css("top"));
 	} else {
     	$("#correctModal").css("left",  dialogX);
     	$("#correctModal").css("top",  dialogY);
@@ -216,7 +277,8 @@ function saveDialog() { // Saves the undocked dialog properties...
 	dialogHeight = $("#correctModal").height();	
 }
 function updateDialog(lineId) {
-	setCurrentLineId(lineId);
+	if (1 == arguments.length) // This function can be called without a line ID to reset the dialog after resizing the window
+		setCurrentLineId(lineId);
 	var lineIdx = getIndexFromLineId(currentLineId);
 	if (!correctModal.isOpen()) { // Do we have to open the dialog first? 
 		correctModal.open(); // We have to open the dialog already here in order to calculate its minimum width
@@ -250,24 +312,31 @@ function updateDialog(lineId) {
 	buildLineList();	
 }
 function calculateLineListDimensions() {
-	modalTextMaxHeight = $("#correctModal").height() - modalMinHeight;// TODO Which height? outer? true?
+	modalTextMaxHeight = $("#correctModal").height() - modalMinHeight;// TODO Which height? outer? true? Also: -5 to give the "fake text area" border some margin below it as well 
 	$(".line-list-div").css("height", modalTextMaxHeight);
 }
-function buildLineList() { // shows and hides lines to create the list in the dialog
+function buildLineList() {
 	var currentIdx = getIndexFromLineId(currentLineId);
-	var index = Math.max(1, currentIdx - surroundingCount);// 1 because the first line is not real
 	var showTo = Math.min(currentIdx + surroundingCount, contentArray.length - 1);
-	$(".content-line").css("display", "none");
+	var index = Math.max(1, currentIdx - surroundingCount); // 1 because the first line is not real
+	var halfFontSize = contentLineFontSize/2;
+	var highlightBall= '<svg height="' + contentLineFontSize + '" width="' + contentLineFontSize + '"><circle cx="' + + '" cy="' + + '" r="' + halfFontSize + '" fill="green" />';
+	$("#lineList").html("");
+	/*
+	TODO Add a green ball in front of the currently highlighted line and transparent palls in front of the others for alignment... Either change from <div> to <li> in the function or add a parameter 
+	 while (index < currentIdx)
+		$("#lineList").append(getLineLiWithTags(contentArray[index++][0]));
+	 */
 	while (index <= showTo)
-		$("#text_" + contentArray[index++][0]).css("display", "block"); // TODO Decide between list-item/block/inline... This will be affected by how tagging is implemented, I think.
+		$("#lineList").append(getLineLiWithTags(contentArray[index++][0]));	
 }
 function resizeText(delta) {
-	var newFontSize = parseInt($('.content-line').css("font-size"), 10) + delta;
+	var newFontSize = contentLineFontSize + delta;
 	if (newFontSize < 14 || newFontSize > 40)
 		return;
-	newLineFontSize = newFontSize;
-	$('.content-line').css("font-size", newLineFontSize+ 'px'); 
-	processTags(currentLineId);// TODO Something better, all tags need to be redrawn here...
+	contentLineFontSize = newFontSize;
+	$('.line-list').css("font-size", contentLineFontSize+ 'px');
+	buildLineList();
 }
 
 // Line functions:
@@ -294,15 +363,18 @@ function getPreviousLineId(lineId) {
 	else
 		return contentArray[index - 1][0];
 }
+// TODO Decide how the dialog should behave. Currently any line can be edited (contenteditable...) but only the active one preserves changes 
 function setCurrentLineId(newId) { // We're not happy with just "=" to set the new id because we want to detect changes, if any, so we have this function.
 	// TODO Tags! Then we'll start saving again.
-	/*currentContent = $("#currentLine").val();
-	if (null != currentLineId && contentArray[getIndexFromLineId(currentLineId)][1] != currentContent) {		
-		if (!changed)
-			setMessage("<div class='alert alert-warning'>" + transUnsavedChanges + "</div>");
+	currentContent = $("#text_" + currentLineId).text();
+	console.log("currentcontent: " + currentContent);
+	if (null != currentLineId && contentArray[getIndexFromLineId(currentLineId)][1] != currentContent) {
+		// TODO Redo, the message breaks the layout...
+		//if (!changed)
+		//	setMessage("<div class='alert alert-warning'>" + transUnsavedChanges + "</div>");
 		changed = true;
 		contentArray[getIndexFromLineId(currentLineId)][1] = currentContent;
-	}*/	
+	}	
 	currentLineId = newId;
 }
 function scrollToNextTop() { // This function scrolls the image up as if it were dragged with the mouse.
@@ -348,8 +420,8 @@ function typewriterPrevious() {
 function typewriterStep(newLineId, delta) {
 	accumExtraY += delta * initialScale * (1 + zoomFactor);
 	$( ".transcript-map-div" ).css("transform",  "translate(" + -accumExtraX +"px, " + -accumExtraY+ "px) scale(" + (1 + zoomFactor) + ")");// Note, the CSS is set to "transform-origin: 0px 0px"
-	updateCanvas();
 	setCurrentLineId(newLineId);
+	updateCanvas();
 	buildLineList();
 }
 

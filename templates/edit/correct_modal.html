@@ -43,11 +43,7 @@
 		</div>
 		<div class="row content-row">
 			<div class="col-xs-12 line-list-div">
-				<ul class="line-list" contenteditable="true">
-					{% for line in lines %}
-						{# TODO Precautions to make safe safe below #}
-						<li class="content-line" id="text_{{line|get_item:"id"}}" spellcheck="false">{{line|get_item:"Unicode"|safe}}</li>
-					{% endfor %}
+				<ul class="line-list" contenteditable="true" id="lineList"  style="margin-right: 20px;">
 				</ul>
 	        </div>
 	    </div>

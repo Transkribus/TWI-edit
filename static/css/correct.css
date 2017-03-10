@@ -35,11 +35,13 @@
     padding: 3%;
     background-color: white;
 }
-.content-line {
-	display: none;
-}
+
+/* Dialog content: */
 .line-list-div {
 	overflow: auto;
+}
+.line-list {
+	font-size: 17px;
 }
 ul {
 	list-style: none;

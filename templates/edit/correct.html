@@ -85,7 +85,7 @@
 <script>
 	var contentArray= [[0, '', [0, 0, 0, 0, 0, 0, 0, 0], 0]
 		{% for line in lines %}
-			,['{{ line|get_item:"id"}}', '{{line|get_item:"Unicode"}}', [{{line|get_item:"crop"|coords_for_imagemap}}], {{line|get_item:"regionWidth"}}]
+			,['{{ line|get_item:"id"}}', '{{line|get_item:"Unicode"}}', [{{line|get_item:"crop"|coords_for_imagemap}}], {{line|get_item:"regionWidth"}}, "{{line|get_item:"Custom"}}"]
 		{% endfor %}
 	];
 	var thumbArray = {{ thumbArray | safe }};{# We assume that this is safe because each url is escape()d in the for loop in the view #}
@@ -171,10 +171,10 @@
 		buildLineList();
 	});
 	$( ".enlarge-text" ).on('click', function(e) {
-		resizeText(10);
+		resizeText(1);
 	});
 	$( ".shrink-text" ).on('click', function(e) {
-		resizeText(-10);
+		resizeText(-1);
 	});
 	$( ".remove-line" ).on('click', function(e) {
 		surroundingCount--; {# TODO A function instead? #}
@@ -204,8 +204,8 @@
     	setTimeout(function() {
 			if (new Date().getTime() > (triggerTime + 480)) {
 				resizeContents();
-			}			
-		}, 500);
+			}	
+		}, 200);
 	});
 	$("#pageNumber").focus(function() {
    		$(this).select();
@@ -213,16 +213,14 @@
 	$("#pageNumber").change(function() {
    		checkPageNumberInput();
 	});
-	$('#transcriptImage').load(function() {
+	$(window).on("load", function() {
+		console.log("image loaded");
 			initialWidth = $('#transcriptImage').width();
 			initialHeight = $('#transcriptImage').height();
 			naturalWidth = $('#transcriptImage').get(0).naturalWidth;
 			initialScale = initialWidth / naturalWidth;
-			
-			pathWithoutPage = window.location.pathname;
-			var split = window.location.pathname.lastIndexOf('/') + 1;
-			pageNo = pathWithoutPage.substring(split);
-			pathWithoutPage = pathWithoutPage.substring(0, split);
+			pathWithoutPage = "{% url 'edit:correct' collId docId %}";
+			pageNo = {{pageNo}};
 			var search = window.location.search + 'tco=0';// just to avoid NaN below
 			thumbCountOffset = parseInt(search.substring(search.indexOf('tco=') + 4)); // "tco=".length = 4
 
@@ -237,6 +235,9 @@
 			calculateAreas();
 			readyToZoom = true;
 			loadThumbs();
+			
+			// Getting this from the CSS file for now, set a variable instead?
+			contentLineFontSize = parseInt($('.line-list').css("font-size"), 10);
 			
 			correctModal = $("#correctModal").dialog({
 				autoOpen: false,
@@ -259,6 +260,7 @@
         		}
 	        });
 	});
+
 </script>
 
 <script src="{% static "js/gijgo.min.js" %}"></script>
