@@ -98,7 +98,9 @@ def correct(request, collId, docId, page, transcriptId=None):# TODO Decide wheth
         for text_region in transcript_root.iter('{http://schema.primaresearch.org/PAGE/gts/pagecontent/2013-07-15}TextRegion'):# We have to have the namespace...
             regionTextEquiv = ""
             for line in text_region.iter('{http://schema.primaresearch.org/PAGE/gts/pagecontent/2013-07-15}TextLine'):
-                modified_text = content.get(line.get("id"))
+                modified_content = content.get(line.get("id"))
+                line.set("custom", modified_content.get("custom"))
+                modified_text = modified_content.get("Unicode")
                 regionTextEquiv += modified_text +"\r\n"
                 line.find('{http://schema.primaresearch.org/PAGE/gts/pagecontent/2013-07-15}TextEquiv').find('{http://schema.primaresearch.org/PAGE/gts/pagecontent/2013-07-15}Unicode').text = modified_text
             text_region.find('{http://schema.primaresearch.org/PAGE/gts/pagecontent/2013-07-15}TextEquiv').find('{http://schema.primaresearch.org/PAGE/gts/pagecontent/2013-07-15}Unicode').text = regionTextEquiv
@@ -133,7 +135,11 @@ def correct(request, collId, docId, page, transcriptId=None):# TODO Decide wheth
                 line_id = line.get("@id")
                 line['id'] = line_id
                 line['Custom'] = line.get("@custom")
-                line['Unicode'] = line.get('TextEquiv').get('Unicode')
+                unicode = line.get('TextEquiv').get('Unicode')
+                if unicode:
+                    line['Unicode'] = unicode;
+                else:
+                    line['Unicode'] = ""
         # Get thumbnails
         pages = t_document(request, collId, docId, -1).get('pageList').get('pages')
         thumb_urls =[]

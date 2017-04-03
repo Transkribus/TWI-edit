@@ -37,7 +37,7 @@
 		</div>
 	    <div class="col-md-6">
 			<div id="message"></div>
-			{# TODO Restore this when saving no longer breaks tags! <a href="#" class="btn btn-primary" data-target="#saveChanges">{% trans "Save changes" %}</a><br/><br/><br/>{# TODO CSS for this purpose. #}
+			<a href="#" class="btn btn-primary" data-target="#saveChanges">{% trans "Save changes" %}</a><br/><br/><br/>{# TODO CSS for this purpose. #}
 		</div>
 		<div class="col-md-4">
 			<div class="input-group input-group-sm">
@@ -83,7 +83,7 @@
 <script src="{% static "js/correct.js" %}"></script>
 <!-- gijgo js can't be included here, it must come after everything else -->
 <script>
-	var contentArray= [[0, '', [0, 0, 0, 0, 0, 0, 0, 0], 0]
+	var contentArray= [[0, '', [0, 0, 0, 0, 0, 0, 0, 0], 0, '']
 		{% for line in lines %}
 			,['{{ line|get_item:"id"}}', '{{line|get_item:"Unicode"}}', [{{line|get_item:"crop"|coords_for_imagemap}}], {{line|get_item:"regionWidth"}}, "{{line|get_item:"Custom"}}"]
 		{% endfor %}
@@ -122,7 +122,6 @@
 		//ignoreLeave = true; {# We don't want the original selection "unhighlighted" when the user moves the mouse to the modal. #}
 		updateDialog($(this).attr("line-key")); 
 		updateCanvas();
-		processTags($(this).attr("line-key"));
 	});
 	$('area').mouseenter(function(e) { 
 		highlightLine(e.target.id);
@@ -152,7 +151,11 @@
 	    if (e.keyCode == 13) {
 	    	e.preventDefault(); // Prevent line breaks...
 	        typewriterNext();
-	    }
+	    } else
+	    	beginEditAction();
+	});
+	$('#correctModal').keyup(function(e){
+    	endEditAction();
 	});
 	$( ".typewriter-previous" ).on('click', function(e) {
 		typewriterPrevious();
