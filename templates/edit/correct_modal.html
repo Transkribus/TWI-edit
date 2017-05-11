@@ -39,7 +39,7 @@
 						</button>
 					</div>
 				</span>
-		    </div>
+		    </div>			
 		</div>
 		<div class="row content-row">
 			<div class="col-xs-12 line-list-div">
@@ -49,3 +49,8 @@
 	    </div>
 	</div>
 </div>
+<script>
+	$("#correctModal").on("mouseenter", function(e) {
+		$("#correctModal").removeAttr("title"); {# Prevent the (awful?) title hack above from being shown as a tooltip. #} 	
+	});
+</script>

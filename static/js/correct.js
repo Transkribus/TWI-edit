@@ -1,4 +1,4 @@
-var readyToZoom = false;// Zooming too zoon breaks the page
+var readyToZoom = false;// Zooming too soon breaks the page
 var changed = false;
 var savedZoom = 0;
 var surroundingCount = 1;
@@ -28,9 +28,9 @@ var dialogX, dialogY;
 var dialogWidth, dialogHeight = 250; // This is 250 for no particular reason. TODO Calculate some appropriate value?
 var activeLine;
 var currentlyEditedLiPreviousLength;
+var selectionData = [];
 
-// Just for testing...
-var tagColors = {// TODO tag colours from the view (array to the template?), also decide whether to use numbers or strings...
+var tagColors = {// TODO tag colours from the view (array to the template?)
 								"Address": "FF34FF",
 								"abbrev": "FF0000",
 								"add": "33FFCC",
@@ -48,63 +48,84 @@ var tagColors = {// TODO tag colours from the view (array to the template?), als
 								"work": "008000"
 							};
 
-function contenteditableToArray(lineId) { // converts an editable line with tags as spans line into the original format, i.e. array with the text and custom attribute content
-	var unicode = $("#text_" + lineId).text(); // text content
-	var tagStack = []; // 2d array with tags:  [[tag, offset, length], ...]
-	$("[tagLineId='" + lineId + "']").each(function () { // spans = tags
-		var tag = $(this).attr("tag");
-		if (tag) { // TODO Check what happens in substrings without tags but which are preceeded and or succeeded by substrings with tags...
-			if ($(this).attr("reopen")) { // Is this a continuation of a tag from an earlier span? If so, we look for the last occurrence of the tag and add to its length
-				var i = tagStack.length - 1;
-				while (i >= 0) {
-					if (tag == tagStack[i][0]) {
-						var incompleteLength = parseInt(tagStack[i][2]); 
-						tagStack[i][2] = incompleteLength + parseInt($(this).attr("length")); 
-						i = 0; // exit the while loop
-					}
-					i--;
-				}
-			} else // it's a new (Transkribus) tag
-				tagStack.push([tag, $(this).attr("offset"), $(this).attr("length")]);
+// Tag functions
+function applyTagTo(applyTag, lineId, start, end, continued) { // applies the tag from start to end on the line the index of which is given, adds "continued:true", if given and true
+	var lineIndex = getIndexFromLineId(lineId);
+	var customTagArray = getSortedCustomTagArray(lineIndex);
+	var isContinued = false;
+	if (5 == arguments.length)
+		continued = continued;
+	
+	var t = 0;
+	while (t < customTagArray.length) // remove all tags from the array except those which are of the same type as the applied one
+		if (customTagArray[t].tag != applyTag)
+			customTagArray.splice(t, 1);
+		else
+			t++;
+	
+	var i = 0;	
+	while (i < customTagArray.length) { // look for overlapping tags
+		var existingOpenOffset = customTagArray[i].offset; 
+		var existingCloseOffset = customTagArray[i + 1].offset; // TODO Remove redundant variables...
+		if (start <= existingCloseOffset && existingOpenOffset <= end)  { // do we have overlap? If so, merge... 
+			start = Math.min(start, existingOpenOffset);
+			end = Math.max(end, existingCloseOffset);
+			customTagArray.splice(i, 2); // ...and remove the old tag
+		} else
+			i += 2;
+	}
+	customTagArray.push({"offset": start, "tag": applyTag, "open": true, "length": (end - start)});
+	customTagArray.push({"offset": end, "tag": applyTag, "open": false, "length": 0});
+	
+	// get everything in custom EXCEPT the applied tag
+	var removalExp = new RegExp(applyTag + "\\s+(.(?!\}))*.{1}\}", "g");
+	var custom = String(contentArray[lineIndex][4]).replace(removalExp, "");
+	for (j = 0; j < customTagArray.length; j += 2) {
+		var length = customTagArray[j].length;
+		if (length > 0) {
+			custom += " " + customTagArray[j].tag + " {offset:" + customTagArray[j].offset + "; length:" + length + ";";
+			if (isContinued)
+				custom += " continued:true;"
+			custom += "}";
 		}
+	}
+	contentArray[lineIndex][4] = custom;	
+}
+function applyTag(applyTag) {
+	// use selectionData to apply the tag
+	if (selectionData.length == 1) {
+		if (selectionData[0][1] != selectionData[0][2]) // beginning and end must be different
+			applyTagTo(applyTag, selectionData[0][0], selectionData[0][1], selectionData[0][2]);
+	} else {
+		var lastButOne = selectionData.length - 1;
+		var i = 0;
+		while (i < lastButOne)
+			applyTagTo(applyTag, selectionData[i][0], selectionData[i][1], selectionData[i++][2], true);
+		applyTagTo(applyTag, selectionData[i][0], selectionData[i][1], selectionData[i][2]); // this tag is not continued on the next line
+	}		
+	buildLineList();	
+}
+function getSortedCustomTagArray(tagLineIndex) {
+	var custom = (contentArray[tagLineIndex][4] + ' ').replace(/\s+/g, '').split('}');
+	var customTagArray = [];
+	if ("None" != custom) {
+		custom.forEach(function(attribute) { // turn "tags" into something closer to actual tags (=spans)
+			attribute = attribute.split('{');
+			if ("" != attribute && "readingOrder" != attribute[0]) { // we have no use for readingOrder for now...
+				var split = attribute[1].split("offset:")[1].split(";length:");
+				var start = parseInt(split[0]);
+				var length = parseInt(split[1]); // parseInt doesn't care about what comes after the first int
+				var end = start + length; // parseInt doesn't care about what comes after the first int
+				customTagArray.push({"offset": start, "tag": attribute[0], "open": true, "length": length});
+				customTagArray.push({"offset": end, "tag": attribute[0], "open": false, "length": 0});
+			}
+		});
+	}
+	customTagArray.sort(function (tagA, tagB) {
+		return tagA.offset - tagB.offset;
 	});
-	// regexp to preserve the part of custom which isn't tags (just readingorder for now and when/if that changes things will break)
-	var custom = String(contentArray[getIndexFromLineId(lineId)][4]).match(/readingOrder {index:\d+;}/);
-	for (var j = 0; j < tagStack.length; j++)
-		custom += " " + tagStack[j][0] + " {offset:" + tagStack[j][1] + "; length:" + tagStack[j][2] + ";}";
-	contentArray[getIndexFromLineId(lineId)][4] = custom;
+	return customTagArray;
 }
-// we use these to get the character count delta within a span and update the attribute when the user enters or deletes text TODO Would it work even better if we also use this to check for backspace where we can't allow it?
-function beginEditAction() { // trigger: keydown
-	currentlyEditedLiPreviousLength = $("#text_" + window.getSelection().anchorNode.parentNode.getAttribute("tagLineId")).text().length;
-}
-// TODO Add backspace prevention with an optional event parameter? Slightly fewer calls needed when it's enough to find the span only once... 
-function endEditAction() { // trigger: keyup
-	var selection = window.getSelection();
-	var anchorNode = selection.anchorNode;
-	var parentNode =  selection.anchorNode.parentNode;
-	// get the line id 
-	var editedLineId = parentNode.getAttribute("tagLineId");
-	var contentDelta = $("#text_" + editedLineId).text().length - currentlyEditedLiPreviousLength;
-	if (0 == contentDelta) // has this been triggered without any actual input (i.e. arrow keys possibly moving the caret from one span to another)
-		return;
-	// get the preceding tag's offset 
-	var editedTagOffset = parseInt(parentNode.getAttribute("offset"));
-	// increase/decrease the offsets and lengths of subsequent tags
-	$("[tagLineId='" + editedLineId + "']").each(function () {
-		var tagOffset = parseInt($(this).attr("offset"));
-		if (tagOffset == editedTagOffset) {
-			var contentLength = parseInt($(this).attr("length"));
-			$(this).attr("length", (contentLength + contentDelta));
-		} else if (tagOffset > editedTagOffset)
-			$(this).attr("offset", (tagOffset + contentDelta));
-	});	
-	contenteditableToArray(editedLineId);
-}
-function activateSpanFromLineId(span) { // TODO Delete? Not needed anymore.
-	console.log("activated: " + span);
-}
-// TODO The last chunk of characters (and probably the first as well) must be within a span as well due to length= and offset=...? Or... no tags apply if it's the last chunk and there aren't any -> np! First: nothing to update...
 function getLineLiWithTags(tagLineId) { // generates a line with spans matching the tags and generates and applies the relevant CSS/SVG to show them
 	// values for creating SVGs with the right height to be used as a background and a 1 px "long" line corresponding to each tag:
 	var lineY = Math.round(1.5 * contentLineFontSize);
@@ -113,35 +134,17 @@ function getLineLiWithTags(tagLineId) { // generates a line with spans matching 
 	var svgRectsJSON = ''; // JSON-2-B with the rect for each line
 	var backgroundHeight = lineY; // enough for the first tag graphic
 	var tagGfxStack = [];
-	
 	// "tags"-2-tags:
-	var tagLineIndex = getIndexFromLineId(tagLineId);
-	var custom = contentArray[getIndexFromLineId(tagLineId)][4].replace(/\s+/g, '').split('}');
-	var customTagArray = [];
+	var tagLineIndex = getIndexFromLineId(tagLineId);	
 	var lineUnicode = contentArray[tagLineIndex][1];
-	
 	var highlightCurrent = "";
 	if (tagLineId == currentLineId)
 		 highlightCurrent = ' style="color: green;" '; // A quick and dirty solution for highlighting the current line in each case below
 	if ("" == lineUnicode)
-		return '<li id="text_' + tagLineId + '" spellcheck="false"' + highlightCurrent + '><div style="min-height: ' + backgroundHeight + 'px;"><span tagLineId="' + tagLineId + ' offset="0" length="0"></span></div></li>';
+		return '<li id="text_' + tagLineId + '" spellcheck="false"' + highlightCurrent + '><div style="min-height: ' + backgroundHeight + 'px;"><span tagLineId="' + tagLineId + '" spanOffset="0"></span></div></li>';
 		//lineUnicode = "&nbsp;";	// TODO Some better solution for empty lines. This results in a selectable empty space.
-	if ("None" != custom) {
-		custom.forEach(function(attribute) { // turn "tags" into something closer to actual tags (=spans)
-			attribute = attribute.split('{');
-			if ("" != attribute && "readingOrder" != attribute[0]) { // we have no use for readingOrder for now...
-				var split = attribute[1].split("offset:")[1].split(";length:");
-				var start = parseInt(split[0]);
-				var end = start + parseInt(split[1]); // parseInt doesn't care about what comes after the first int
-				customTagArray.push({"offset": start, "tag": attribute[0], "open": true});
-				customTagArray.push({"offset": end, "tag": attribute[0], "open": false});
-			}
-		});
-	}
-	if (customTagArray.length > 0) { // sort the tags, if any
-		customTagArray.sort(function (tagA, tagB) {
-			return tagA.offset - tagB.offset;
-		});
+	var customTagArray = getSortedCustomTagArray(tagLineIndex);
+	if (customTagArray.length > 0) {
 		customTagArray.forEach(function (tag) { // get a stack with all unique tags present
 			var notYetIn = true; // set to false if the tag is already found in the stack
 			for (var i = 0; notYetIn && i < tagGfxStack.length; i++) {
@@ -165,7 +168,7 @@ function getLineLiWithTags(tagLineId) { // generates a line with spans matching 
 		var backgroundHeight = lineY + bottomPadding;
 		// generate lines with spans showing the tags...
 		var tagStack = [];
-		var tagString = '<li id="text_' + tagLineId + '" spellcheck="false"' + highlightCurrent 
+		var tagString = '<li spanOffset="0" class="tag-menu" id="text_' + tagLineId + '" spellcheck="false"' + highlightCurrent 
 									+ '><div style="padding-bottom: ' + bottomPadding + 'px;" ' 
 									+ 'style="min-height: ' + backgroundHeight + 'px;">';
 		var rangeBegin;
@@ -173,24 +176,27 @@ function getLineLiWithTags(tagLineId) { // generates a line with spans matching 
 		var previousTag;
 		var firstTagOffset = customTagArray[0].offset;
 		if (firstTagOffset > 0) {
-			tagString += '<span tagLineId="' + tagLineId + '" offset="0" length>' + lineUnicode.substring(0, firstTagOffset) + '</span>';
+			var tagContent = lineUnicode.substring(0, firstTagOffset);
+			tagString += '<span tagLineId="' + tagLineId + '" spanOffset="0">' + tagContent + '</span>';
 			rangeBegin = firstTagOffset;
 		} else
 			rangeBegin = 0;
 		customTagArray.forEach(function (tag) {
 			var currentTag = tag.tag;
 			var offset = tag.offset;
+			var length = tag.length; // set this when opening for the first time ONLY, not when reopening (this is from Transkribus custom and has nothing to do with the string lengths between spans...)
 			if (offset != rangeBegin || currentTag != previousTag) { // has this tag already been temporarily closed when closing an outer tag? If so, we don't need to open it again, otherwise we must
+				var tagContent = lineUnicode.substring(rangeBegin, offset);
 				while (keepOpenStack.length > 0) {
 					var keepTag = keepOpenStack.pop(); 
-					tagString += "<span offset=" + offset + " length reopen=1 " + " contenteditable='true' onclick='activateSpanFromLineId(\"" + tagLineId + "\");' tagLineId='" + tagLineId + "' tag='" + keepTag + "' " // a "tag" = span with a tag attribute
+					tagString += "<span tagLineId='" + tagLineId + "' spanOffset=\"" + rangeBegin + "\" "
 											+ "style=\"background-image: url('data:image/svg+xml; utf8, <svg xmlns=\\'http://www.w3.org/2000/svg\\' width=\\'1\\' height=\\'" + backgroundHeight + "\\'>" + svgRectsJSON[keepTag] + "</svg>'); padding-bottom: " + bottomPadding + "px;\""
 											+ ">";
 					tagStack.push(keepTag);
 				};
-				tagString += lineUnicode.substring(rangeBegin, offset);
+				tagString += '<span tagLineId="' + tagLineId + '" spanOffset="' + rangeBegin + '">' + tagContent + '</span>';// we always need the tagLineId
 				if (tag.open) { // if the new tag opens, just insert it and push it onto the stack
-					tagString += "<span offset=" + offset + " length contenteditable='true' onclick='activateSpanFromLineId(\"" + tagLineId + "\");' tagLineId='" + tagLineId + "' tag='" + currentTag + "' " //" // a "tag" = span with a tag attribute
+					tagString += "<span offset=\"" + offset + "\" spanOffset=\"" + offset + "\" tagLength=\"" + length +  "\" tagLineId='" + tagLineId + "' tag='" + currentTag + "' " //" // a "tag" = span with a tag attribute
 											+ "style=\"background-image: url('data:image/svg+xml; utf8, <svg xmlns=\\'http://www.w3.org/2000/svg\\' width=\\'1\\' height=\\'" + backgroundHeight + "\\'>" + svgRectsJSON[currentTag] + "</svg>'); padding-bottom: " + bottomPadding + "px;\""
 											+ ">";
 					tagStack.push(currentTag);
@@ -207,14 +213,66 @@ function getLineLiWithTags(tagLineId) { // generates a line with spans matching 
 			previousTag = currentTag;
 			rangeBegin = offset;
 		});
-		// TODO Calc offset below!
-		tagString += "<span offset=" + rangeBegin + " length>" + lineUnicode.substring(rangeBegin, lineUnicode.length) + "</span></div></li>";
+		var remainder = lineUnicode.substring(rangeBegin, lineUnicode.length);
+		tagString += '<span tagLineId="' + tagLineId + '" spanOffset="' + rangeBegin + '">' + remainder + '</span></div></li>';
 		return tagString;
 	} else
-		return '<li id="text_' + tagLineId + '" spellcheck="false"' + highlightCurrent + '><div style="min-height: ' + backgroundHeight + 'px;"><span tagLineId="' + tagLineId + '" offset="0">' + lineUnicode + '</span></div></li>';
+		return '<li class="tag-menu" id="text_' + tagLineId + '" spellcheck="false"' + highlightCurrent + '><div style="min-height: ' + backgroundHeight + 'px;"><span tagLineId="' + tagLineId + '" spanOffset="0">' + lineUnicode + '</span></div></li>';
 }
 
 // Various functions
+function updateSelectionData() { // call after user inputs to put selection information into a more usable format in a 2D array [[lineId, selection start offset, selection end offset], [...]]
+	var selection = window.getSelection();
+	var anchorParentNode = selection.anchorNode.parentNode;
+	var aPNtagLineId = anchorParentNode.getAttribute("tagLineId");
+	if (!aPNtagLineId) // this function can be triggered by clicks elsewhere than in just the text
+		return;
+	var focusParentNode = selection.focusNode.parentNode;
+	var anchorLineIndex = getIndexFromLineId(aPNtagLineId);
+	var focusLineIndex = getIndexFromLineId(focusParentNode.getAttribute("tagLineId"));
+	var totAnchorOffset = selection.anchorOffset + parseInt(anchorParentNode.getAttribute("spanOffset"));
+	var totFocusOffset = selection.focusOffset + parseInt(focusParentNode.getAttribute("spanOffset"));	
+	var startOffset, endOffset;
+	
+	if (anchorLineIndex == focusLineIndex) {
+		startOffset = Math.min(totAnchorOffset, totFocusOffset);
+		endOffset = Math.max(totAnchorOffset, totFocusOffset);
+		selectionData = [[contentArray[anchorLineIndex][0], startOffset, endOffset]];
+	} else {
+		var startIndex = Math.min(anchorLineIndex, focusLineIndex);
+		var endIndex = Math.max(anchorLineIndex, focusLineIndex);
+		if (anchorLineIndex < focusLineIndex) {
+			startOffset = totAnchorOffset;
+			endOffset = totFocusOffset;
+		} else {
+			startOffset = totFocusOffset;
+			endOffset = totAnchorOffset;
+		}
+		selectionData = [[contentArray[startIndex][0], startOffset, contentArray[startIndex++][1].length]];
+		while (startIndex < endIndex)
+			selectionData.push([contentArray[startIndex][0], 0, contentArray[startIndex++][1].length]);
+		selectionData.push([contentArray[startIndex][0], 0, endOffset]);
+	}
+}
+function contenteditableToArray(lineId, overwriteText) { // converts an editable line with tags as spans line into the original format, i.e. array with the text and custom attribute content. Optionally text content can be given.
+	var lineIndex = getIndexFromLineId(lineId);
+	var tagStack = []; // 2d array with tags:  [[tag, offset, length], ...]
+	$("[tagLineId='" + lineId + "']").each(function () { // spans = tags
+		var tag = $(this).attr("tag");
+		if (tag)
+			tagStack.push([tag, $(this).attr("offset"), $(this).attr("tagLength")]);
+	});
+	// regexp to preserve the part of custom which isn't tags (just readingorder for now and when/if that changes things will break)
+	var custom = String(contentArray[getIndexFromLineId(lineId)][4]).match(/readingOrder {index:\d+;}/);
+	for (var j = 0; j < tagStack.length; j++)
+		custom += " " + tagStack[j][0] + " {offset:" + tagStack[j][1] + "; length:" + tagStack[j][2] + ";}";
+	contentArray[lineIndex][4] = custom;
+	if (2 == arguments.length) {
+		contentArray[lineIndex][1] = overwriteText;
+		buildLineList();
+	} else
+		contentArray[lineIndex][1] = $("#text_" + lineId).text();
+}
 function getContent() { //"JSON.stringifies" contentArray and also strips out content which does not need to be submitted.
 	var lengthMinusOne = contentArray.length - 1;
 	content = '{';
@@ -256,13 +314,11 @@ function resizeContents() { // Call to perform necessary updates of contents and
 	initialHeight = $('#transcriptImage').height();
 	naturalWidth = $('#transcriptImage').get(0).naturalWidth;
 	initialScale = initialWidth / naturalWidth;	
-	
 	// We have to update these too in case the image has gotten resized by the browser along with the window:
 	accumExtraX = initialWidth * accumExtraX / oldWidth;
 	accumExtraY = initialWidth * accumExtraY / oldWidth;
 	
 	$(".transcript-map-div").css("transform",  "translate(" + -accumExtraX +"px, " + -accumExtraY+ "px) scale(" + (1 + zoomFactor) + ")");// Note, the CSS is set to "transform-origin: 0px 0px"
-
 	calculateAreas();
 	generateThumbGrid();
 	updateCanvas();
@@ -405,12 +461,6 @@ function calculateLineListDimensions() {
 	modalTextMaxHeight = $("#correctModal").height() - modalMinHeight;// TODO Which height? outer? true? Also: -5 to give the "fake text area" border some margin below it as well
 	$(".line-list-div").css("height", modalTextMaxHeight);
 }
-function updateLineLengths() { // updates the length attribute of spans in lines
-	$("[length]").each(function () {
-		var span = $(this);
-		span.attr("length", span.text().length);
-	});
-}
 function buildLineList() {
 	var currentIdx = getIndexFromLineId(currentLineId);
 	var showTo = Math.min(currentIdx + surroundingCount, contentArray.length - 1);
@@ -418,7 +468,6 @@ function buildLineList() {
 	$("#lineList").html("");
 	while (index <= showTo)
 		$("#lineList").append(getLineLiWithTags(contentArray[index++][0]));
-	updateLineLengths();
 	highlightLineList();
 }
 function resizeText(delta) {
@@ -454,14 +503,13 @@ function getPreviousLineId(lineId) {
 	else
 		return contentArray[index - 1][0];
 }
+// TODO Replace this since we've begun to set the content after each edit instead...
 function setCurrentLineId(newId) { // We're not happy with just "=" to set the new id because we want to detect changes, if any, to the lines in the dialog so we have this function. TODO Rename? Its purpose is so different now...
-	// TODO Tags! Then we'll start saving again.
 	if (null != currentLineId) {
 		var currentIdx = getIndexFromLineId(currentLineId);
 		var i = Math.max(1, currentIdx - surroundingCount); // 1 because the first line is not real
 		var to = Math.min(currentIdx + surroundingCount, contentArray.length - 1);
 		while (i <= to) {
-			console.log("dialog: "+ contentArray[i][1]);
 			var currentContent = $("#text_" + contentArray[i][0]).text();
 			var savedContent = contentArray[i][1];
 			if (currentContent != savedContent) {
@@ -502,31 +550,6 @@ function setZoom(zoom, x, y) {
 	$( ".transcript-map-div" ).css("transform",  "translate(" + -accumExtraX +"px, " + -accumExtraY+ "px) scale(" + (1 + zoomFactor) + ")");// Note, the CSS is set to "transform-origin: 0px 0px" 
 	updateCanvas();
 }
-function stopBackspace(node) { // Get the cursor position relative to the <DIV>. Regardless of <SPAN> tags.
-	var selection = window.getSelection();
-	var anchorNode =  selection.anchorNode;
-	var offset = selection.anchorOffset;
-	var childNode = node.firstChild;
-
-	if ("" != selection)
-		return false;
-	else
-		return (parseInt(selection.anchorNode.parentNode.getAttribute("offset")) + window.getSelection().anchorOffset) < 1;
-	
-	if (childNode.isSameNode(anchorNode)) {// Is the offset relative to the <DIV>?
-		console.log("off: " + offset);
-		return true;
-		return offset < 1;
-	}
-
-	while (!anchorNode.isSameNode(childNode.firstChild)) { // The child node was not the <DIV> so we start from the first <SPAN> within the <DIV>.
-		offset += childNode.textContent.length;
-		childNode = childNode.nextSibling;
-	}
-	// Just testing, the entire function might soon disappear.
-	return true;
-	return offset < 1;
-}
 function scrollToNextTop() { // This function scrolls the image up as if it were dragged with the mouse.
 	resizeModal(10);
 	var currentTop = accumExtraY / (initialScale * (1 + zoomFactor)) + 1;// +1 to ensure that a new top is obtained for every click
@@ -554,6 +577,101 @@ function scrollToPreviousTop() {
 	}
 	accumExtraY = newTop * initialScale * (1 + zoomFactor);
 	$( ".transcript-map-div" ).css("transform",  "translate(" + -accumExtraX +"px, " + -accumExtraY+ "px) scale(" + (1 + zoomFactor) + ")");// Note, the CSS is set to "transform-origin: 0px 0px"
+}
+function placeCaret() {
+	var offset = selectionData[0][1];
+	var range = document.createRange();
+	var sel = window.getSelection();
+	var spanNodes = $("[tagLineId='" + selectionData[0][0] + "']");
+	var i = 0;
+	while (i < spanNodes.length && offset > spanNodes[i].getAttribute("spanoffset"))
+		i++;
+	i = Math.max(0, i - 1);
+	var offsetFromSpan = offset - spanNodes[i].getAttribute("spanoffset");
+	if (spanNodes[i].hasChildNodes())
+		range.setStart(spanNodes[i].firstChild, offsetFromSpan);
+	else
+		range.setStart(spanNodes[i], offsetFromSpan);
+	range.collapse(true);
+	sel.removeAllRanges();
+	sel.addRange(range);
+}
+function lineEditAction(editedLineId, startOffset, endOffset, textInjection) { // if no text injection is given, we just update the tags and assume that the input went straight to the "contenteditable", if startOffset > endOffset the action is a deletion (possibly followed by an injection into the same offset) 
+	var contentDelta;
+	if (arguments.length == 4) // this could set endOffset so that any given value is ignored because it makes no sense to consider that parameter in this case
+		contentDelta = textInjection.length;
+	else
+		contentDelta = endOffset - startOffset;
+	$("[tagLineId='" + editedLineId + "']").each(function () {
+		var tagLength = parseInt($(this).attr("tagLength"));
+		if (tagLength) { // spans with set tagLengths are Transkribus tags
+			var tagOffset = parseInt($(this).attr("offset"));
+			if (startOffset <= tagOffset) { // tags after the edit
+				$(this).attr("offset", tagOffset + contentDelta);
+			} else if (tagOffset > endOffset && (tagOffset + tagLength) > startOffset) {
+				$(this).attr("offset", endOffset);
+				$(this).attr("tagLength", tagLength - startOffset + tagOffset);
+			} else if ((tagOffset + tagLength) > endOffset) {
+				$(this).attr("tagLength", Math.max(tagLength + contentDelta, endOffset - tagOffset));
+			}
+		}
+	});
+	if (contentDelta < 0) {
+		var previousContent = contentArray[getIndexFromLineId(editedLineId)][1];
+		contenteditableToArray(editedLineId, previousContent.substring(0, endOffset) + previousContent.substring(startOffset, previousContent.length)); // deletions require overwrites
+		placeCaret();
+	} else if (arguments.length == 4) {
+		var previousContent = contentArray[getIndexFromLineId(editedLineId)][1];
+		contenteditableToArray(editedLineId, previousContent.substring(0, endOffset) + textInjection + previousContent.substring(endOffset, previousContent.length));
+		placeCaret();
+	} else
+		contenteditableToArray(editedLineId);
+}
+// TODO Include pasteAction's multi-line handling here instead, this handles multiple lines in other situations as well...
+function editAction(isBackspace, textInjection) { // trigger: keyup
+	var editedLineId = selectionData[0][0];
+	if (selectionData.length ==1) { // input to or deletion from just one line, possibly with something selected
+		var startOffset, endOffset;// TODO Rename the vars? start and end are not intuitive names when removing text end = the caret position at the END OF THE ACTION (i.e. a smaller offset than start = the caret position AT THE START OF THE ACTION)
+		if (selectionData[0][1] == selectionData[0][2]) { // simple input or deletion with delete key or cut
+			endOffset = selectionData[0][1];
+			if (isBackspace) { // backspace with nothing selected = "select" the preceding character by setting endOffset--
+				if (endOffset > 0) {
+					startOffset = endOffset;
+					endOffset--;
+					selectionData[0][1] = endOffset;
+				} else
+					return;
+			} else // get the delta from what happened to the line
+				startOffset = endOffset - $("#text_" + editedLineId).text().length + contentArray[getIndexFromLineId(editedLineId)][1].length;
+			lineEditAction(editedLineId, startOffset, endOffset);
+		} else if (isBackspace) { // selected and backspace, i.e. just delete from the line
+			endOffset = selectionData[0][1];
+			startOffset = selectionData[0][2];
+			lineEditAction(editedLineId, startOffset, endOffset);
+		}
+	} else if (isBackspace || $("#text_" + editedLineId).text().length != contentArray[getIndexFromLineId(editedLineId)][1].length) { // a multi-line selection to remove!
+		var i = 1;
+		var lastButOne = selectionData.length - 1;
+		lineEditAction(editedLineId, contentArray[getIndexFromLineId(editedLineId)][1].length, selectionData[0][1]);		
+		while (i < lastButOne) {			
+			editedLineId = getNextLineId(editedLineId);
+			lineEditAction(editedLineId, contentArray[getIndexFromLineId(editedLineId)][1].length, 0);
+			i++;
+		}
+		lineEditAction(getNextLineId(editedLineId), selectionData[i][2], 0); 
+	}
+}
+function pasteAction(text) {
+	var lines = text.split("\n");
+	editAction(false, lines[0]);
+	var nextLineId = getNextLineId(selectionData[0][0]);
+	for (var i = 1; i < lines.length; i++) { // write to subsequent lines, if they're empty but otherwise append to one line without breaks
+		if ("" == contentArray[getIndexFromLineId(nextLineId)][1].replace(/\s+/g, '')) { 
+			selectionData = [[nextLineId, 0, 0]];
+			nextLineId = getNextLineId(nextLineId);
+		}
+		editAction(false, ' ' + lines[i])
+	}
 }
 
 // UX action helpers

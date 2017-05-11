@@ -69,7 +69,7 @@
 		<div class="transcript-map-div">
 			<map name="transcriptMap" id="transcriptMap">
 				{% for line in lines %}
-						<area line-key="{{ line|get_item:"id"}}" id="{{ line|get_item:"id"}}"  href="{{ line|get_item:"id"}}"  shape="poly" coords="{{line|get_item:"crop"|coords_for_imagemap}}" >
+						<area line-key="{{ line|get_item:"@id"}}" id="{{ line|get_item:"@id"}}"  href="{{ line|get_item:"@id"}}"  shape="poly" >
 				{% endfor %}
 			</map>
 			<canvas id="transcriptCanvas" style="position: absolute; z-index: 998; pointer-events: none;"></canvas>
@@ -77,15 +77,29 @@
 		</div>
 	</div>
 </div>
-
 {% include "edit/correct_modal.html" %}
 
 <script src="{% static "js/correct.js" %}"></script>
 <!-- gijgo js can't be included here, it must come after everything else -->
+
+
+
+    <link rel="stylesheet" href="https://swisnl.github.io/jQuery-contextMenu/css/screen.css" type="text/css"/>
+    <!-- <link rel="stylesheet" href="https://swisnl.github.io/jQuery-contextMenu/css/theme.css" type="text/css"/>-->
+    <link rel="stylesheet" href="https://swisnl.github.io/jQuery-contextMenu/css/theme-fixes.css" type="text/css"/>
+    <link href="https://swisnl.github.io/jQuery-contextMenu/dist/jquery.contextMenu.css" rel="stylesheet" type="text/css" />
+    
+    <script src="https://swisnl.github.io/jQuery-contextMenu/dist/jquery.contextMenu.js" type="text/javascript"></script>
+
+    <!--<script src="https://swisnl.github.io/jQuery-contextMenu/dist/jquery.ui.position.min.js" type="text/javascript"></script>-->
+
+    <script src="https://swisnl.github.io/jQuery-contextMenu/js/main.js" type="text/javascript"></script>
+
+
 <script>
 	var contentArray= [[0, '', [0, 0, 0, 0, 0, 0, 0, 0], 0, '']
 		{% for line in lines %}
-			,['{{ line|get_item:"id"}}', '{{line|get_item:"Unicode"}}', [{{line|get_item:"crop"|coords_for_imagemap}}], {{line|get_item:"regionWidth"}}, "{{line|get_item:"Custom"}}"]
+			,['{{ line|get_item:"@id"}}', '{{line|get_item:"TextEquiv"|get_item:"Unicode"|default_if_none:""}}', [{{line|get_item:"crop"|coords_for_imagemap}}], {{line|get_item:"regionWidth"}}, "{{line|get_item:"@custom"}}"]
 		{% endfor %}
 	];
 	var thumbArray = {{ thumbArray | safe }};{# We assume that this is safe because each url is escape()d in the for loop in the view #}
@@ -151,11 +165,22 @@
 	    if (e.keyCode == 13) {
 	    	e.preventDefault(); // Prevent line breaks...
 	        typewriterNext();
-	    } else
-	    	beginEditAction();
+	    }
+	    if (e.keyCode == 8) {
+	    	e.preventDefault(); // We don't allow removal of line breaks like this so we do something else in editAction instead
+	    }
 	});
 	$('#correctModal').keyup(function(e){
-    	endEditAction();
+    	editAction(8 == e.which);
+    	updateSelectionData();
+	});
+	// TODO Figure out if updateSelectionData is needed at all, after all...? Yes it probably is if we wish to delete and or overwrite multiple lines.....
+	$('#correctModal').on('mouseup', function(e) { 
+		updateSelectionData();
+	});
+	$("#correctModal").on("paste", function(e) {
+		e.preventDefault();
+		pasteAction(e.originalEvent.clipboardData.getData('text'));
 	});
 	$( ".typewriter-previous" ).on('click', function(e) {
 		typewriterPrevious();
@@ -216,52 +241,65 @@
 	$("#pageNumber").change(function() {
    		checkPageNumberInput();
 	});
+	
+	$(function() { {# TODO Solution for people using broken computers that don't have more than one mouse button. Issues: z-index (or overflow?) and selections getting deselected... #}
+        $.contextMenu({
+            selector: '.tag-menu', 
+            callback: function(selection, options) {
+                applyTag(selection); 
+            },
+            items: {
+				{% for tag in tags %}"{{tag.name}}": {name: "{{tag.name}}"} {% if not forloop.last %}, {% endif %}
+				{% endfor %}
+            }
+        });
+    });
+	
 	$(window).on("load", function() {
-		console.log("image loaded");
-			initialWidth = $('#transcriptImage').width();
-			initialHeight = $('#transcriptImage').height();
-			naturalWidth = $('#transcriptImage').get(0).naturalWidth;
-			initialScale = initialWidth / naturalWidth;
-			pathWithoutPage = "{% url 'edit:correct' collId docId %}";
-			pageNo = {{pageNo}};
-			var search = window.location.search + 'tco=0';// just to avoid NaN below
-			thumbCountOffset = parseInt(search.substring(search.indexOf('tco=') + 4)); // "tco=".length = 4
+		initialWidth = $('#transcriptImage').width();
+		initialHeight = $('#transcriptImage').height();
+		naturalWidth = $('#transcriptImage').get(0).naturalWidth;
+		initialScale = initialWidth / naturalWidth;
+		pathWithoutPage = "{% url 'edit:correct' collId docId %}";
+		pageNo = {{pageNo}};
+		var search = window.location.search + 'tco=0';// just to avoid NaN below
+		thumbCountOffset = parseInt(search.substring(search.indexOf('tco=') + 4)); // "tco=".length = 4
 
-			// If the current page isn't among the thumbs first shown, we change the offset to make it so 
-			thumbCountOffset = Math.max(thumbCountOffset, -pageNo + 1);
-			thumbCountOffset = Math.min(thumbCountOffset, -pageNo + THUMBS_TO_SHOW); 
-			
-			// Show the current page number 
-			checkPageNumberInput();
+		// If the current page isn't among the thumbs first shown, we change the offset to make it so 
+		thumbCountOffset = Math.max(thumbCountOffset, -pageNo + 1);
+		thumbCountOffset = Math.min(thumbCountOffset, -pageNo + THUMBS_TO_SHOW); 
+		
+		// Show the current page number 
+		checkPageNumberInput();
 
-			updateCanvas();
-			calculateAreas();
-			readyToZoom = true;
-			loadThumbs();
-			
-			// Getting this from the CSS file for now, set a variable instead?
-			contentLineFontSize = parseInt($('.line-list').css("font-size"), 10);
-			
-			correctModal = $("#correctModal").dialog({
-				autoOpen: false,
-			    uiLibrary: 'bootstrap',
-	            resizable: true,
-			    closed: function(e) {
-			        setCurrentLineId(null);
-					updateCanvas();
-					ignoreLeave = false;
-			    },
-			    resize: function (e) {
-					modalHeight = parseInt(this.style.height, 10);			    	
-		        	calculateLineListDimensions();
-        		},
-        		resizeStart: function (e) {
-        			updateDockingStatus(false);
-        		},
-        		dragStart: function (e) {
-        			updateDockingStatus(false);
-        		}
-	        });
+		updateCanvas();
+		calculateAreas();
+		readyToZoom = true;
+		loadThumbs();
+		
+		// Getting this from the CSS file for now, set a variable instead?
+		contentLineFontSize = parseInt($('.line-list').css("font-size"), 10);
+		
+		correctModal = $("#correctModal").dialog({
+			autoOpen: false,
+		    uiLibrary: 'bootstrap',
+            resizable: true,
+		    closed: function(e) {
+		        setCurrentLineId(null);
+				updateCanvas();
+				ignoreLeave = false;
+		    },
+		    resize: function (e) {
+				modalHeight = parseInt(this.style.height, 10);
+	        	calculateLineListDimensions();
+    		},
+    		resizeStart: function (e) {
+    			updateDockingStatus(false);
+    		},
+    		dragStart: function (e) {
+    			updateDockingStatus(false);
+    		}
+        });      
 	});
 
 </script>
