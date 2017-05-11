@@ -72,7 +72,6 @@ def proofread(request, collId, docId, page, transcriptId):# TODO Decide whether 
                     for line in lines:
                         lineList.extend([line])
         
-        content_dict = {}
         # TODO Use "readingorder"?
         if lineList:
             for line in lineList:
@@ -115,7 +114,7 @@ def correct(request, collId, docId, page, transcriptId=None):# TODO Decide wheth
         lineList = []
         if regions:
             for x in regions:
-                lines = x.get("TextLine")
+                lines = x.get("TextLine") # Region!
                 region_width = crop(x.get("Coords").get("@points"), 1).get('w')
                 if lines:
                     if isinstance(lines, dict):
@@ -130,27 +129,37 @@ def correct(request, collId, docId, page, transcriptId=None):# TODO Decide wheth
         # TODO Use "readingorder"?
         if lineList:
             for line in lineList:
-                line_crop = crop(line.get("Coords").get("@points"))#,True)
+                line_crop = crop(line.get("Coords").get("@points"))
                 line['crop'] = line_crop
-                line_id = line.get("@id")
-                line['id'] = line_id
-                line['Custom'] = line.get("@custom")
-                unicode = line.get('TextEquiv').get('Unicode')
-                if unicode:
-                    line['Unicode'] = unicode;
-                else:
-                    line['Unicode'] = ""
         # Get thumbnails
         pages = t_document(request, collId, docId, -1).get('pageList').get('pages')
         thumb_urls =[]
         for thumb_page in pages:
             thumb_urls.append(escape(thumb_page.get("thumbUrl")).replace("&amp;", "&"))# The JavaScript must get the strings like this.
+        
+        tags = [
+            {"name": "Address", "color": "FF34FF"},
+            {"name": "abbrev", "color": "FF0000"},
+            {"name": "add", "color": "33FFCC"},
+            {"name": "blackening", "color": "000000"},
+            {"name": "date", "color": "0000FF"},
+            {"name": "gap", "color": "1CE6FF"},
+            {"name": "organization", "color": "FF00FF"},
+            {"name": "person", "color": "00FF00"},
+            {"name": "place", "color": "8A2BE2"},
+            {"name": "sic", "color": "FFEB00"},
+            {"name": "speech", "color": "A30059"},
+            {"name": "supplied", "color": "CD5C5C"},
+            {"name": "textStyle", "color": "808080"},
+            {"name": "unclear", "color": "FFCC66"},
+            {"name": "work", "color": "008000"}
+        ]
         return render(request, 'edit/correct.html', {
                  'imageUrl': t_document(request, collId, docId, -1).get('pageList').get('pages')[int(page) - 1].get("url"),
                  'lines': lineList,
-                 'content': json.dumps(content_dict),
                  'thumbArray': "['" + "', '".join(thumb_urls) + "']",
                  'collId': collId,
                  'docId': docId,
                  'pageNo': page,
+                 'tags': tags,
             })
