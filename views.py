@@ -34,6 +34,9 @@ import apps.edit.settings
 
 @t_login_required
 def proofread(request, collId, docId, page, transcriptId):# TODO Decide whether to select which transcript to work with unless it should always be the newest?
+    if not t_refresh() : 
+        return HttpResponseRedirect(request.build_absolute_uri(settings.SERVERBASE+"/logout/?next={!s}".format(request.get_full_path())))
+
     current_transcript = t_current_transcript(request, collId, docId, page)
     transcript = t_transcript(request, current_transcript.get("tsId"), current_transcript.get("url"))
     transcriptId = str(transcript.get("tsId"))
@@ -86,6 +89,9 @@ def proofread(request, collId, docId, page, transcriptId):# TODO Decide whether 
 
 @t_login_required
 def correct(request, collId, docId, page, transcriptId=None):# TODO Decide whether to select which transcript to work with unless it should always be the newest?
+    if not t_refresh() : 
+        return HttpResponseRedirect(request.build_absolute_uri(settings.SERVERBASE+"/logout/?next={!s}".format(request.get_full_path())))
+
     current_transcript = t_current_transcript(request, collId, docId, page)
     transcript = t_transcript(request, current_transcript.get("tsId"), current_transcript.get("url"))
     transcriptId = str(transcript.get("tsId"))
