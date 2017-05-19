@@ -161,18 +161,11 @@
 	$( ".scroll-down" ).on('click', function(e) {
 		scrollToNextTop();
 	});
-	$('#correctModal').keydown(function(e){
-	    if (e.keyCode == 13) {
-	    	e.preventDefault(); // Prevent line breaks...
-	        typewriterNext();
-	    }
-	    if (e.keyCode == 8) {
-	    	e.preventDefault(); // We don't allow removal of line breaks like this so we do something else in editAction instead
-	    }
+	$('#correctModal').on('keydown', function(e) {
+		updateSelectionData();
 	});
-	$('#correctModal').keyup(function(e){
-    	editAction(8 == e.which);
-    	updateSelectionData();
+	$('#correctModal').on('keypress', function(e) {
+		editAction(e);
 	});
 	// TODO Figure out if updateSelectionData is needed at all, after all...? Yes it probably is if we wish to delete and or overwrite multiple lines.....
 	$('#correctModal').on('mouseup', function(e) { 
@@ -299,9 +292,8 @@
     		dragStart: function (e) {
     			updateDockingStatus(false);
     		}
-        });      
+        });              
 	});
-
 </script>
 
 <script src="{% static "js/gijgo.min.js" %}"></script>

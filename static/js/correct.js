@@ -17,7 +17,7 @@ var pageNo, pathWithoutPage;
 var previousInnerWidth = window.innerWidth;
 var isDragged = false;
 var triggerTime;
-var THUMBS_TO_SHOW = 10; // "static" variable for playing around with the no. of thumbs to show
+var THUMBS_TO_SHOW = 10; // "constant" for playing around with the no. of thumbs to show
 var thumbCountOffset = 0;
 var thumbWidth;
 var toLoadCount;
@@ -29,6 +29,8 @@ var dialogWidth, dialogHeight = 250; // This is 250 for no particular reason. TO
 var activeLine;
 var currentlyEditedLiPreviousLength;
 var selectionData = [];
+var BACKSPACE = 1001, DELETE = 1002, CHARACTER = 1003; // "constants" for  
+
 
 var tagColors = {// TODO tag colours from the view (array to the template?)
 								"Address": "FF34FF",
@@ -253,6 +255,7 @@ function updateSelectionData() { // call after user inputs to put selection info
 			selectionData.push([contentArray[startIndex][0], 0, contentArray[startIndex++][1].length]);
 		selectionData.push([contentArray[startIndex][0], 0, endOffset]);
 	}
+	//console.log("selection position: " + selectionData[0][0] + " off: " + selectionData[0][1]);
 }
 function contenteditableToArray(lineId, overwriteText) { // converts an editable line with tags as spans line into the original format, i.e. array with the text and custom attribute content. Optionally text content can be given.
 	var lineIndex = getIndexFromLineId(lineId);
@@ -317,7 +320,6 @@ function resizeContents() { // Call to perform necessary updates of contents and
 	// We have to update these too in case the image has gotten resized by the browser along with the window:
 	accumExtraX = initialWidth * accumExtraX / oldWidth;
 	accumExtraY = initialWidth * accumExtraY / oldWidth;
-	
 	$(".transcript-map-div").css("transform",  "translate(" + -accumExtraX +"px, " + -accumExtraY+ "px) scale(" + (1 + zoomFactor) + ")");// Note, the CSS is set to "transform-origin: 0px 0px"
 	calculateAreas();
 	generateThumbGrid();
@@ -399,7 +401,9 @@ function updateDocking(dock) { // docks (true) / undocks (false) the dialog. Whe
 		$("#correctModal").css("height", dockedHeight);
 		$("#correctModal").css("position", "fixed");
 		$("#correctModal").css("top", $(window).height() - dockedHeight + "px");// using "bottom" is problematic
-		console.log("dialog top: " + $("#correctModal").css("top"));
+		$("#correctModal").on("mousedown touchdwon", function (e) { // TODO Test touchdown when an appropriate device is available...
+			$("#correctModal").css("position", "fixed"); // gijgo dialog messes with this undesirably...
+		});
 	} else {
     	$("#correctModal").css("left",  dialogX);
     	$("#correctModal").css("top",  dialogY);
@@ -417,6 +421,7 @@ function updateDockingStatus(dock) { // Toggles the docking status and the docki
 		$("#dockButton").html('<button type="button" class="dock-toggle close" onclick="updateDocking(true);"><small><span class="glyphicon glyphicon-resize-full" aria-hidden="true"></span></small></button>');
 }
 function saveDialog() { // Saves the undocked dialog properties...
+	$("#correctModal").css("position", "absolute");
 	dialogX = $("#correctModal").offset().left;
 	dialogY = $("#correctModal").offset().top;
 	dialogWidth = $("#correctModal").width(); // TODO Search width vs. outerWidth
@@ -595,13 +600,15 @@ function placeCaret() {
 	range.collapse(true);
 	sel.removeAllRanges();
 	sel.addRange(range);
+	console.log("placing caret at: " + offset);
 }
 function lineEditAction(editedLineId, startOffset, endOffset, textInjection) { // if no text injection is given, we just update the tags and assume that the input went straight to the "contenteditable", if startOffset > endOffset the action is a deletion (possibly followed by an injection into the same offset) 
 	var contentDelta;
+	var injectionDelta = 0;
 	if (arguments.length == 4) // this could set endOffset so that any given value is ignored because it makes no sense to consider that parameter in this case
-		contentDelta = textInjection.length;
-	else
-		contentDelta = endOffset - startOffset;
+		injectionDelta = textInjection.length;
+	contentDelta = endOffset - startOffset + injectionDelta;
+	console.log("contentdelta: " + contentDelta);
 	$("[tagLineId='" + editedLineId + "']").each(function () {
 		var tagLength = parseInt($(this).attr("tagLength"));
 		if (tagLength) { // spans with set tagLengths are Transkribus tags
@@ -616,62 +623,117 @@ function lineEditAction(editedLineId, startOffset, endOffset, textInjection) { /
 			}
 		}
 	});
-	if (contentDelta < 0) {
+	if (arguments.length == 4) { // injected, possibly with deletion?
 		var previousContent = contentArray[getIndexFromLineId(editedLineId)][1];
-		contenteditableToArray(editedLineId, previousContent.substring(0, endOffset) + previousContent.substring(startOffset, previousContent.length)); // deletions require overwrites
-		placeCaret();
-	} else if (arguments.length == 4) {
+		if (endOffset < startOffset)
+			contenteditableToArray(editedLineId, previousContent.substring(0, endOffset) + textInjection + previousContent.substring(startOffset, previousContent.length));
+		else
+			contenteditableToArray(editedLineId, previousContent.substring(0, endOffset) + textInjection + previousContent.substring(endOffset, previousContent.length));
+	} else if (contentDelta < 0) {
 		var previousContent = contentArray[getIndexFromLineId(editedLineId)][1];
-		contenteditableToArray(editedLineId, previousContent.substring(0, endOffset) + textInjection + previousContent.substring(endOffset, previousContent.length));
-		placeCaret();
+		contenteditableToArray(editedLineId, previousContent.substring(0, endOffset) + previousContent.substring(startOffset, previousContent.length)); // deletions require overwrites 
 	} else
 		contenteditableToArray(editedLineId);
 }
 // TODO Include pasteAction's multi-line handling here instead, this handles multiple lines in other situations as well...
-function editAction(isBackspace, textInjection) { // trigger: keyup
+function editAction(event) { // trigger: keypress
+    var editedLineId = selectionData[0][0];
+	var startOffset = selectionData[0][2];
+	var endOffset = selectionData[0][1]; // TODO Some cleanup? This is just for one line edits, changed in the else below...
+	// TODO Rename the vars? start and end are not intuitive names when removing text end = the caret position at the END OF THE ACTION (i.e. a smaller offset than start = the caret position AT THE START OF THE ACTION)
+	if (selectionData.length ==1) { // does everything happen on just one line? 
+		if (event.key.length == 1) { // a regular character?
+			event.preventDefault();
+			lineEditAction(editedLineId, startOffset, endOffset, event.key);
+			endOffset++; // we've moved one character and have to set the selection
+    		selectionData[0][1] = endOffset;
+    		selectionData[0][2] = endOffset;
+	    } else if (event.keyCode == 8) { // backspace?
+	    	event.preventDefault();
+	    	if (endOffset != startOffset) { // a selection to remove?
+	    		lineEditAction(editedLineId, startOffset, endOffset);
+	    	} else if (endOffset > 0) { // we create a one character selection (but don't remove linebreaks)
+	    		endOffset--;
+				lineEditAction(editedLineId, startOffset, endOffset);
+			}
+    		selectionData[0][1] = endOffset;
+    		selectionData[0][2] = endOffset;
+		} else if (event.keyCode == 46) { // delete?
+			event.preventDefault();
+			if (endOffset == startOffset && endOffset < contentArray[getIndexFromLineId(editedLineId)][1].length) // can we allow a deletion without removing a linebreak? 
+	    		startOffset++; // pretend that the character in front of the caret was selected
+    		lineEditAction(editedLineId, startOffset, endOffset);
+	    } else if (event.keyCode == 13) { // return? 
+	    	event.preventDefault(); // we don't allow linebreaks 
+	        typewriterNext();
+	    } else // TODO Prevent the arrow keys from skipping empty lines....
+	    	return; // this key did nothing
+	} else if (event.key.length == 1 || event.keyCode == 8 || event.keyCode == 46) { // multiple lines selected, character input, backspace or delete requires a deletion
+			event.preventDefault();
+			var inject;
+			if (event.key.length == 1)
+				inject = event.key;
+			else
+				inject = "";
+			var i = 1;
+			var lastButOne = selectionData.length - 1; 
+			lineEditAction(editedLineId, contentArray[getIndexFromLineId(editedLineId)][1].length, endOffset, inject);
+			var deleteFromId = getNextLineId(editedLineId);
+			while (i < lastButOne) {	
+				lineEditAction(deleteFromId, contentArray[getIndexFromLineId(deleteFromId)][1].length, 0);
+				deleteFromId = getNextLineId(deleteFromId);
+				i++;
+			}
+			lineEditAction(deleteFromId, selectionData[i][2], 0);
+			selectionData = [[editedLineId, endOffset, endOffset]];
+	}
+	buildLineList();
+	placeCaret();
+}
+function pasteAction(text) { // TODO This can be sped up but it's not used much...
+	var lines = text.split("\n");
 	var editedLineId = selectionData[0][0];
-	if (selectionData.length ==1) { // input to or deletion from just one line, possibly with something selected
-		var startOffset, endOffset;// TODO Rename the vars? start and end are not intuitive names when removing text end = the caret position at the END OF THE ACTION (i.e. a smaller offset than start = the caret position AT THE START OF THE ACTION)
-		if (selectionData[0][1] == selectionData[0][2]) { // simple input or deletion with delete key or cut
-			endOffset = selectionData[0][1];
-			if (isBackspace) { // backspace with nothing selected = "select" the preceding character by setting endOffset--
-				if (endOffset > 0) {
-					startOffset = endOffset;
-					endOffset--;
-					selectionData[0][1] = endOffset;
-				} else
-					return;
-			} else // get the delta from what happened to the line
-				startOffset = endOffset - $("#text_" + editedLineId).text().length + contentArray[getIndexFromLineId(editedLineId)][1].length;
-			lineEditAction(editedLineId, startOffset, endOffset);
-		} else if (isBackspace) { // selected and backspace, i.e. just delete from the line
-			endOffset = selectionData[0][1];
-			startOffset = selectionData[0][2];
-			lineEditAction(editedLineId, startOffset, endOffset);
-		}
-	} else if (isBackspace || $("#text_" + editedLineId).text().length != contentArray[getIndexFromLineId(editedLineId)][1].length) { // a multi-line selection to remove!
+	var startOffset = selectionData[0][2];
+	var endOffset = selectionData[0][1];
+	// TODO Remove selected content first
+	if (selectionData.length > 1 && selectionData[0][1] != selectionData[0][2]) {
 		var i = 1;
-		var lastButOne = selectionData.length - 1;
-		lineEditAction(editedLineId, contentArray[getIndexFromLineId(editedLineId)][1].length, selectionData[0][1]);		
-		while (i < lastButOne) {			
-			editedLineId = getNextLineId(editedLineId);
-			lineEditAction(editedLineId, contentArray[getIndexFromLineId(editedLineId)][1].length, 0);
+		var lastButOne = selectionData.length - 1; 
+		lineEditAction(editedLineId, contentArray[getIndexFromLineId(editedLineId)][1].length, endOffset);
+		var deleteFromId = getNextLineId(editedLineId);
+		while (i < lastButOne) {	
+			lineEditAction(deleteFromId, contentArray[getIndexFromLineId(deleteFromId)][1].length, 0);
+			deleteFromId = getNextLineId(deleteFromId);
 			i++;
 		}
-		lineEditAction(getNextLineId(editedLineId), selectionData[i][2], 0); 
+		lineEditAction(deleteFromId, selectionData[i][2], 0);
 	}
-}
-function pasteAction(text) {
-	var lines = text.split("\n");
-	editAction(false, lines[0]);
-	var nextLineId = getNextLineId(selectionData[0][0]);
-	for (var i = 1; i < lines.length; i++) { // write to subsequent lines, if they're empty but otherwise append to one line without breaks
-		if ("" == contentArray[getIndexFromLineId(nextLineId)][1].replace(/\s+/g, '')) { 
-			selectionData = [[nextLineId, 0, 0]];
-			nextLineId = getNextLineId(nextLineId);
+	buildLineList();// TODO Better way? The issue is the line length comparison with the offset below....
+	if (contentArray[getIndexFromLineId(editedLineId)][1].length == endOffset) { // don't even consider multi-line pasting unless we start doing it at the end of the line
+		console.log("multi-line paste possible");
+		var pasteText = lines[0];
+		lineEditAction(editedLineId, startOffset, endOffset, pasteText);
+		nextLineId = getNextLineId(editedLineId);
+		endOffset += pasteText.length;
+		for (var i = 1; i < lines.length; i++) { // write to subsequent lines, if they're empty but otherwise append to one line without breaks
+			console.log("pasting line");
+			pasteText = lines[i];
+			if ("" == contentArray[getIndexFromLineId(nextLineId)][1].replace(/\s+/g, '')) {
+				console.log("pasting line to new line");
+				endOffset = 0;
+				lineEditAction(nextLineId, 0, 0, pasteText);
+				nextLineId = getNextLineId(nextLineId);
+			} else {
+				console.log("appending");
+				endOffset += pasteText.length;
+				lineEditAction(editedLineId, endOffset, endOffset, pasteText);
+			}
 		}
-		editAction(false, ' ' + lines[i])
+	} else {
+		var oneLine = lines.join(" ");
+		lineEditAction(editedLineId, startOffset, endOffset, oneLine);
 	}
+	// TODO Place the caret!
 }
 
 // UX action helpers
