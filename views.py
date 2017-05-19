@@ -34,15 +34,20 @@ import apps.edit.settings
 @login_required
 def proofread(request, collId, docId, page, transcriptId):# TODO Decide whether to select which transcript to work with unless it should always be the newest?
     t = request.user.tsdata.t
-    if not t.refresh() : 
-        return HttpResponseRedirect(request.build_absolute_uri(settings.SERVERBASE+"/logout/?next={!s}".format(request.get_full_path())))
 
     current_transcript = t.current_transcript(request, collId, docId, page)
+    if isinstance(current_transcript,HttpResponse):
+        return current_transcript
     transcript = t.transcript(request, current_transcript.get("tsId"), current_transcript.get("url"))
+    if isinstance(transcript,HttpResponse):
+        return transcript
+
     transcriptId = str(transcript.get("tsId"))
     if request.method == 'POST':# This is by JQuery...
         content = json.loads(request.POST.get('content'))
         transcript_xml = t.transcript_xml(request, transcriptId, current_transcript.get("url"))
+        if isinstance(transcript_xml,HttpResponse):
+            return transcript_xml
         transcript_root = ElementTree.fromstring(transcript_xml)
         # TODO Decide what to do about regionId... It's not necessary....
         for text_region in transcript_root.iter('{http://schema.primaresearch.org/PAGE/gts/pagecontent/2013-07-15}TextRegion'):# We have to have the namespace...
@@ -57,6 +62,8 @@ def proofread(request, collId, docId, page, transcriptId):# TODO Decide whether 
             text_region.find('{http://schema.primaresearch.org/PAGE/gts/pagecontent/2013-07-15}TextEquiv').find('{http://schema.primaresearch.org/PAGE/gts/pagecontent/2013-07-15}Unicode').text = regionTextEquiv
         t.save_transcript(request, ElementTree.tostring(transcript_root), collId, docId, page)
         current_transcript = t.current_transcript(request, collId, docId, page)# We want the updated transcript now.
+        if isinstance(current_transcript,HttpResponse):
+            return current_transcript
         success_message = str(_("Transcript saved!"))
         return HttpResponse("<div class='alert alert-success'>" + success_message + "</div>", content_type="text/plain")
     else:
@@ -82,23 +89,33 @@ def proofread(request, collId, docId, page, transcriptId):# TODO Decide whether 
                 line['id'] = line.get("@id")
                 line['Unicode'] = line.get('TextEquiv').get('Unicode')
         
+    #RM need to test whether this has been successful
+    document = t.document(request, collId, docId, -1)
+    if isinstance(document,HttpResponse):
+        return document
+
     return render(request, 'edit/proofread.html', {
-        'imageUrl': t.document(request, collId, docId, -1).get('pageList').get('pages')[int(page) - 1].get("url"),
+        'imageUrl': document.get('pageList').get('pages')[int(page) - 1].get("url"),
         'lines': lineList
         })
 
 @login_required
 def correct(request, collId, docId, page, transcriptId=None):# TODO Decide whether to select which transcript to work with unless it should always be the newest?
     t = request.user.tsdata.t
-    if not t.refresh() : 
-        return HttpResponseRedirect(request.build_absolute_uri(settings.SERVERBASE+"/logout/?next={!s}".format(request.get_full_path())))
 
     current_transcript = t.current_transcript(request, collId, docId, page)
+    if isinstance(current_transcript,HttpResponse):
+        return current_transcript
     transcript = t.transcript(request, current_transcript.get("tsId"), current_transcript.get("url"))
+    if isinstance(transcript,HttpResponse):
+        return transcript
+
     transcriptId = str(transcript.get("tsId"))
     if request.method == 'POST':# This is by JQuery...
         content = json.loads(request.POST.get('content'))
         transcript_xml = t.transcript_xml(request, transcriptId, current_transcript.get("url"))
+        if isinstance(transcript_xml,HttpResponse):
+            return transcript_xml
         transcript_root = ElementTree.fromstring(transcript_xml)
         # TODO Decide what to do about regionId... It's not necessary....
         for text_region in transcript_root.iter('{http://schema.primaresearch.org/PAGE/gts/pagecontent/2013-07-15}TextRegion'):# We have to have the namespace...
@@ -112,6 +129,11 @@ def correct(request, collId, docId, page, transcriptId=None):# TODO Decide wheth
             text_region.find('{http://schema.primaresearch.org/PAGE/gts/pagecontent/2013-07-15}TextEquiv').find('{http://schema.primaresearch.org/PAGE/gts/pagecontent/2013-07-15}Unicode').text = regionTextEquiv
         t_save_transcript(request, ElementTree.tostring(transcript_root), collId, docId, page)
         current_transcript = t.current_transcript(request, collId, docId, page)# We want the updated transcript now.
+        #RM add some error catching (though somewhat suboptimal)
+        if isinstance(current_transcript,HttpResponse):
+            t_log("current_transcript request has failed... %s" % current_transcript)
+            #For now this will do but there may be other reasons the transckribus request fails...
+            return HttpResponse('Unauthorized', status=401)
         success_message = str(_("Transcript saved!"))
         return HttpResponse("<div class='alert alert-success'>" + success_message + "</div>", content_type="text/plain")
     else:
@@ -139,7 +161,13 @@ def correct(request, collId, docId, page, transcriptId=None):# TODO Decide wheth
                 line_crop = crop(line.get("Coords").get("@points"))
                 line['crop'] = line_crop
         # Get thumbnails
-        pages = t.document(request, collId, docId, -1).get('pageList').get('pages')
+        # RM Make one document request here...
+        # RM need to test whether this has been successful
+        document = t.document(request, collId, docId, -1)
+        if isinstance(document,HttpResponse):
+            return document
+        # RM and get pages from the result... and also the url further down
+        pages = document.get('pageList').get('pages')
         thumb_urls =[]
         for thumb_page in pages:
             thumb_urls.append(escape(thumb_page.get("thumbUrl")).replace("&amp;", "&"))# The JavaScript must get the strings like this.
@@ -161,8 +189,9 @@ def correct(request, collId, docId, page, transcriptId=None):# TODO Decide wheth
             {"name": "unclear", "color": "FFCC66"},
             {"name": "work", "color": "008000"}
         ]
+
         return render(request, 'edit/correct.html', {
-                 'imageUrl': t.document(request, collId, docId, -1).get('pageList').get('pages')[int(page) - 1].get("url"),
+                 'imageUrl': document.get('pageList').get('pages')[int(page) - 1].get("url"),
                  'lines': lineList,
                  'thumbArray': "['" + "', '".join(thumb_urls) + "']",
                  'collId': collId,
