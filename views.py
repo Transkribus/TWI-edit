@@ -37,17 +37,17 @@ def proofread(request, collId, docId, page, transcriptId):# TODO Decide whether 
 
     current_transcript = t.current_transcript(request, collId, docId, page)
     if isinstance(current_transcript,HttpResponse):
-        return current_transcript
+        return apps.utils.views.error_view(request,current_transcript)
     transcript = t.transcript(request, current_transcript.get("tsId"), current_transcript.get("url"))
     if isinstance(transcript,HttpResponse):
-        return transcript
+        return apps.utils.views.error_view(request,transcript)
 
     transcriptId = str(transcript.get("tsId"))
     if request.method == 'POST':# This is by JQuery...
         content = json.loads(request.POST.get('content'))
         transcript_xml = t.transcript_xml(request, transcriptId, current_transcript.get("url"))
         if isinstance(transcript_xml,HttpResponse):
-            return transcript_xml
+            return apps.utils.views.error_view(request,transcript_xml)
         transcript_root = ElementTree.fromstring(transcript_xml)
         # TODO Decide what to do about regionId... It's not necessary....
         for text_region in transcript_root.iter('{http://schema.primaresearch.org/PAGE/gts/pagecontent/2013-07-15}TextRegion'):# We have to have the namespace...
@@ -63,7 +63,7 @@ def proofread(request, collId, docId, page, transcriptId):# TODO Decide whether 
         t.save_transcript(request, ElementTree.tostring(transcript_root), collId, docId, page)
         current_transcript = t.current_transcript(request, collId, docId, page)# We want the updated transcript now.
         if isinstance(current_transcript,HttpResponse):
-            return current_transcript
+            return apps.utils.views.error_view(request,current_transcript)
         success_message = str(_("Transcript saved!"))
         return HttpResponse("<div class='alert alert-success'>" + success_message + "</div>", content_type="text/plain")
     else:
@@ -92,7 +92,7 @@ def proofread(request, collId, docId, page, transcriptId):# TODO Decide whether 
     #RM need to test whether this has been successful
     document = t.document(request, collId, docId, -1)
     if isinstance(document,HttpResponse):
-        return document
+        return apps.utils.views.error_view(request,document)
 
     return render(request, 'edit/proofread.html', {
         'imageUrl': document.get('pageList').get('pages')[int(page) - 1].get("url"),
@@ -105,17 +105,17 @@ def correct(request, collId, docId, page, transcriptId=None):# TODO Decide wheth
 
     current_transcript = t.current_transcript(request, collId, docId, page)
     if isinstance(current_transcript,HttpResponse):
-        return current_transcript
+        return apps.utils.views.error_view(request,current_transcript)
     transcript = t.transcript(request, current_transcript.get("tsId"), current_transcript.get("url"))
     if isinstance(transcript,HttpResponse):
-        return transcript
+        return apps.utils.views.error_view(request,transcript)
 
     transcriptId = str(transcript.get("tsId"))
     if request.method == 'POST':# This is by JQuery...
         content = json.loads(request.POST.get('content'))
         transcript_xml = t.transcript_xml(request, transcriptId, current_transcript.get("url"))
         if isinstance(transcript_xml,HttpResponse):
-            return transcript_xml
+            return apps.utils.views.error_view(request,transcript_xml)
         transcript_root = ElementTree.fromstring(transcript_xml)
         # TODO Decide what to do about regionId... It's not necessary....
         for text_region in transcript_root.iter('{http://schema.primaresearch.org/PAGE/gts/pagecontent/2013-07-15}TextRegion'):# We have to have the namespace...
@@ -133,7 +133,8 @@ def correct(request, collId, docId, page, transcriptId=None):# TODO Decide wheth
         if isinstance(current_transcript,HttpResponse):
             t_log("current_transcript request has failed... %s" % current_transcript)
             #For now this will do but there may be other reasons the transckribus request fails...
-            return HttpResponse('Unauthorized', status=401)
+            return apps.utils.views.error_view(request,current-transcript)
+
         success_message = str(_("Transcript saved!"))
         return HttpResponse("<div class='alert alert-success'>" + success_message + "</div>", content_type="text/plain")
     else:
@@ -165,7 +166,7 @@ def correct(request, collId, docId, page, transcriptId=None):# TODO Decide wheth
         # RM need to test whether this has been successful
         document = t.document(request, collId, docId, -1)
         if isinstance(document,HttpResponse):
-            return document
+            return apps.utils.views.error_view(request,document)
         # RM and get pages from the result... and also the url further down
         pages = document.get('pageList').get('pages')
         thumb_urls =[]
