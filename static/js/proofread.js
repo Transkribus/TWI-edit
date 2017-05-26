@@ -53,7 +53,7 @@ $( ".editable-line" ).on('keyup', function(e) {// TODO Add other events?
 		countNode = countNode.nextSibling;
 		charCount += countNode.textContent.length;
 	}
-	
+	// TODO A var? Or was there something else going on here?
 	range.setStart(countNode.firstChild, cursorPosition - previousCharCount);
 	range.setEnd(countNode.firstChild, cursorPosition - previousCharCount);
 	//TODO Make sure that this indeed is redundant: range.collapse(true);

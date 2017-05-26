@@ -43,11 +43,9 @@
 .line-list {
 	font-size: 17px;
 }
-ul {
-	list-style: none;
-	padding-left: 0px;
+ol {
+
 }
 li {
-    list-style-type: none;
     white-space: nowrap; 
 }

@@ -8,7 +8,6 @@ var modalHeight = 250;// TODO Consider whether to calculate this somehow, this v
 var modalMinWidth, modalMinHeight, modalTextMaxHeight, dockedHeight = 250;// TODO Decide how to calculate this.
 var ballRadius = 50;// TODO Decide how to set this. 
 var ignoreLeave = false;
-var topLineId = null;
 var zoomFactor = 0;
 var accumExtraX = 0;
 var accumExtraY = 0;
@@ -29,28 +28,136 @@ var dialogWidth, dialogHeight = 250; // This is 250 for no particular reason. TO
 var activeLine;
 var currentlyEditedLiPreviousLength;
 var selectionData = [];
-var BACKSPACE = 1001, DELETE = 1002, CHARACTER = 1003; // "constants" for  
-
-
-var tagColors = {// TODO tag colours from the view (array to the template?)
-								"Address": "FF34FF",
-								"abbrev": "FF0000",
-								"add": "33FFCC",
-								"blackening": "000000",
-								"date": "0000FF",
-								"gap": "1CE6FF",
-								"organization": "FF00FF",
-								"person": "00FF00",
-								"place": "8A2BE2",
-								"sic": "FFEB00",
-								"speech": "A30059",
-								"supplied": "CD5C5C",
-								"textStyle": "808080",
-								"unclear": "FFCC66",
-								"work": "008000"
-							};
+var undoArray = [];
+var keyDownString = '';
+var tagItems, tagColors;
 
 // Tag functions
+function toggleTag(toggleTag) { // sets/removes the tag depending on whether the selection already has it
+	if (!removeTag(toggleTag)) // if the tag can be removed, we do that...
+		applyTag(toggleTag);// ...but otherwise we apply it
+}
+function removeTag(removeTag) { // removes the given tag from the selection, returns true if removals were made, otherwise false
+	var removals = false;
+	var lastButOne = selectionData.length - 1;
+	var lineIndex = getIndexFromLineId(selectionData[0][0]);
+	var tagsOnLine = getSortedCustomTagArray(lineIndex, removeTag);
+	var selStart = selectionData[0][1];
+	var selEnd;
+	if (selectionData.length == 1)
+		selEnd = selectionData[0][2];
+	else
+		selEnd = contentArray[lineIndex][1].length;
+	for (var i = 0; i < tagsOnLine.length; i++) {
+		var tagOffset = tagsOnLine[i].offset;
+		if ((tagOffset <= selStart && selStart < (tagOffset + tagsOnLine[i].length)) || (selStart < tagOffset && tagOffset <= selEnd)) {
+			removals = true;
+			contentArray[lineIndex][4] = String(contentArray[lineIndex][4]).replace(new RegExp("\\s" + removeTag + "\\s+{offset:" + tagOffset + ";[^}]*}"), "");
+		} 
+	}
+	var j = 1;
+	while (j < lastButOne) { 
+		lineIndex++; // we don't check if this goes out of bounds since such a selection shouldn't be possible...
+		if (getSortedCustomTagArray(lineIndex, removeTag).length > 0) {
+			removals = true;
+			contentArray[lineIndex][4] = String(contentArray[lineIndex][4]).replace(new RegExp("\\s" + removeTag + "[^}]*}"), "");			
+		}
+		j++;
+	}
+	if (selectionData.length > 1) {
+		lineIndex++;
+		tagsOnLine = getSortedCustomTagArray(lineIndex, removeTag);
+		selEnd = selectionData[j][2];
+		selStart = 0;
+		for (var i = 0; i < tagsOnLine.length; i++) {
+			var tagOffset = tagsOnLine[i].offset;
+			if (tagOffset < selEnd) {
+				removals = true;
+				contentArray[lineIndex][4] = String(contentArray[lineIndex][4]).replace(new RegExp("\\s" + removeTag + "\\s+{offset:" + tagOffset + ";[^}]*}"), "");
+			}
+		}
+	}
+	buildLineList();
+	return removals;
+}
+// TODO Remove, the function above returns the result anyway...
+function selectionContains(searchTag) {
+	var lastButOne = selectionData.length - 1;
+	var lineIndex = getIndexFromLineId(selectionData[0][0]);
+	var tagsOnLine = getSortedCustomTagArray(lineIndex, searchTag);
+	var selStart = selectionData[0][1];
+	var selEnd;
+	if (selectionData.length == 1)
+		selEnd = selectionData[0][2];
+	else
+		selEnd = contentArray[lineIndex][1].length;
+	for (var i = 0; i < tagsOnLine.length; i++) {
+		if (tagsOnLine[i].tag == searchTag) {
+			var tagOffset = tagsOnLine[i].offset;
+			if ((tagOffset <= selStart && selStart < (tagOffset + tagsOnLine[i].length)) || (selStart < tagOffset && tagOffset <= selEnd))
+				return true;
+		}
+	}
+	var j = 1;
+	while (j < lastButOne) {  
+		lineIndex++; // we don't check if this goes out of bounds since such a selection shouldn't be possible...
+		if (getSortedCustomTagArray(lineIndex, searchTag).length > 0)
+			return true;
+		j++;
+	}
+	if (selectionData.length > 1) {
+		lineIndex++;
+		tagsOnLine = getSortedCustomTagArray(lineIndex, searchTag);
+		selEnd = selectionData[j][2];
+		for (var i = 0; i < tagsOnLine.length; i++) {
+			if (tagsOnLine[i].offset < selEnd)
+				return true;
+		}		
+	}
+	return false;
+}
+function tagMenu() { // returns the tag list with tags in the selection highlighted, if any
+	var appliedTags = {}; // an array to be populated with all tags within the selection, may contain duplicates
+	var lastButOne = selectionData.length - 1;
+	var lineIndex = getIndexFromLineId(selectionData[0][0]);
+	var tagsOnLine = getSortedCustomTagArray(lineIndex);
+	var selStart = selectionData[0][1];
+	var selEnd;
+	if (selectionData.length == 1)
+		selEnd = selectionData[0][2];
+	else
+		selEnd = contentArray[lineIndex][1].length;
+	for (var i = 0; i < tagsOnLine.length; i++) {
+		var tagOffset = tagsOnLine[i].offset;
+		if ((tagOffset <= selStart && selStart < (tagOffset + tagsOnLine[i].length)) || (selStart < tagOffset && tagOffset <= selEnd)) {
+			var tag = tagsOnLine[i].tag;
+			appliedTags[tag] = {"name": "<span style=\"color: #" + tagColors[tag] + ";\">" + tag + "</span>", "type": "checkbox", "isHtmlName": true, "selected": true};
+		}
+	}
+	var j = 1;
+	while (j < lastButOne) { 
+		lineIndex++; // we don't check if this goes out of bounds since such a selection shouldn't be possible...
+		tagsOnLine = getSortedCustomTagArray(lineIndex);
+		for (var k = 0; k < tagsOnLine.length; k++) {
+			var tag = tagsOnLine[k].tag;
+			appliedTags[tag] = {"name": "<span style=\"color: #" + tagColors[tag] + ";\">" + tag + "</span>", "type": "checkbox", "isHtmlName": true, "selected": true}; // the selection covers all tags on this line
+		}
+		j++;
+	}
+	if (selectionData.length > 1) {
+		lineIndex++;
+		tagsOnLine = getSortedCustomTagArray(lineIndex);
+		selEnd = selectionData[j][2];
+		selStart = 0;
+		for (var i = 0; i < tagsOnLine.length; i++) {
+			if (tagsOnLine[i].offset < selEnd) {
+				var tag = tagsOnLine[i].tag;
+				appliedTags[tag] = {"name": "<span style=\"color: #" + tagColors[tag] + ";\">" + tag + "</span>", "type": "checkbox", "isHtmlName": true, "selected": true};
+			}
+		}		
+	}
+	return {"items": $.extend({}, tagItems, appliedTags)};
+}
 function applyTagTo(applyTag, lineId, start, end, continued) { // applies the tag from start to end on the line the index of which is given, adds "continued:true", if given and true
 	var lineIndex = getIndexFromLineId(lineId);
 	var customTagArray = getSortedCustomTagArray(lineIndex);
@@ -107,7 +214,11 @@ function applyTag(applyTag) {
 	}		
 	buildLineList();	
 }
-function getSortedCustomTagArray(tagLineIndex) {
+function getSortedCustomTagArray(tagLineIndex, filterTag) { // returns an array with Transkribus "custom" tags in the format below, if a filterTag is given, only tags of that type are included
+	var filter = false;
+	if (2 == arguments.length) {
+		filter = filterTag;
+	}
 	var custom = (contentArray[tagLineIndex][4] + ' ').replace(/\s+/g, '').split('}');
 	var customTagArray = [];
 	if ("None" != custom) {
@@ -118,8 +229,11 @@ function getSortedCustomTagArray(tagLineIndex) {
 				var start = parseInt(split[0]);
 				var length = parseInt(split[1]); // parseInt doesn't care about what comes after the first int
 				var end = start + length; // parseInt doesn't care about what comes after the first int
-				customTagArray.push({"offset": start, "tag": attribute[0], "open": true, "length": length});
-				customTagArray.push({"offset": end, "tag": attribute[0], "open": false, "length": 0});
+				var tag = attribute[0];
+				if (!filter || filter == tag) {
+					customTagArray.push({"offset": start, "tag": attribute[0], "open": true, "length": length});
+					customTagArray.push({"offset": end, "tag": attribute[0], "open": false, "length": 0});
+				}
 			}
 		});
 	}
@@ -143,7 +257,7 @@ function getLineLiWithTags(tagLineId) { // generates a line with spans matching 
 	if (tagLineId == currentLineId)
 		 highlightCurrent = ' style="color: green;" '; // A quick and dirty solution for highlighting the current line in each case below
 	if ("" == lineUnicode)
-		return '<li id="text_' + tagLineId + '" spellcheck="false"' + highlightCurrent + '><div style="min-height: ' + backgroundHeight + 'px;"><span tagLineId="' + tagLineId + '" spanOffset="0"></span></div></li>';
+		return '<li id="text_' + tagLineId + '" spellcheck="false"' + highlightCurrent + '><div style="min-height: ' + backgroundHeight + 'px;"><span tagLineId="' + tagLineId + '" spanOffset="-1">&#8203;</span></div></li>'; // spanOffset -1 ensures that &#8203; is ignored when new text is entered
 		//lineUnicode = "&nbsp;";	// TODO Some better solution for empty lines. This results in a selectable empty space.
 	var customTagArray = getSortedCustomTagArray(tagLineIndex);
 	if (customTagArray.length > 0) {
@@ -255,7 +369,6 @@ function updateSelectionData() { // call after user inputs to put selection info
 			selectionData.push([contentArray[startIndex][0], 0, contentArray[startIndex++][1].length]);
 		selectionData.push([contentArray[startIndex][0], 0, endOffset]);
 	}
-	//console.log("selection position: " + selectionData[0][0] + " off: " + selectionData[0][1]);
 }
 function contenteditableToArray(lineId, overwriteText) { // converts an editable line with tags as spans line into the original format, i.e. array with the text and custom attribute content. Optionally text content can be given.
 	var lineIndex = getIndexFromLineId(lineId);
@@ -357,6 +470,7 @@ function loadThumbs() { // Loads all thumbs and shows the ones which are visible
 			}
 		};
 	}
+	console.log("thumbs loaded");
 }
 function generateThumbGrid() {
 	// Calculate appropriate arrow and thumbnail sizes according to initialWidth:
@@ -387,6 +501,7 @@ function generateThumbGrid() {
 	$(".thumb").css("width", (thumbWidth - 2*padding) + "px"); 
 	$(".thumb-row").css("width", THUMBS_TO_SHOW * thumbWidth + "px");
 	$(".thumbs" ).css("transform",  "translateX(" + thumbCountOffset * thumbWidth + "px)");
+	console.log("thumb grid generated");
 }
 
 // Dialog functions:
@@ -471,9 +586,34 @@ function buildLineList() {
 	var showTo = Math.min(currentIdx + surroundingCount, contentArray.length - 1);
 	var index = Math.max(1, currentIdx - surroundingCount); // 1 because the first line is not real
 	$("#lineList").html("");
+	$("#lineList").attr("start", index);
 	while (index <= showTo)
 		$("#lineList").append(getLineLiWithTags(contentArray[index++][0]));
 	highlightLineList();
+	restoreSelection(); // TODO Make this optional?
+}
+function restoreSelection() {
+	var charCount = 0;
+	var begCharCount = selectionData[0][1];
+	var endCharCount = selectionData[selectionData.length - 1][2];
+	var bElement, eElement;
+	$("[tagLineId='" + selectionData[0][0] + "']").each(function () { // line where the selection begins
+		if ($(this).attr("spanoffset") > begCharCount)
+			return false; // bElement now = the span before the intended caret position
+		bElement = $(this);
+	});
+	$("[tagLineId='" + selectionData[selectionData.length - 1][0] + "']").each(function () { // line where the selection ends
+		if ($(this).attr("spanoffset") > endCharCount)
+			return false; // eElement now = the span before the intended caret position
+		eElement = $(this);
+	});
+	var range = document.createRange();
+	range.setStart(bElement[0].firstChild, begCharCount - bElement.attr("spanoffset"));
+	range.setEnd(eElement[0].firstChild, endCharCount - eElement.attr("spanoffset"));
+	//TODO Make sure that this indeed is redundant: range.collapse(true);
+	var sel = window.getSelection();
+	sel.removeAllRanges();
+	sel.addRange(range);
 }
 function resizeText(delta) {
 	var newFontSize = contentLineFontSize + delta;
@@ -483,7 +623,6 @@ function resizeText(delta) {
 	$('.line-list').css("font-size", contentLineFontSize+ 'px');
 	buildLineList();
 }
-
 // Line functions:
 function getIndexFromLineId(lineId) {
 	var length = contentArray.length;
@@ -531,14 +670,25 @@ function setCurrentLineId(newId) { // We're not happy with just "=" to set the n
 }
 
 // UX Actions
+function resetImage() {
+	savedZoom = 0;
+	zoomFactor = 0;
+	accumExtraX = 0;
+	accumExtraY = 0;
+	$(".transcript-map-div").css("transform",  "translate(0px, 0px) scale(1)");// Note, the CSS is set to "transform-origin: 0px 0px"
+	/*initialWidth = $('#transcriptImage').width();
+	initialHeight = $('#transcriptImage').height();
+	naturalWidth = $('#transcriptImage').get(0).naturalWidth;
+	initialScale = initialWidth / naturalWidth;	*/
+}
 function setZoom(zoom, x, y) {
 	if (!readyToZoom)
 		return;// Zooming before the page has fully loaded breaks it.
 	var newZoom = savedZoom + zoom;
-	if (newZoom >= 0) 
+	if (newZoom >= -60) 
 		savedZoom = newZoom;
 	else
-		return;// We don't allow zooming out more than what the size originally was.
+		return;// We have a limit on zooming
 	if (1 == arguments.length) {// If no cursor position has been given, we use the center
 		x = initialWidth/2 + accumExtraX;
 		y = initialHeight/2 + accumExtraY;
@@ -583,6 +733,7 @@ function scrollToPreviousTop() {
 	accumExtraY = newTop * initialScale * (1 + zoomFactor);
 	$( ".transcript-map-div" ).css("transform",  "translate(" + -accumExtraX +"px, " + -accumExtraY+ "px) scale(" + (1 + zoomFactor) + ")");// Note, the CSS is set to "transform-origin: 0px 0px"
 }
+/* TODO Remove this and all references to it. restoreSelection does the same thing and more
 function placeCaret() {
 	var offset = selectionData[0][1];
 	var range = document.createRange();
@@ -600,15 +751,13 @@ function placeCaret() {
 	range.collapse(true);
 	sel.removeAllRanges();
 	sel.addRange(range);
-	console.log("placing caret at: " + offset);
-}
+}*/
 function lineEditAction(editedLineId, startOffset, endOffset, textInjection) { // if no text injection is given, we just update the tags and assume that the input went straight to the "contenteditable", if startOffset > endOffset the action is a deletion (possibly followed by an injection into the same offset) 
 	var contentDelta;
 	var injectionDelta = 0;
 	if (arguments.length == 4) // this could set endOffset so that any given value is ignored because it makes no sense to consider that parameter in this case
 		injectionDelta = textInjection.length;
 	contentDelta = endOffset - startOffset + injectionDelta;
-	console.log("contentdelta: " + contentDelta);
 	$("[tagLineId='" + editedLineId + "']").each(function () {
 		var tagLength = parseInt($(this).attr("tagLength"));
 		if (tagLength) { // spans with set tagLengths are Transkribus tags
@@ -635,19 +784,47 @@ function lineEditAction(editedLineId, startOffset, endOffset, textInjection) { /
 	} else
 		contenteditableToArray(editedLineId);
 }
+function eraseSelection() {
+	var editedLineId = selectionData[0][0];
+	undoArray = [];
+	undoArray.push(contentArray[getIndexFromLineId(editedLineId)].slice());
+	if (selectionData.length == 1) {
+		lineEditAction(editedLineId, selectionData[0][1], selectionData[0][2]);
+		return;
+	}
+	var i = 1;
+	var lastButOne = selectionData.length - 1; 
+	lineEditAction(editedLineId, contentArray[getIndexFromLineId(editedLineId)][1].length, selectionData[0][1]);
+	var deleteFromId = getNextLineId(editedLineId);
+	while (i < lastButOne) {	
+		undoArray.push(contentArray[getIndexFromLineId(deleteFromId)].slice());
+		lineEditAction(deleteFromId, contentArray[getIndexFromLineId(deleteFromId)][1].length, 0);
+		deleteFromId = getNextLineId(deleteFromId);
+		i++;
+	}
+	undoArray.push(contentArray[getIndexFromLineId(deleteFromId)].slice());
+	lineEditAction(deleteFromId, selectionData[i][2], 0);
+	selectionData = [[editedLineId, selectionData[0][1], selectionData[0][1]]];
+	buildLineList();
+}
 // TODO Include pasteAction's multi-line handling here instead, this handles multiple lines in other situations as well...
 function editAction(event) { // trigger: keypress
+	if (event.ctrlKey || event.altKey || event.metaKey) { // we must prevent any printable from being input in these cases....
+		if (event.key == "z" || event.key == "Z")
+			undo();
+		return;
+	}
     var editedLineId = selectionData[0][0];
 	var startOffset = selectionData[0][2];
 	var endOffset = selectionData[0][1]; // TODO Some cleanup? This is just for one line edits, changed in the else below...
+	undoArray = [];
+	undoArray.push(contentArray[getIndexFromLineId(editedLineId)].slice());
 	// TODO Rename the vars? start and end are not intuitive names when removing text end = the caret position at the END OF THE ACTION (i.e. a smaller offset than start = the caret position AT THE START OF THE ACTION)
 	if (selectionData.length ==1) { // does everything happen on just one line? 
 		if (event.key.length == 1) { // a regular character?
 			event.preventDefault();
 			lineEditAction(editedLineId, startOffset, endOffset, event.key);
 			endOffset++; // we've moved one character and have to set the selection
-    		selectionData[0][1] = endOffset;
-    		selectionData[0][2] = endOffset;
 	    } else if (event.keyCode == 8) { // backspace?
 	    	event.preventDefault();
 	    	if (endOffset != startOffset) { // a selection to remove?
@@ -656,8 +833,6 @@ function editAction(event) { // trigger: keypress
 	    		endOffset--;
 				lineEditAction(editedLineId, startOffset, endOffset);
 			}
-    		selectionData[0][1] = endOffset;
-    		selectionData[0][2] = endOffset;
 		} else if (event.keyCode == 46) { // delete?
 			event.preventDefault();
 			if (endOffset == startOffset && endOffset < contentArray[getIndexFromLineId(editedLineId)][1].length) // can we allow a deletion without removing a linebreak? 
@@ -666,8 +841,20 @@ function editAction(event) { // trigger: keypress
 	    } else if (event.keyCode == 13) { // return? 
 	    	event.preventDefault(); // we don't allow linebreaks 
 	        typewriterNext();
-	    } else // TODO Prevent the arrow keys from skipping empty lines....
-	    	return; // this key did nothing
+	    } else { 
+	    	if (event.key == "ArrowUp" && getIndexFromLineId(editedLineId) == (getIndexFromLineId(currentLineId) - surroundingCount)) {
+    			 typewriterPrevious();
+    			 //placeCaret();
+    			 restoreSelection();
+	    	} else if (event.key == "ArrowDown" && getIndexFromLineId(editedLineId) == (getIndexFromLineId(currentLineId) + surroundingCount)) {
+	    		typewriterNext();
+	    		//placeCaret();
+	    		restoreSelection();
+	    	}
+	    	return;
+	    }
+		selectionData[0][1] = endOffset;
+		selectionData[0][2] = endOffset;
 	} else if (event.key.length == 1 || event.keyCode == 8 || event.keyCode == 46) { // multiple lines selected, character input, backspace or delete requires a deletion
 			event.preventDefault();
 			var inject;
@@ -680,16 +867,26 @@ function editAction(event) { // trigger: keypress
 			lineEditAction(editedLineId, contentArray[getIndexFromLineId(editedLineId)][1].length, endOffset, inject);
 			var deleteFromId = getNextLineId(editedLineId);
 			while (i < lastButOne) {	
+				undoArray.push(contentArray[getIndexFromLineId(deleteFromId)].slice());
 				lineEditAction(deleteFromId, contentArray[getIndexFromLineId(deleteFromId)][1].length, 0);
 				deleteFromId = getNextLineId(deleteFromId);
 				i++;
 			}
+			undoArray.push(contentArray[getIndexFromLineId(deleteFromId)].slice());
 			lineEditAction(deleteFromId, selectionData[i][2], 0);
 			selectionData = [[editedLineId, endOffset, endOffset]];
 	}
 	buildLineList();
-	placeCaret();
+	//placeCaret();
 }
+function undo() {
+	for (var i = 0; i < undoArray.length; i++) {
+		var undoId = undoArray[i][0];
+		contentArray[getIndexFromLineId(undoArray[i][0])] = undoArray[i];
+	}
+	buildLineList();
+}
+// TODO Add undo to this when undo works.
 function pasteAction(text) { // TODO This can be sped up but it's not used much...
 	var lines = text.split("\n");
 	var editedLineId = selectionData[0][0];
@@ -710,21 +907,17 @@ function pasteAction(text) { // TODO This can be sped up but it's not used much.
 	}
 	buildLineList();// TODO Better way? The issue is the line length comparison with the offset below....
 	if (contentArray[getIndexFromLineId(editedLineId)][1].length == endOffset) { // don't even consider multi-line pasting unless we start doing it at the end of the line
-		console.log("multi-line paste possible");
 		var pasteText = lines[0];
 		lineEditAction(editedLineId, startOffset, endOffset, pasteText);
 		nextLineId = getNextLineId(editedLineId);
 		endOffset += pasteText.length;
 		for (var i = 1; i < lines.length; i++) { // write to subsequent lines, if they're empty but otherwise append to one line without breaks
-			console.log("pasting line");
 			pasteText = lines[i];
 			if ("" == contentArray[getIndexFromLineId(nextLineId)][1].replace(/\s+/g, '')) {
-				console.log("pasting line to new line");
 				endOffset = 0;
 				lineEditAction(nextLineId, 0, 0, pasteText);
 				nextLineId = getNextLineId(nextLineId);
 			} else {
-				console.log("appending");
 				endOffset += pasteText.length;
 				lineEditAction(editedLineId, endOffset, endOffset, pasteText);
 			}
@@ -757,8 +950,8 @@ function typewriterStep(newLineId, delta) {
 
 // Drawing functions:
 function updateCanvas() {        
-	var c=document.getElementById("transcriptCanvas");
-	var ctx=c.getContext("2d");
+	var c = document.getElementById("transcriptCanvas");
+	var ctx = c.getContext("2d");
 	ctx.canvas.width = $('#transcriptImage').width();
 	ctx.canvas.height = $('#transcriptImage').height();
 	ctx.fillStyle = "rgba(0, 0, 0, 0.15)";

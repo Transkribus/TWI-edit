@@ -26,6 +26,13 @@
 	    	</div>
 		</div>
 		<div class="col-md-1">
+	    	<div class="input-group input-group-sm">
+				<button class="reset-image" >
+					<a class="reset-image btn-sm" href="#"><span class="glyphicon glyphicon-screenshot"></span></a>
+				</button>
+	    	</div>
+		</div>
+		<div class="col-md-1">
 			<div class="input-group input-group-sm">
 				<span class="input-group-addon">
 	    			<a class="scroll-up btn-sm" href="#"><span class="glyphicon glyphicon-arrow-up"></span></a>
@@ -35,7 +42,7 @@
 	    		</span>
     		</div>
 		</div>
-	    <div class="col-md-6">
+	    <div class="col-md-5">
 			<div id="message"></div>
 			<a href="#" class="btn btn-primary" data-target="#saveChanges">{% trans "Save changes" %}</a><br/><br/><br/>{# TODO CSS for this purpose. #}
 		</div>
@@ -78,7 +85,6 @@
 	</div>
 </div>
 {% include "edit/correct_modal.html" %}
-
 <script src="{% static "js/correct.js" %}"></script>
 <!-- gijgo js can't be included here, it must come after everything else -->
 
@@ -95,16 +101,32 @@
 
     <script src="https://swisnl.github.io/jQuery-contextMenu/js/main.js" type="text/javascript"></script>
 
-
 <script>
+
+
+
+
+
+	var contextMenu;
+
+
+
 	var contentArray= [[0, '', [0, 0, 0, 0, 0, 0, 0, 0], 0, '']
 		{% for line in lines %}
 			,['{{ line|get_item:"@id"}}', '{{line|get_item:"TextEquiv"|get_item:"Unicode"|default_if_none:""}}', [{{line|get_item:"crop"|coords_for_imagemap}}], {{line|get_item:"regionWidth"}}, "{{line|get_item:"@custom"}}"]
 		{% endfor %}
 	];
+	// TODO Clean...
 	var thumbArray = {{ thumbArray | safe }};{# We assume that this is safe because each url is escape()d in the for loop in the view #}
 	var transUnsavedChanges = "{% trans "You have unsaved changes." %}";
-	
+	tagItems = {
+		{% for tag in tags %}"{{tag.name}}": {name: "<span href=\"#\" style=\"color: #{{tag.color}};\">{{tag.name}}</span>", type: "checkbox", isHtmlName: true} {% if not forloop.last %}, {% endif %}
+		{% endfor %}
+    };
+	tagColors = {
+		{% for tag in tags %}"{{tag.name}}": "{{tag.color}}" {% if not forloop.last %}, {% endif %}
+		{% endfor %}	
+	}
 	$("a[data-target='#saveChanges']").click(function(e) {
     	e.preventDefault();
     	$.post(window.location.href, {content: getContent(), csrfmiddlewaretoken: '{{ csrf_token }}'}, function( data ) {
@@ -162,12 +184,35 @@
 		scrollToNextTop();
 	});
 	$('#correctModal').on('keydown', function(e) {
-		updateSelectionData();
+		if (e.key.length == 1) // this is a key but if it has an accent or such, keypress won't detect it, during keyup we'll fake it if keypress doesn't handle it
+			keyDownString = e.target.textContent;
 	});
 	$('#correctModal').on('keypress', function(e) {
 		editAction(e);
+		keyDownString = ''; // we detected the event and took care of it
 	});
-	// TODO Figure out if updateSelectionData is needed at all, after all...? Yes it probably is if we wish to delete and or overwrite multiple lines.....
+	$('#correctModal').on('keyup', function(e) {
+		if ('' != keyDownString) { // process the key, if it wasn't taken care of by keypress
+			// clunky way to get the special character but KeyboardEvent cautions against using the properties that seem useful for this case
+			var i = 0;
+			var upArray = [...e.target.textContent];
+			var downArray = [...keyDownString];
+			while (i < downArray.length && upArray[i] == downArray[i])
+				i++;
+			editAction({ // fake keypress event
+				"ctrlKey": false, 
+				"altKey": false, 
+				"metaKey": false, 
+				"length": 1, 
+				"key": upArray[i],
+				"preventDefault": function() {
+					// no need to actually prevent the input because buildLineList() is executed anyway..
+				}
+			});
+			keyDownString = '';
+		}
+		updateSelectionData();
+	});
 	$('#correctModal').on('mouseup', function(e) { 
 		updateSelectionData();
 	});
@@ -175,12 +220,18 @@
 		e.preventDefault();
 		pasteAction(e.originalEvent.clipboardData.getData('text'));
 	});
+	$("#correctModal").on("cut", function(e) {
+		eraseSelection();
+	});
 	$( ".typewriter-previous" ).on('click', function(e) {
 		typewriterPrevious();
 	});
 	$( ".typewriter-next" ).on('click', function(e) {
 		typewriterNext();
-	});	
+	});
+	$( ".reset-image" ).on('click', function(e) {
+		resetImage();
+	});
 	$( ".zoom-in" ).on('click', function(e) {
 		setZoom(10);
 	});
@@ -234,20 +285,18 @@
 	$("#pageNumber").change(function() {
    		checkPageNumberInput();
 	});
-	
 	$(function() { {# TODO Solution for people using broken computers that don't have more than one mouse button. Issues: z-index (or overflow?) and selections getting deselected... #}
-        $.contextMenu({
+        contextMenu = $.contextMenu({
             selector: '.tag-menu', 
-            callback: function(selection, options) {
-                applyTag(selection); 
-            },
-            items: {
-				{% for tag in tags %}"{{tag.name}}": {name: "{{tag.name}}"} {% if not forloop.last %}, {% endif %}
-				{% endfor %}
-            }
-        });
+            build: function($trigger, e) {
+            	restoreSelection(); {# TODO Request feedback. This solution has the advantage of allowing a selection to be made and the menu opened elsewhere in order not to cover the relevant text. #}
+				return tagMenu();
+        	},
+		});
     });
-	
+    $(document.body).on("contextmenu: focus", ".context-menu-item", function(e) { // TODO Place this somewhere else....
+		toggleTag($(e.target).prop("name").substr(19)); // "context-menu-input-".length is 19
+	});
 	$(window).on("load", function() {
 		initialWidth = $('#transcriptImage').width();
 		initialHeight = $('#transcriptImage').height();
@@ -292,7 +341,12 @@
     		dragStart: function (e) {
     			updateDockingStatus(false);
     		}
-        });              
+        });
+        
+        /*setInterval(function() {
+        console.log("blah");
+        	tagMenu();
+        }, 2000);*/
 	});
 </script>
 
