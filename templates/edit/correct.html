@@ -220,6 +220,9 @@
 		e.preventDefault();
 		pasteAction(e.originalEvent.clipboardData.getData('text'));
 	});
+	$("#correctModal").on("drop", function(e) {
+		e.preventDefault(); {# Nobody needs to do this and this breaks things. #}
+	});
 	$("#correctModal").on("cut", function(e) {
 		eraseSelection();
 	});
@@ -264,7 +267,7 @@
     $('.transcript-div').on('mousewheel DOMMouseScroll', function(e) {
     	e.preventDefault();
     	var mouseZoom;
-    	if (e.originalEvent.detail > 0)
+    	if (e.originalEvent.detail > 0 || e.originalEvent.wheelDelta < 0)
 			mouseZoom = -20;        	
 		else
 			mouseZoom = 20;

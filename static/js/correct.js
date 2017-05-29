@@ -80,42 +80,6 @@ function removeTag(removeTag) { // removes the given tag from the selection, ret
 	buildLineList();
 	return removals;
 }
-// TODO Remove, the function above returns the result anyway...
-function selectionContains(searchTag) {
-	var lastButOne = selectionData.length - 1;
-	var lineIndex = getIndexFromLineId(selectionData[0][0]);
-	var tagsOnLine = getSortedCustomTagArray(lineIndex, searchTag);
-	var selStart = selectionData[0][1];
-	var selEnd;
-	if (selectionData.length == 1)
-		selEnd = selectionData[0][2];
-	else
-		selEnd = contentArray[lineIndex][1].length;
-	for (var i = 0; i < tagsOnLine.length; i++) {
-		if (tagsOnLine[i].tag == searchTag) {
-			var tagOffset = tagsOnLine[i].offset;
-			if ((tagOffset <= selStart && selStart < (tagOffset + tagsOnLine[i].length)) || (selStart < tagOffset && tagOffset <= selEnd))
-				return true;
-		}
-	}
-	var j = 1;
-	while (j < lastButOne) {  
-		lineIndex++; // we don't check if this goes out of bounds since such a selection shouldn't be possible...
-		if (getSortedCustomTagArray(lineIndex, searchTag).length > 0)
-			return true;
-		j++;
-	}
-	if (selectionData.length > 1) {
-		lineIndex++;
-		tagsOnLine = getSortedCustomTagArray(lineIndex, searchTag);
-		selEnd = selectionData[j][2];
-		for (var i = 0; i < tagsOnLine.length; i++) {
-			if (tagsOnLine[i].offset < selEnd)
-				return true;
-		}		
-	}
-	return false;
-}
 function tagMenu() { // returns the tag list with tags in the selection highlighted, if any
 	var appliedTags = {}; // an array to be populated with all tags within the selection, may contain duplicates
 	var lastButOne = selectionData.length - 1;
