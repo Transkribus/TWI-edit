@@ -218,10 +218,16 @@ function getLineLiWithTags(tagLineId) { // generates a line with spans matching 
 	var tagLineIndex = getIndexFromLineId(tagLineId);	
 	var lineUnicode = contentArray[tagLineIndex][1];
 	var highlightCurrent = "";
+	var lineNo = String(String(contentArray[tagLineIndex][4]).match(/readingOrder {index:\d+;}/)).match(/\d+/g);
+	if (!lineNo)
+		lineNo = tagLineIndex;
+	else
+		lineNo++; // readingOrder starts from 0, tagLineIndex is OK as is because of the "dummy line" in the beginning 
+	
 	if (tagLineId == currentLineId)
 		 highlightCurrent = ' style="color: green;" '; // A quick and dirty solution for highlighting the current line in each case below
 	if ("" == lineUnicode)
-		return '<li id="text_' + tagLineId + '" spellcheck="false"' + highlightCurrent + '><div style="min-height: ' + backgroundHeight + 'px;"><span tagLineId="' + tagLineId + '" spanOffset="-1">&#8203;</span></div></li>'; // spanOffset -1 ensures that &#8203; is ignored when new text is entered
+		return '<li value="' + lineNo + '" id="text_' + tagLineId + '" spellcheck="false"' + highlightCurrent + '><div style="min-height: ' + backgroundHeight + 'px;"><span tagLineId="' + tagLineId + '" spanOffset="-1">&#8203;</span></div></li>'; // spanOffset -1 ensures that &#8203; is ignored when new text is entered
 		//lineUnicode = "&nbsp;";	// TODO Some better solution for empty lines. This results in a selectable empty space.
 	var customTagArray = getSortedCustomTagArray(tagLineIndex);
 	if (customTagArray.length > 0) {
@@ -248,7 +254,7 @@ function getLineLiWithTags(tagLineId) { // generates a line with spans matching 
 		var backgroundHeight = lineY + bottomPadding;
 		// generate lines with spans showing the tags...
 		var tagStack = [];
-		var tagString = '<li spanOffset="0" class="tag-menu" id="text_' + tagLineId + '" spellcheck="false"' + highlightCurrent 
+		var tagString = '<li value="' + lineNo + '" spanOffset="0" class="tag-menu" id="text_' + tagLineId + '" spellcheck="false"' + highlightCurrent 
 									+ '><div style="padding-bottom: ' + bottomPadding + 'px;" ' 
 									+ 'style="min-height: ' + backgroundHeight + 'px;">';
 		var rangeBegin;
@@ -297,7 +303,7 @@ function getLineLiWithTags(tagLineId) { // generates a line with spans matching 
 		tagString += '<span tagLineId="' + tagLineId + '" spanOffset="' + rangeBegin + '">' + remainder + '</span></div></li>';
 		return tagString;
 	} else
-		return '<li class="tag-menu" id="text_' + tagLineId + '" spellcheck="false"' + highlightCurrent + '><div style="min-height: ' + backgroundHeight + 'px;"><span tagLineId="' + tagLineId + '" spanOffset="0">' + lineUnicode + '</span></div></li>';
+		return '<li value="' + lineNo + '" class="tag-menu" id="text_' + tagLineId + '" spellcheck="false"' + highlightCurrent + '><div style="min-height: ' + backgroundHeight + 'px;"><span tagLineId="' + tagLineId + '" spanOffset="0">' + lineUnicode + '</span></div></li>';
 }
 
 // Various functions
@@ -550,7 +556,7 @@ function buildLineList() {
 	var showTo = Math.min(currentIdx + surroundingCount, contentArray.length - 1);
 	var index = Math.max(1, currentIdx - surroundingCount); // 1 because the first line is not real
 	$("#lineList").html("");
-	$("#lineList").attr("start", index);
+	//$("#lineList").attr("start", index);
 	while (index <= showTo)
 		$("#lineList").append(getLineLiWithTags(contentArray[index++][0]));
 	highlightLineList();
@@ -925,9 +931,9 @@ function updateCanvas() {
 		highlightLineList();
 	}
 	// debugging, highlight all:
-	/*for (var i = 1; i < contentArray.length; i++)
-		highlightLine(contentArray[i][0]);
-	console.log("updating canvas");*/
+	//for (var i = 1; i < contentArray.length; i++)
+		//highlightLine(contentArray[i][0]);
+	console.log("updating canvas");
 }
 function placeBalls(lineId) {
 	var length = contentArray.length;

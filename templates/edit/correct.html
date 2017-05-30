@@ -102,22 +102,14 @@
     <script src="https://swisnl.github.io/jQuery-contextMenu/js/main.js" type="text/javascript"></script>
 
 <script>
-
-
-
-
-
-	var contextMenu;
-
-
-
 	var contentArray= [[0, '', [0, 0, 0, 0, 0, 0, 0, 0], 0, '']
 		{% for line in lines %}
 			,['{{ line|get_item:"@id"}}', '{{line|get_item:"TextEquiv"|get_item:"Unicode"|default_if_none:""}}', [{{line|get_item:"crop"|coords_for_imagemap}}], {{line|get_item:"regionWidth"}}, "{{line|get_item:"@custom"}}"]
 		{% endfor %}
 	];
 	// TODO Clean...
-	var thumbArray = {{ thumbArray | safe }};{# We assume that this is safe because each url is escape()d in the for loop in the view #}
+	var thumbArray = {{ thumbArray | safe }}; {# We assume that this is safe because each url is escape()d in the for loop in the view #}
+	 {# var regionData = {{ regionData | safe }}; We don't need this yet, after all, but lets leave it here for now.  #}
 	var transUnsavedChanges = "{% trans "You have unsaved changes." %}";
 	tagItems = {
 		{% for tag in tags %}"{{tag.name}}": {name: "<span href=\"#\" style=\"color: #{{tag.color}};\">{{tag.name}}</span>", type: "checkbox", isHtmlName: true} {% if not forloop.last %}, {% endif %}
@@ -289,7 +281,7 @@
    		checkPageNumberInput();
 	});
 	$(function() { {# TODO Solution for people using broken computers that don't have more than one mouse button. Issues: z-index (or overflow?) and selections getting deselected... #}
-        contextMenu = $.contextMenu({
+        $.contextMenu({
             selector: '.tag-menu', 
             build: function($trigger, e) {
             	restoreSelection(); {# TODO Request feedback. This solution has the advantage of allowing a selection to be made and the menu opened elsewhere in order not to cover the relevant text. #}
