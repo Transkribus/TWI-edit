@@ -142,6 +142,7 @@ def correct(request, collId, docId, page, transcriptId=None):# TODO Decide wheth
         if isinstance(regions, dict):
             regions = [regions]
         lineList = []
+        #regionData = [] # Let's leave this here for now, it might still be needed.
         if regions:
             for x in regions:
                 lines = x.get("TextLine") # Region!
@@ -149,14 +150,17 @@ def correct(request, collId, docId, page, transcriptId=None):# TODO Decide wheth
                 if lines:
                     if isinstance(lines, dict):
                         lines['regionWidth'] = region_width
+                        lines['@id'] = x.get("@id") + lines['@id']
                         lineList.extend([lines])
+                        #regionData.extend([x.get("@id"), 1])
                     else: # Assume that lines is a list of lines
                         for line in lines:
                             line['regionWidth'] = region_width
+                            line['@id'] = x.get("@id") + line['@id']
                             lineList.extend([line])
+                        #regionData.extend([x.get("@id"), len(lines)])
         content_dict = {}
         # TODO Unmessify this, the loop below might be better placed inside the one above
-        # TODO Use "readingorder"?
         if lineList:
             for line in lineList:
                 line_crop = crop(line.get("Coords").get("@points"))
@@ -199,4 +203,5 @@ def correct(request, collId, docId, page, transcriptId=None):# TODO Decide wheth
                  'docId': docId,
                  'pageNo': page,
                  'tags': tags,
+                 #'regionData': regionData,
             })
