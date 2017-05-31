@@ -104,7 +104,7 @@
 <script>
 	var contentArray= [[0, '', [0, 0, 0, 0, 0, 0, 0, 0], 0, '']
 		{% for line in lines %}
-			,['{{ line|get_item:"@id"}}', '{{line|get_item:"TextEquiv"|get_item:"Unicode"|default_if_none:""}}', [{{line|get_item:"crop"|coords_for_imagemap}}], {{line|get_item:"regionWidth"}}, "{{line|get_item:"@custom"}}"]
+			,['{{ line|get_item:"@id"}}', '{{line|get_item:"Unicode"|default_if_none:""}}', [{{line|get_item:"crop"|coords_for_imagemap}}], {{line|get_item:"regionWidth"}}, "{{line|get_item:"@custom"}}"]
 		{% endfor %}
 	];
 	// TODO Clean...

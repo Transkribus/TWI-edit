@@ -165,6 +165,9 @@ def correct(request, collId, docId, page, transcriptId=None):# TODO Decide wheth
             for line in lineList:
                 line_crop = crop(line.get("Coords").get("@points"))
                 line['crop'] = line_crop
+                textEquiv = line.get('TextEquiv')
+                if textEquiv:
+                    line['Unicode'] = textEquiv.get('Unicode')
         # Get thumbnails
         # RM Make one document request here...
         # RM need to test whether this has been successful
@@ -194,7 +197,10 @@ def correct(request, collId, docId, page, transcriptId=None):# TODO Decide wheth
             {"name": "unclear", "color": "FFCC66"},
             {"name": "work", "color": "008000"}
         ]
-
+        #t_log("tags: %s" % tags, logging.WARN)
+        #t_log("page: %s" % page, logging.WARN)
+        t_log("lines: %s" % lineList, logging.WARN)
+        #t_log("regions: %s" % regionData, logging.WARN)
         return render(request, 'edit/correct.html', {
                  'imageUrl': document.get('pageList').get('pages')[int(page) - 1].get("url"),
                  'lines': lineList,

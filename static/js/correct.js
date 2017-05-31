@@ -192,7 +192,7 @@ function getSortedCustomTagArray(tagLineIndex, filterTag) { // returns an array 
 				var split = attribute[1].split("offset:")[1].split(";length:");
 				var start = parseInt(split[0]);
 				var length = parseInt(split[1]); // parseInt doesn't care about what comes after the first int
-				var end = start + length; // parseInt doesn't care about what comes after the first int
+				var end = start + length;
 				var tag = attribute[0];
 				if (!filter || filter == tag) {
 					customTagArray.push({"offset": start, "tag": attribute[0], "open": true, "length": length});
@@ -355,9 +355,9 @@ function contenteditableToArray(lineId, overwriteText) { // converts an editable
 	contentArray[lineIndex][4] = custom;
 	if (2 == arguments.length) {
 		contentArray[lineIndex][1] = overwriteText;
-		buildLineList();
+		//buildLineList(); // TODO Test more! This breaks deletions (and possibly other things) when executed here. Is it necessary in any scenario?
 	} else
-		contentArray[lineIndex][1] = $("#text_" + lineId).text();
+		contentArray[lineIndex][1] = $("#text_" + lineId).text().replace(/\u200B/g,''); // remove the zero width space!!!
 }
 function getContent() { //"JSON.stringifies" contentArray and also strips out content which does not need to be submitted.
 	var lengthMinusOne = contentArray.length - 1;
@@ -972,7 +972,7 @@ function highlightLineList() { // highlights the lines being shown in the dialog
 		var ctx=c.getContext("2d");
 		ctx.beginPath(); 
 		ctx.arc(lineCoords[0] -0.5 * lineHeight, lineCoords[1] + lineHeight / 2, 10, 0, 2*Math.PI);
-		if (contentArray[index][1].length == 0 || (contentArray[index][1].length <= 1 && contentArray[index][1].match(/\s+/))) { // empty = orange
+		if (contentArray[index][1].length == 0 || (contentArray[index][1].length <= 1 && contentArray[index][1].match(/(\s+|\u200B)/))) { // empty or a zero width space
 			ctx.fillStyle = "rgba(255, 140, 0, 1)";
 			ctx.strokeStyle = "rgba(255, 140, 0, 1)";
 		} else { // otherwise green
