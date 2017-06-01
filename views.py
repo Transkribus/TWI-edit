@@ -121,13 +121,13 @@ def correct(request, collId, docId, page, transcriptId=None):# TODO Decide wheth
         for text_region in transcript_root.iter('{http://schema.primaresearch.org/PAGE/gts/pagecontent/2013-07-15}TextRegion'):# We have to have the namespace...
             regionTextEquiv = ""
             for line in text_region.iter('{http://schema.primaresearch.org/PAGE/gts/pagecontent/2013-07-15}TextLine'):
-                modified_content = content.get(line.get("id"))
+                modified_content = content.get(text_region.get("id") + line.get("id"))
                 line.set("custom", modified_content.get("custom"))
                 modified_text = modified_content.get("Unicode")
                 regionTextEquiv += modified_text +"\r\n"
                 line.find('{http://schema.primaresearch.org/PAGE/gts/pagecontent/2013-07-15}TextEquiv').find('{http://schema.primaresearch.org/PAGE/gts/pagecontent/2013-07-15}Unicode').text = modified_text
             text_region.find('{http://schema.primaresearch.org/PAGE/gts/pagecontent/2013-07-15}TextEquiv').find('{http://schema.primaresearch.org/PAGE/gts/pagecontent/2013-07-15}Unicode').text = regionTextEquiv
-        t_save_transcript(request, ElementTree.tostring(transcript_root), collId, docId, page)
+        t.save_transcript(request, ElementTree.tostring(transcript_root), collId, docId, page)
         current_transcript = t.current_transcript(request, collId, docId, page)# We want the updated transcript now.
         #RM add some error catching (though somewhat suboptimal)
         if isinstance(current_transcript,HttpResponse):
@@ -142,6 +142,7 @@ def correct(request, collId, docId, page, transcriptId=None):# TODO Decide wheth
         if isinstance(regions, dict):
             regions = [regions]
         lineList = []
+        #regionData = [] # Let's leave this here for now, it might still be needed.
         if regions:
             for x in regions:
                 lines = x.get("TextLine") # Region!
@@ -149,18 +150,24 @@ def correct(request, collId, docId, page, transcriptId=None):# TODO Decide wheth
                 if lines:
                     if isinstance(lines, dict):
                         lines['regionWidth'] = region_width
+                        lines['@id'] = x.get("@id") + lines['@id'] # TODO Figure out why this results in region_blah_region_blah_line instead of just region_blah_line_
                         lineList.extend([lines])
+                        #regionData.extend([x.get("@id"), 1])
                     else: # Assume that lines is a list of lines
                         for line in lines:
                             line['regionWidth'] = region_width
+                            line['@id'] = x.get("@id") + line['@id'] # TODO Figure out why this results in region_blah_region_blah_line instead of just region_blah_line_
                             lineList.extend([line])
+                        #regionData.extend([x.get("@id"), len(lines)])
         content_dict = {}
         # TODO Unmessify this, the loop below might be better placed inside the one above
-        # TODO Use "readingorder"?
         if lineList:
             for line in lineList:
                 line_crop = crop(line.get("Coords").get("@points"))
                 line['crop'] = line_crop
+                textEquiv = line.get("TextEquiv")
+                if textEquiv:
+                    line['Unicode'] = textEquiv.get("Unicode")
         # Get thumbnails
         # RM Make one document request here...
         # RM need to test whether this has been successful
@@ -190,7 +197,6 @@ def correct(request, collId, docId, page, transcriptId=None):# TODO Decide wheth
             {"name": "unclear", "color": "FFCC66"},
             {"name": "work", "color": "008000"}
         ]
-
         return render(request, 'edit/correct.html', {
                  'imageUrl': document.get('pageList').get('pages')[int(page) - 1].get("url"),
                  'lines': lineList,
@@ -199,4 +205,5 @@ def correct(request, collId, docId, page, transcriptId=None):# TODO Decide wheth
                  'docId': docId,
                  'pageNo': page,
                  'tags': tags,
+                 #'regionData': regionData,
             })
