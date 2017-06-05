@@ -21,7 +21,7 @@
 	overflow: hidden;
 }
 .thumbs {
-    transition: transform 1s;
+
 }
 .thumb-current {
     padding: 3%;

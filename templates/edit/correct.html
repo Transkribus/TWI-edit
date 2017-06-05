@@ -111,6 +111,7 @@
 	var thumbArray = {{ thumbArray | safe }}; {# We assume that this is safe because each url is escape()d in the for loop in the view #}
 	 {# var regionData = {{ regionData | safe }}; We don't need this yet, after all, but lets leave it here for now.  #}
 	var transUnsavedChanges = "{% trans "You have unsaved changes." %}";
+	var dialogBeingResized = false; {# a "semaphore" to avoid false resize events (resizing the dialog triggers such events and we only want those triggered by the window) #}
 	tagItems = {
 		{% for tag in tags %}"{{tag.name}}": {name: "<span href=\"#\" style=\"color: #{{tag.color}};\">{{tag.name}}</span>", type: "checkbox", isHtmlName: true} {% if not forloop.last %}, {% endif %}
 		{% endfor %}
@@ -260,19 +261,18 @@
     	e.preventDefault();
     	var mouseZoom;
     	if (e.originalEvent.detail > 0 || e.originalEvent.wheelDelta < 0)
-			mouseZoom = -20;        	
+			mouseZoom = -20;	
 		else
 			mouseZoom = 20;
     	setZoom(mouseZoom, e.originalEvent.pageX - $( ".transcript-map-div" ).offset().left, e.originalEvent.pageY - $( ".transcript-map-div" ).offset().top);
     });
     $(window).resize(function() {
-    	{# We don't want to respond until the window has finished resizing. #}
-	   	triggerTime = new Date().getTime();
-    	setTimeout(function() {
-			if (new Date().getTime() > (triggerTime + 480)) {
+    	if (!dialogBeingResized) { {# If the dialog is being resized, it triggers this event and we must ignore it. #}
+	    	clearTimeout(resizeTimeout); {# We don't want to respond until the window has finished resizing. #}
+	    	resizeTimeout = setTimeout(function() {
 				resizeContents();
-			}	
-		}, 200);
+	    	}, 480);
+	    }
 	});
 	$("#pageNumber").focus(function() {
    		$(this).select();
@@ -331,17 +331,16 @@
 	        	calculateLineListDimensions();
     		},
     		resizeStart: function (e) {
+    			dialogBeingResized = true;
     			updateDockingStatus(false);
     		},
     		dragStart: function (e) {
     			updateDockingStatus(false);
+    		},
+    		resizeStop: function (e) {
+    			dialogBeingResized = false;
     		}
-        });
-        
-        /*setInterval(function() {
-        console.log("blah");
-        	tagMenu();
-        }, 2000);*/
+        });        
 	});
 </script>
 
