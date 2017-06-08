@@ -261,7 +261,7 @@
     	e.preventDefault();
     	var mouseZoom;
     	if (e.originalEvent.detail > 0 || e.originalEvent.wheelDelta < 0)
-			mouseZoom = -20;	
+			mouseZoom = -20;        	
 		else
 			mouseZoom = 20;
     	setZoom(mouseZoom, e.originalEvent.pageX - $( ".transcript-map-div" ).offset().left, e.originalEvent.pageY - $( ".transcript-map-div" ).offset().top);
@@ -340,7 +340,7 @@
     		resizeStop: function (e) {
     			dialogBeingResized = false;
     		}
-        });        
+        });
 	});
 </script>
 

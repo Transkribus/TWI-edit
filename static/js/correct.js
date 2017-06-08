@@ -118,7 +118,7 @@ function tagMenu() { // returns the tag list with tags in the selection highligh
 				var tag = tagsOnLine[i].tag;
 				appliedTags[tag] = {"name": "<span style=\"color: #" + tagColors[tag] + ";\">" + tag + "</span>", "type": "checkbox", "isHtmlName": true, "selected": true};
 			}
-		}		
+		}
 	}
 	return {"items": $.extend({}, tagItems, appliedTags)};
 }
@@ -128,19 +128,19 @@ function applyTagTo(applyTag, lineId, start, end, continued) { // applies the ta
 	var isContinued = false;
 	if (5 == arguments.length)
 		continued = continued;
-	
+
 	var t = 0;
 	while (t < customTagArray.length) // remove all tags from the array except those which are of the same type as the applied one
 		if (customTagArray[t].tag != applyTag)
 			customTagArray.splice(t, 1);
 		else
 			t++;
-	
-	var i = 0;	
+
+	var i = 0;
 	while (i < customTagArray.length) { // look for overlapping tags
-		var existingOpenOffset = customTagArray[i].offset; 
+		var existingOpenOffset = customTagArray[i].offset;
 		var existingCloseOffset = customTagArray[i + 1].offset; // TODO Remove redundant variables...
-		if (start <= existingCloseOffset && existingOpenOffset <= end)  { // do we have overlap? If so, merge... 
+		if (start <= existingCloseOffset && existingOpenOffset <= end)  { // do we have overlap? If so, merge...
 			start = Math.min(start, existingOpenOffset);
 			end = Math.max(end, existingCloseOffset);
 			customTagArray.splice(i, 2); // ...and remove the old tag
@@ -149,7 +149,7 @@ function applyTagTo(applyTag, lineId, start, end, continued) { // applies the ta
 	}
 	customTagArray.push({"offset": start, "tag": applyTag, "open": true, "length": (end - start)});
 	customTagArray.push({"offset": end, "tag": applyTag, "open": false, "length": 0});
-	
+
 	// get everything in custom EXCEPT the applied tag
 	var removalExp = new RegExp(applyTag + "\\s+(.(?!\}))*.{1}\}", "g");
 	var custom = String(contentArray[lineIndex][4]).replace(removalExp, "");
@@ -162,11 +162,13 @@ function applyTagTo(applyTag, lineId, start, end, continued) { // applies the ta
 			custom += "}";
 		}
 	}
-	contentArray[lineIndex][4] = custom;	
+	contentArray[lineIndex][4] = custom;
 }
 function applyTag(applyTag) {
 	// use selectionData to apply the tag
-	if (selectionData.length == 1) {
+	if ("gap" == applyTag) // this tag is an exception
+		applyTagTo(applyTag, selectionData[0][0], selectionData[0][1], selectionData[0][1] + 1);
+	else if (selectionData.length == 1) {
 		if (selectionData[0][1] != selectionData[0][2]) // beginning and end must be different
 			applyTagTo(applyTag, selectionData[0][0], selectionData[0][1], selectionData[0][2]);
 	} else {
@@ -215,7 +217,7 @@ function getLineLiWithTags(tagLineId) { // generates a line with spans matching 
 	var backgroundHeight = lineY; // enough for the first tag graphic
 	var tagGfxStack = [];
 	// "tags"-2-tags:
-	var tagLineIndex = getIndexFromLineId(tagLineId);	
+	var tagLineIndex = getIndexFromLineId(tagLineId);
 	var lineUnicode = contentArray[tagLineIndex][1];
 	var highlightCurrent = "";
 	var lineNo = String(String(contentArray[tagLineIndex][4]).match(/readingOrder {index:\d+;}/)).match(/\d+/g);
@@ -236,20 +238,28 @@ function getLineLiWithTags(tagLineId) { // generates a line with spans matching 
 				if (tagGfxStack[i] == tag.tag)
 					notYetIn = false;
 			}
-			if (notYetIn) 
+			if (notYetIn)
 				tagGfxStack.push(tag.tag);
 		});
 		// sort the stack and generate a graphical representation for each tag type (placement depends on order and total # of tags)
 		tagGfxStack.sort()
-		tagGfxStack.forEach(function (gfxTag) {
-			svgRectsJSON += '"' + gfxTag + '":' + "\"<rect x=\\\\'0\\\\' y=\\\\'" + lineY + "\\\\' width=\\\\'1\\\\' height=\\\\'" + lineThickness + "\\\\' style=\\\\'fill: %23" + tagColors[gfxTag] + ";\\\\' />\""; // # must be %23 and yes \\\\ [sic!]
-			lineY +=thicknessAndSpacing;
-			svgRectsJSON += ',';			
+		var gapTag = false;
+		tagGfxStack.forEach(function (gfxTag) { // we use initialWidth here and below since it's definitely long enough, except for the "gap" tag
+			if (gfxTag != "gap") { // we exclude this special case
+				svgRectsJSON += '"' + gfxTag + '":' + "\"<rect x=\\\\'0\\\\' y=\\\\'" + lineY + "\\\\' width=\\\\'" + initialWidth + "\\\\' height=\\\\'" + lineThickness + "\\\\' style=\\\\'fill: %23" + tagColors[gfxTag] + ";\\\\' />\""; // # must be %23 and yes \\\\ [sic!]
+				lineY +=thicknessAndSpacing;
+				svgRectsJSON += ',';
+			} else
+				gapTag = true;
 		});
-		svgRectsJSON = svgRectsJSON.substring(0, svgRectsJSON.length - 1); // remove the comma in the end
+		if (gapTag) // insert the "gap" tag, if necessary. This also ensures that we don't have a comma in the end before conversion...
+			svgRectsJSON += '"gap":' + "\"<line x1=\\\\'0\\\\' y1=\\\\'0\\\\' x2=\\\\'0\\\\' y2=\\\\'" + lineY + "\\\\' style=\\\\'stroke-width: " + lineThickness + "; stroke: %23" +  (tagColors["gap"]) + ";\\\\' />\""; // # must be %23 and yes \\\\ [sic!]
+		else
+			svgRectsJSON = svgRectsJSON.substring(0, svgRectsJSON.length - 1); // remove the comma in the end
 		svgRectsJSON = JSON.parse("{" +svgRectsJSON + "}");
+		//console.log("corrected tagstack size: " + (tagGfxStack.length - gapTag));
 		// more graphics variables
-		var bottomPadding = (1 + tagGfxStack.length) * thicknessAndSpacing;
+		var bottomPadding = (1 + (tagGfxStack.length - gapTag)) * thicknessAndSpacing; // gapTag must be subtracted from the count since it shouldn't affect the height
 		var backgroundHeight = lineY + bottomPadding;
 		// generate lines with spans showing the tags...
 		var tagStack = [];
@@ -273,16 +283,16 @@ function getLineLiWithTags(tagLineId) { // generates a line with spans matching 
 			if (offset != rangeBegin || currentTag != previousTag) { // has this tag already been temporarily closed when closing an outer tag? If so, we don't need to open it again, otherwise we must
 				var tagContent = lineUnicode.substring(rangeBegin, offset);
 				while (keepOpenStack.length > 0) {
-					var keepTag = keepOpenStack.pop(); 
+					var keepTag = keepOpenStack.pop();
 					tagString += "<span tagLineId='" + tagLineId + "' spanOffset=\"" + rangeBegin + "\" "
-											+ "style=\"background-image: url('data:image/svg+xml; utf8, <svg xmlns=\\'http://www.w3.org/2000/svg\\' width=\\'1\\' height=\\'" + backgroundHeight + "\\'>" + svgRectsJSON[keepTag] + "</svg>'); padding-bottom: " + bottomPadding + "px;\""
-											+ ">";
+											+ "style=\"background-image: url('data:image/svg+xml; utf8, <svg xmlns=\\'http://www.w3.org/2000/svg\\' width=\\'" + initialWidth + "\\' height=\\'" + backgroundHeight + "\\'>" + svgRectsJSON[keepTag] + "</svg>'); padding-bottom: " + bottomPadding + "px;\""
+											+ ">";// we use initialWidth here and below because it's guaranteed to be enough
 					tagStack.push(keepTag);
 				};
 				tagString += '<span tagLineId="' + tagLineId + '" spanOffset="' + rangeBegin + '">' + tagContent + '</span>';// we always need the tagLineId
 				if (tag.open) { // if the new tag opens, just insert it and push it onto the stack
 					tagString += "<span offset=\"" + offset + "\" spanOffset=\"" + offset + "\" tagLength=\"" + length +  "\" tagLineId='" + tagLineId + "' tag='" + currentTag + "' " //" // a "tag" = span with a tag attribute
-											+ "style=\"background-image: url('data:image/svg+xml; utf8, <svg xmlns=\\'http://www.w3.org/2000/svg\\' width=\\'1\\' height=\\'" + backgroundHeight + "\\'>" + svgRectsJSON[currentTag] + "</svg>'); padding-bottom: " + bottomPadding + "px;\""
+											+ "style=\"background-image: url('data:image/svg+xml; utf8, <svg xmlns=\\'http://www.w3.org/2000/svg\\' width=\\'" + initialWidth + "\\' height=\\'" + backgroundHeight + "\\'>" + svgRectsJSON[currentTag] + "</svg>'); padding-bottom: " + bottomPadding + "px;\""
 											+ ">";
 					tagStack.push(currentTag);
 				} else { // if the tag closes, we have to close all open tags until we reach the "original" opening tag
@@ -316,9 +326,9 @@ function updateSelectionData() { // call after user inputs to put selection info
 	var anchorLineIndex = getIndexFromLineId(aPNtagLineId);
 	var focusLineIndex = getIndexFromLineId(focusParentNode.getAttribute("tagLineId"));
 	var totAnchorOffset = selection.anchorOffset + parseInt(anchorParentNode.getAttribute("spanOffset"));
-	var totFocusOffset = selection.focusOffset + parseInt(focusParentNode.getAttribute("spanOffset"));	
+	var totFocusOffset = selection.focusOffset + parseInt(focusParentNode.getAttribute("spanOffset"));
 	var startOffset, endOffset;
-	
+
 	if (anchorLineIndex == focusLineIndex) {
 		startOffset = Math.min(totAnchorOffset, totFocusOffset);
 		endOffset = Math.max(totAnchorOffset, totFocusOffset);
@@ -398,7 +408,7 @@ function resizeContents() { // Call to perform necessary updates of contents and
 	initialWidth = $('#transcriptImage').width();
 	initialHeight = $('#transcriptImage').height();
 	naturalWidth = $('#transcriptImage').get(0).naturalWidth;
-	initialScale = initialWidth / naturalWidth;	
+	initialScale = initialWidth / naturalWidth;
 	// We have to update these too in case the image has gotten resized by the browser along with the window:
 	accumExtraX = initialWidth * accumExtraX / oldWidth;
 	accumExtraY = initialWidth * accumExtraY / oldWidth;
@@ -447,7 +457,7 @@ function loadThumbs() { // Loads all thumbs and shows the ones which are visible
 	toLoadCount = Math.min(THUMBS_TO_SHOW, to);
 	var tempImg;
 	for (var i = -thumbCountOffset; i <= to; i++) {
-		tempImg = new Image(); 
+		tempImg = new Image();
 		tempImg.src = thumbArray[i];
 		tempImg.onload = function() {
 			toLoadCount--; //  JavaScript is single-threaded...
@@ -545,7 +555,7 @@ function updateDialog(lineId) {
 	if (1 == arguments.length) // This function can be called without a line ID to reset the dialog after resizing the window
 		setCurrentLineId(lineId);
 	var lineIdx = getIndexFromLineId(currentLineId);
-	if (!correctModal.isOpen()) { // Do we have to open the dialog first? 
+	if (!correctModal.isOpen()) { // Do we have to open the dialog first?
 		correctModal.open(); // We have to open the dialog already here in order to calculate its minimum width
 		if (null == dialogWidth) { // Unless the size has already been calculated and possibly manually modified, we use the region width to set it...
 			modalMinWidth = 2 - 2*parseInt($(".tool-row").css("margin-left"), 10);// equal and negative margins (sic!)
@@ -574,7 +584,7 @@ function updateDialog(lineId) {
 		updateDocking(); // We restore the dialog to a docked state, if it was docked when closed
 	}
 	calculateLineListDimensions();
-	buildLineList();	
+	buildLineList();
 }
 function calculateLineListDimensions() {
 	modalTextMaxHeight = $("#correctModal").height() - modalMinHeight;// TODO Which height? outer? true? Also: -5 to give the "fake text area" border some margin below it as well
@@ -697,7 +707,7 @@ function setZoom(zoom, x, y) {
 	var xRatio = x / ((1 + zoomFactor) * parseInt($( ".transcript-map-div" ).css("width"), 10));
 	var yRatio = y / ((1 + zoomFactor) * parseInt($( ".transcript-map-div" ).css("height"), 10));
 	// Calculate the absolute no. of pixels added and get the total offset to move in order to preserve the cursor position...
-	var oldZoomFactor = zoomFactor;	
+	var oldZoomFactor = zoomFactor;
 	zoomFactor = savedZoom / 100;
 	accumExtraX += initialWidth * (zoomFactor - oldZoomFactor) * xRatio;
 	accumExtraY += initialHeight * (zoomFactor - oldZoomFactor) * yRatio;
@@ -733,25 +743,6 @@ function scrollToPreviousTop() {
 	accumExtraY = newTop * initialScale * (1 + zoomFactor);
 	$( ".transcript-map-div" ).css("transform",  "translate(" + -accumExtraX +"px, " + -accumExtraY+ "px) scale(" + (1 + zoomFactor) + ")");// Note, the CSS is set to "transform-origin: 0px 0px"
 }
-/* TODO Remove this and all references to it. restoreSelection does the same thing and more
-function placeCaret() {
-	var offset = selectionData[0][1];
-	var range = document.createRange();
-	var sel = window.getSelection();
-	var spanNodes = $("[tagLineId='" + selectionData[0][0] + "']");
-	var i = 0;
-	while (i < spanNodes.length && offset > spanNodes[i].getAttribute("spanoffset"))
-		i++;
-	i = Math.max(0, i - 1);
-	var offsetFromSpan = offset - spanNodes[i].getAttribute("spanoffset");
-	if (spanNodes[i].hasChildNodes())
-		range.setStart(spanNodes[i].firstChild, offsetFromSpan);
-	else
-		range.setStart(spanNodes[i], offsetFromSpan);
-	range.collapse(true);
-	sel.removeAllRanges();
-	sel.addRange(range);
-}*/
 function lineEditAction(editedLineId, startOffset, endOffset, textInjection) { // if no text injection is given, we just update the tags and assume that the input went straight to the "contenteditable", if startOffset > endOffset the action is a deletion (possibly followed by an injection into the same offset) 
 	var contentDelta;
 	var injectionDelta = 0;
@@ -793,10 +784,10 @@ function eraseSelection() {
 		return;
 	}
 	var i = 1;
-	var lastButOne = selectionData.length - 1; 
+	var lastButOne = selectionData.length - 1;
 	lineEditAction(editedLineId, contentArray[getIndexFromLineId(editedLineId)][1].length, selectionData[0][1]);
 	var deleteFromId = getNextLineId(editedLineId);
-	while (i < lastButOne) {	
+	while (i < lastButOne) {
 		undoArray.push(contentArray[getIndexFromLineId(deleteFromId)].slice());
 		lineEditAction(deleteFromId, contentArray[getIndexFromLineId(deleteFromId)][1].length, 0);
 		deleteFromId = getNextLineId(deleteFromId);
@@ -820,7 +811,7 @@ function editAction(event) { // trigger: keypress
 	undoArray = [];
 	undoArray.push(contentArray[getIndexFromLineId(editedLineId)].slice());
 	// TODO Rename the vars? start and end are not intuitive names when removing text end = the caret position at the END OF THE ACTION (i.e. a smaller offset than start = the caret position AT THE START OF THE ACTION)
-	if (selectionData.length ==1) { // does everything happen on just one line? 
+	if (selectionData.length ==1) { // does everything happen on just one line?
 		if (event.key.length == 1) { // a regular character?
 			event.preventDefault();
 			lineEditAction(editedLineId, startOffset, endOffset, event.key);
@@ -838,10 +829,10 @@ function editAction(event) { // trigger: keypress
 			if (endOffset == startOffset && endOffset < contentArray[getIndexFromLineId(editedLineId)][1].length) // can we allow a deletion without removing a linebreak? 
 	    		startOffset++; // pretend that the character in front of the caret was selected
     		lineEditAction(editedLineId, startOffset, endOffset);
-	    } else if (event.keyCode == 13) { // return? 
-	    	event.preventDefault(); // we don't allow linebreaks 
+	    } else if (event.keyCode == 13) { // return?
+	    	event.preventDefault(); // we don't allow linebreaks
 	        typewriterNext();
-	    } else { 
+	    } else {
 	    	if (event.key == "ArrowUp" && getIndexFromLineId(editedLineId) == (getIndexFromLineId(currentLineId) - surroundingCount)) {
     			 typewriterPrevious();
     			 //placeCaret();
@@ -895,10 +886,10 @@ function pasteAction(text) { // TODO This can be sped up but it's not used much.
 	// TODO Remove selected content first
 	if (selectionData.length > 1 && selectionData[0][1] != selectionData[0][2]) {
 		var i = 1;
-		var lastButOne = selectionData.length - 1; 
+		var lastButOne = selectionData.length - 1;
 		lineEditAction(editedLineId, contentArray[getIndexFromLineId(editedLineId)][1].length, endOffset);
 		var deleteFromId = getNextLineId(editedLineId);
-		while (i < lastButOne) {	
+		while (i < lastButOne) {
 			lineEditAction(deleteFromId, contentArray[getIndexFromLineId(deleteFromId)][1].length, 0);
 			deleteFromId = getNextLineId(deleteFromId);
 			i++;
@@ -949,7 +940,7 @@ function typewriterStep(newLineId, delta) {
 }
 
 // Drawing functions:
-function updateCanvas() {        
+function updateCanvas() {
 	var c = document.getElementById("transcriptCanvas");
 	var ctx = c.getContext("2d");
 	ctx.canvas.width = $('#transcriptImage').width();
@@ -978,10 +969,10 @@ function placeBalls(lineId) {
 	var lineHeight = (coords[5] - coords[1]); // We use this to get an "appropriate" place for the ball in relation to the line size...
 	var c=document.getElementById("transcriptCanvas");
 	var ctx=c.getContext("2d");
-	ctx.beginPath(); 
+	ctx.beginPath();
 	ctx.arc(coords[0] -0.5 * lineHeight, coords[1] + lineHeight / 2, 10, 0, 2*Math.PI);
 	ctx.fillStyle = "rgba(0, 255, 0, 1)";
-	ctx.fill();	
+	ctx.fill();
 }
 function highLightArea(coords) {
 	var c=document.getElementById("transcriptCanvas");
@@ -1000,7 +991,7 @@ function highlightLineList() { // highlights the lines being shown in the dialog
 		var lineHeight = (lineCoords[5] - lineCoords[1]); // We use this to get "appropriate" places for the balls in relation to the line size...
 		var c=document.getElementById("transcriptCanvas");
 		var ctx=c.getContext("2d");
-		ctx.beginPath(); 
+		ctx.beginPath();
 		ctx.arc(lineCoords[0] -0.5 * lineHeight, lineCoords[1] + lineHeight / 2, 10, 0, 2*Math.PI);
 		if (contentArray[index][1].length == 0 || (contentArray[index][1].length <= 1 && contentArray[index][1].match(/(\s+|\u200B)/))) { // empty or a zero width space
 			ctx.fillStyle = "rgba(255, 140, 0, 1)";
@@ -1022,7 +1013,7 @@ function highlightLine(lineId) { // highlights a single line (use when moving th
 	var length = contentArray.length;
 	var coords =  Array(8);// TODO Four coordinate pairs are not needed for a rectangle...
 	for (var j = 0; j < length; j++) {// TODO Stop the loop sooner!
-		if (contentArray[j][0] == lineId) {						
+		if (contentArray[j][0] == lineId) {
 			for (var k = 0; k < coords.length; k++)
 				coords[k] = Math.round(initialScale*contentArray[j][2][k]);
 		}
