@@ -318,6 +318,8 @@ function getLineLiWithTags(tagLineId) { // generates a line with spans matching 
 // Various functions
 function updateSelectionData() { // call after user inputs to put selection information into a more usable format in a 2D array [[lineId, selection start offset, selection end offset], [...]]
 	var selection = window.getSelection();
+	if ( selection.anchorNode === null )
+		return;
 	var anchorParentNode = selection.anchorNode.parentNode;
 	var aPNtagLineId = anchorParentNode.getAttribute("tagLineId");
 	if (!aPNtagLineId) // this function can be triggered by clicks elsewhere than in just the text
