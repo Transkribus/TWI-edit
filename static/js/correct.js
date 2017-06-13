@@ -6,7 +6,7 @@ var currentLineId;
 var modalFromMouse = 50;// TODO Decide whether to calculate this or have a simple default. Note pages with text near the lower edge...
 var modalHeight = 250;// TODO Consider whether to calculate this somehow, this value is just a rough guess...
 var modalMinWidth, modalMinHeight, modalTextMaxHeight, dockedHeight = 250;// TODO Decide how to calculate this.
-var ballRadius = 50;// TODO Decide how to set this. 
+var ballRadius = 50;// TODO Decide how to set this.
 var ignoreLeave = false;
 var zoomFactor = 0;
 var accumExtraX = 0;
@@ -53,14 +53,14 @@ function removeTag(removeTag) { // removes the given tag from the selection, ret
 		if ((tagOffset <= selStart && selStart < (tagOffset + tagsOnLine[i].length)) || (selStart < tagOffset && tagOffset <= selEnd)) {
 			removals = true;
 			contentArray[lineIndex][4] = String(contentArray[lineIndex][4]).replace(new RegExp("\\s" + removeTag + "\\s+{offset:" + tagOffset + ";[^}]*}"), "");
-		} 
+		}
 	}
 	var j = 1;
-	while (j < lastButOne) { 
+	while (j < lastButOne) {
 		lineIndex++; // we don't check if this goes out of bounds since such a selection shouldn't be possible...
 		if (getSortedCustomTagArray(lineIndex, removeTag).length > 0) {
 			removals = true;
-			contentArray[lineIndex][4] = String(contentArray[lineIndex][4]).replace(new RegExp("\\s" + removeTag + "[^}]*}"), "");			
+			contentArray[lineIndex][4] = String(contentArray[lineIndex][4]).replace(new RegExp("\\s" + removeTag + "[^}]*}"), "");
 		}
 		j++;
 	}
@@ -99,7 +99,7 @@ function tagMenu() { // returns the tag list with tags in the selection highligh
 		}
 	}
 	var j = 1;
-	while (j < lastButOne) { 
+	while (j < lastButOne) {
 		lineIndex++; // we don't check if this goes out of bounds since such a selection shouldn't be possible...
 		tagsOnLine = getSortedCustomTagArray(lineIndex);
 		for (var k = 0; k < tagsOnLine.length; k++) {
@@ -177,8 +177,8 @@ function applyTag(applyTag) {
 		while (i < lastButOne)
 			applyTagTo(applyTag, selectionData[i][0], selectionData[i][1], selectionData[i++][2], true);
 		applyTagTo(applyTag, selectionData[i][0], selectionData[i][1], selectionData[i][2]); // this tag is not continued on the next line
-	}		
-	buildLineList();	
+	}
+	buildLineList();
 }
 function getSortedCustomTagArray(tagLineIndex, filterTag) { // returns an array with Transkribus "custom" tags in the format below, if a filterTag is given, only tags of that type are included
 	var filter = false;
@@ -224,8 +224,8 @@ function getLineLiWithTags(tagLineId) { // generates a line with spans matching 
 	if (!lineNo)
 		lineNo = tagLineIndex;
 	else
-		lineNo++; // readingOrder starts from 0, tagLineIndex is OK as is because of the "dummy line" in the beginning 
-	
+		lineNo++; // readingOrder starts from 0, tagLineIndex is OK as is because of the "dummy line" in the beginning
+
 	if (tagLineId == currentLineId)
 		 highlightCurrent = ' style="color: green;" '; // A quick and dirty solution for highlighting the current line in each case below
 	if ("" == lineUnicode)
@@ -263,8 +263,8 @@ function getLineLiWithTags(tagLineId) { // generates a line with spans matching 
 		var backgroundHeight = lineY + bottomPadding;
 		// generate lines with spans showing the tags...
 		var tagStack = [];
-		var tagString = '<li value="' + lineNo + '" spanOffset="0" class="tag-menu" id="text_' + tagLineId + '" spellcheck="false"' + highlightCurrent 
-									+ '><div style="padding-bottom: ' + bottomPadding + 'px;" ' 
+		var tagString = '<li value="' + lineNo + '" spanOffset="0" class="tag-menu" id="text_' + tagLineId + '" spellcheck="false"' + highlightCurrent
+									+ '><div style="padding-bottom: ' + bottomPadding + 'px;" '
 									+ 'style="min-height: ' + backgroundHeight + 'px;">';
 		var rangeBegin;
 		var keepOpenStack = [];
@@ -472,14 +472,14 @@ function generateThumbGrid() {
 	thumbWidth = initialWidth / 11;// 11 because we show 10 thumbs and each arrow will be half as wide as a thumbnail
 	var arrowWidth = thumbWidth / 2;
 	var padding = 0.08 * thumbWidth; // This results in roughly 10 pixels with a maximized window on an HD screen if 10 thumbs are shown
-	var thumbTDs = ''; // thumbTDs will become a string that's inserted into the <tr> with id thumbTR	
-	
+	var thumbTDs = ''; // thumbTDs will become a string that's inserted into the <tr> with id thumbTR
+
 	if (thumbArray.length > 10) // do we need arrows?
 		thumbTDs += '<td style="min-width: ' + arrowWidth + 'px;"><a id="leftArrow" href="#" onclick="scrollThumbsLeft();"><svg width="' + arrowWidth + '" height="' + thumbWidth + '"><polygon points="' + (arrowWidth - padding) + ',' + padding + ' ' + padding + ',' + (arrowWidth) + ' '  + ' ' + (arrowWidth - padding) + ',' + (thumbWidth - padding) + '" style="fill: blue; stroke-width: 0;" /></svg></a>';
 	else // we don't need arrows but we need to "pad" the row from the left to center the thumbs we do show
 		thumbTDs += '<td style="min-width: ' + arrowWidth * (12 - thumbArray.length) + 'px;">'; // arrowWidth = half a thumb...
 	thumbTDs += '</td><td><div class="thumb-row" style="text-align: center;"><div class="thumbs"><table><tr>';
-	
+
 	var i = 1;
 	// Before the current page:
 	while(i < pageNo) {
@@ -495,14 +495,14 @@ function generateThumbGrid() {
 		i++;
 	}
 	thumbTDs += '</tr></table></div></div></td><td style="min-width: ' + arrowWidth + 'px;">';
-	
+
 	if (thumbArray.length > 10) // arrow?
 		thumbTDs += '<a id="rightArrow" href="#" onclick="scrollThumbsRight();"><svg width="' + arrowWidth + '" height="' + thumbWidth + '"><polygon points="' + padding + ',' + padding + ' ' + (arrowWidth - padding) + ',' + (arrowWidth) + ' '  + ' ' + padding + ',' + (thumbWidth - padding) + '" style="fill: blue; stroke-width: 0;" /></svg></a>';
 	thumbTDs += '</td>';
 	$("#thumbTR").html(thumbTDs); // insert it
-	
+
 	// Then we alter the CSS:
-	//$(".thumb").css("width", (thumbWidth - 2*padding) + "px"); 
+	//$(".thumb").css("width", (thumbWidth - 2*padding) + "px");
 	$(".thumb-row").css("width", (initialWidth - thumbWidth) + "px");//THUMBS_TO_SHOW * thumbWidth + "px");
 	console.log("thus w: " + $(".thumb-img").css("width"));
 	console.log("t w: " + thumbWidth);
@@ -517,7 +517,7 @@ function generateThumbGrid() {
 function updateDocking(dock) { // docks (true) / undocks (false) the dialog. When not specified, docking status remains unchanged and just the dialog position and size gets updated
 	if (1 == arguments.length)
 		docked = dock;
-	if (docked) { 
+	if (docked) {
 		saveDialog();
 		var leftOffset = $("#sidebar-wrapper").width();
 		$("#correctModal").css("left", 0);
@@ -532,7 +532,7 @@ function updateDocking(dock) { // docks (true) / undocks (false) the dialog. Whe
     	$("#correctModal").css("left",  dialogX);
     	$("#correctModal").css("top",  dialogY);
     	$("#correctModal").css("width",  dialogWidth);
-    	$("#correctModal").css("height",  dialogHeight);		
+    	$("#correctModal").css("height",  dialogHeight);
 	}
 	updateDockingStatus(docked);
 	calculateLineListDimensions();
@@ -549,7 +549,7 @@ function saveDialog() { // Saves the undocked dialog properties...
 	dialogX = $("#correctModal").offset().left;
 	dialogY = $("#correctModal").offset().top;
 	dialogWidth = $("#correctModal").width(); // TODO Search width vs. outerWidth
-	dialogHeight = $("#correctModal").height();	
+	dialogHeight = $("#correctModal").height();
 }
 function updateDialog(lineId) {
 	if (1 == arguments.length) // This function can be called without a line ID to reset the dialog after resizing the window
@@ -570,7 +570,7 @@ function updateDialog(lineId) {
 		dialogX =  Math.max(Math.min(initialScale*contentArray[lineIdx][2][0] + $(".transcript-div").offset().left - accumExtraX, window.innerWidth - dialogWidth - 20), $(".transcript-div").offset().left);
 		// If possible, the dialog top should match the top of the second line below the current one:
 		if (contentArray.length - 1 == lineIdx) // Is it the last line? If so...
-			dialogY = (2 * contentArray[lineIdx][2][7] - contentArray[lineIdx][2][1]) * initialScale + $(".transcript-div" ).offset().top - accumExtraY; // ...place the dialog the current line height below it 
+			dialogY = (2 * contentArray[lineIdx][2][7] - contentArray[lineIdx][2][1]) * initialScale + $(".transcript-div" ).offset().top - accumExtraY; // ...place the dialog the current line height below it
 		else if (contentArray.length - 2 == lineIdx) // If it's the last but one...
 			dialogY = contentArray[lineIdx + 1][2][7] * initialScale + $(".transcript-div" ).offset().top - accumExtraY; // ...place it at the bottom of the line below the current one
 		else // And usually place it...
@@ -617,6 +617,10 @@ function restoreSelection() {
 			return false; // eElement now = the span before the intended caret position
 		eElement = $(this);
 	});
+
+	if ( bElement === undefined || eElement === undefined )
+		return;
+
 	var range = document.createRange();
 	range.setStart(bElement[0].firstChild, begCharCount - bElement.attr("spanoffset"));
 	range.setEnd(eElement[0].firstChild, endCharCount - eElement.attr("spanoffset"));
@@ -644,7 +648,7 @@ function getIndexFromLineId(lineId) {
 	return null;
 }
 function getNextLineId(lineId) {
-	index = getIndexFromLineId(lineId); 
+	index = getIndexFromLineId(lineId);
 	if (contentArray.length == (index + 1))
 		return null;// If it's the last line, we don't have a next id.
 	else
@@ -695,7 +699,7 @@ function setZoom(zoom, x, y) {
 	if (!readyToZoom)
 		return;// Zooming before the page has fully loaded breaks it.
 	var newZoom = savedZoom + zoom;
-	if (newZoom >= -60) 
+	if (newZoom >= -60)
 		savedZoom = newZoom;
 	else
 		return;// We have a limit on zooming
@@ -712,7 +716,7 @@ function setZoom(zoom, x, y) {
 	accumExtraX += initialWidth * (zoomFactor - oldZoomFactor) * xRatio;
 	accumExtraY += initialHeight * (zoomFactor - oldZoomFactor) * yRatio;
 	// ...and move the image accordingly before scaling:
-	$( ".transcript-map-div" ).css("transform",  "translate(" + -accumExtraX +"px, " + -accumExtraY+ "px) scale(" + (1 + zoomFactor) + ")");// Note, the CSS is set to "transform-origin: 0px 0px" 
+	$( ".transcript-map-div" ).css("transform",  "translate(" + -accumExtraX +"px, " + -accumExtraY+ "px) scale(" + (1 + zoomFactor) + ")");// Note, the CSS is set to "transform-origin: 0px 0px"
 	updateCanvas();
 }
 function scrollToNextTop() { // This function scrolls the image up as if it were dragged with the mouse.
@@ -743,7 +747,7 @@ function scrollToPreviousTop() {
 	accumExtraY = newTop * initialScale * (1 + zoomFactor);
 	$( ".transcript-map-div" ).css("transform",  "translate(" + -accumExtraX +"px, " + -accumExtraY+ "px) scale(" + (1 + zoomFactor) + ")");// Note, the CSS is set to "transform-origin: 0px 0px"
 }
-function lineEditAction(editedLineId, startOffset, endOffset, textInjection) { // if no text injection is given, we just update the tags and assume that the input went straight to the "contenteditable", if startOffset > endOffset the action is a deletion (possibly followed by an injection into the same offset) 
+function lineEditAction(editedLineId, startOffset, endOffset, textInjection) { // if no text injection is given, we just update the tags and assume that the input went straight to the "contenteditable", if startOffset > endOffset the action is a deletion (possibly followed by an injection into the same offset)
 	var contentDelta;
 	var injectionDelta = 0;
 	if (arguments.length == 4) // this could set endOffset so that any given value is ignored because it makes no sense to consider that parameter in this case
@@ -771,7 +775,7 @@ function lineEditAction(editedLineId, startOffset, endOffset, textInjection) { /
 			contenteditableToArray(editedLineId, previousContent.substring(0, endOffset) + textInjection + previousContent.substring(endOffset, previousContent.length));
 	} else if (contentDelta < 0) {
 		var previousContent = contentArray[getIndexFromLineId(editedLineId)][1];
-		contenteditableToArray(editedLineId, previousContent.substring(0, endOffset) + previousContent.substring(startOffset, previousContent.length)); // deletions require overwrites 
+		contenteditableToArray(editedLineId, previousContent.substring(0, endOffset) + previousContent.substring(startOffset, previousContent.length)); // deletions require overwrites
 	} else
 		contenteditableToArray(editedLineId);
 }
@@ -826,7 +830,7 @@ function editAction(event) { // trigger: keypress
 			}
 		} else if (event.keyCode == 46) { // delete?
 			event.preventDefault();
-			if (endOffset == startOffset && endOffset < contentArray[getIndexFromLineId(editedLineId)][1].length) // can we allow a deletion without removing a linebreak? 
+			if (endOffset == startOffset && endOffset < contentArray[getIndexFromLineId(editedLineId)][1].length) // can we allow a deletion without removing a linebreak?
 	    		startOffset++; // pretend that the character in front of the caret was selected
     		lineEditAction(editedLineId, startOffset, endOffset);
 	    } else if (event.keyCode == 13) { // return?
@@ -854,10 +858,10 @@ function editAction(event) { // trigger: keypress
 			else
 				inject = "";
 			var i = 1;
-			var lastButOne = selectionData.length - 1; 
+			var lastButOne = selectionData.length - 1;
 			lineEditAction(editedLineId, contentArray[getIndexFromLineId(editedLineId)][1].length, endOffset, inject);
 			var deleteFromId = getNextLineId(editedLineId);
-			while (i < lastButOne) {	
+			while (i < lastButOne) {
 				undoArray.push(contentArray[getIndexFromLineId(deleteFromId)].slice());
 				lineEditAction(deleteFromId, contentArray[getIndexFromLineId(deleteFromId)][1].length, 0);
 				deleteFromId = getNextLineId(deleteFromId);
