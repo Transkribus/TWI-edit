@@ -50,7 +50,7 @@
 			<div class="input-group input-group-sm">
 				<div class="btn-group btn-toggle">
 			        <a class="btn btn-sm btn-primary active" data-target="#toggleView">{% trans "Profread" %}</a>
-			    	<a class="btn btn-sm btn-default" data-target="#toggleView">{% trans "Line by line" %}</a>
+			    	<a id="toggleView_lbl" class="btn btn-sm btn-default" data-target="#toggleView">{% trans "Line by line" %}</a>
 			    </div>
 			</div>
 		</div>
@@ -88,33 +88,32 @@
 				{% endfor %}
 			</map>
 			<canvas id="transcriptCanvas" style="position: absolute; z-index: 998; pointer-events: none;"></canvas>
-			<img src="{{imageUrl}}" usemap="#transcriptMap" id="transcriptImage" class="transcript-img"  style="z-index: 999;">
+			<img src="{{ imageUrl }}" usemap="#transcriptMap" id="transcriptImage" class="transcript-img"  style="z-index: 999;">
 		</div>
 	</div>
 	<div class="lines-div" style="display: none;">
-		 <p>Image to use:</p>
-		<img id="img" src="{{pagedata.url}}" style="display: none;">
+		<script type="text/javascript">
+			function drawLineImage(lineId, coordinates) {
+				var ctx = document.getElementById("canvas_" + lineId).getContext("2d");
+				var image = document.getElementById("transcriptImage");
+				var coords = coordinates.toString().split(',');
+				var width = coords[2] - coords[0];
+				var height = coords[5] - coords[1];
+				ctx.drawImage(image, coords[0], coords[1], width, height, 0, 0, Math.min(width, 800), Math.min(height, 100));
+			}
+		</script>
 		{% for line in lines %}
-			<canvas id="canvas_{{forloop.counter}}" width="800" height="100" style="border:1px solid #d3d3d3;">
-				Your browser does not support the HTML5 canvas tag.
+			<div class="input-group" style="padding-bottom: 10px;">
+				<canvas id="canvas_{{ line|get_item:"@id" }}" width="800" height="100" style="border:1px solid #d3d3d3;">
+					Your browser does not support the HTML5 canvas tag.
+				</canvas>
 				<script type="text/javascript">
-					function doIt(lineId, coordinates) {
-				       	var test = coordinates.toString();
-				        var c = document.getElementById("canvas_" + lineId);
-				        var ctx = c.getContext("2d");
-				        var image = document.getElementById("img");
-				    	var coordsArray = test.split(',');
-				   		var coords =  Array(8);
-				    	for ( k = 0; k < coordsArray.length; k++ )
-				      		coords[k] = Math.round(coordsArray[k]);
-				    	var width = Math.min(coords[4] - coords[0], 800);
-				    	var height = Math.min(coords[5] - coords[1], 100);
-				    	ctx.drawImage(image,coords[0], coords[1], coords[4] - coords[0],coords[5] - coords[1], 0, 0, width, height);
-				    }
-					doIt("{{ forloop.counter }}", "{{line|get_item:"crop"|coords_for_imagemap}}");
+				    $(function() { drawLineImage("{{ line|get_item:"@id" }}", "{{ line|get_item:"crop"|coords_for_imagemap }}") });
 				</script>
-			</canvas>
-			<p>{{ line|get_item:"Unicode"}}</p>
+				<input class="form-control" type="text" name="{{ line|get_item:"@id" }}" value="{{ line|get_item:"Unicode"}}" style="width: 800px;">
+			</div>
+		{% empty %}
+			<p>{% trans "The page contains no lines." %}</p>
 		{% endfor %}
 	</div>
 </div>
@@ -137,6 +136,10 @@
     <script src="https://swisnl.github.io/jQuery-contextMenu/js/main.js" type="text/javascript"></script>
 
 <script>
+	$(function() {
+		if ( "{{ view }}" == "lbl" )
+			$("#toggleView_lbl").click();
+	});
 	var contentArray= [[0, '', [0, 0, 0, 0, 0, 0, 0, 0], 0, '']
 		{% for line in lines %}
 			,['{{ line|get_item:"@id"}}', '{{line|get_item:"Unicode"|default_if_none:""}}', [{{line|get_item:"crop"|coords_for_imagemap}}], {{line|get_item:"regionWidth"}}, "{{line|get_item:"@custom"}}"]
@@ -167,7 +170,7 @@
     	e.preventDefault();
     	$(".transcript-div").toggle();
     	$(".lines-div").toggle();
-    	if ( correctModal.isOpen() )
+    	if ( correctModal !== undefined && correctModal.isOpen() )
 			correctModal.close();
     	{# TODO Handle failures here or are we happy with the current solution? #}
 	});

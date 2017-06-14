@@ -68,7 +68,7 @@ def proofread(request, collId, docId, page, transcriptId):# TODO Decide whether 
         return HttpResponse("<div class='alert alert-success'>" + success_message + "</div>", content_type="text/plain")
     else:
         regions=transcript.get("PcGts").get("Page").get("TextRegion");
-        
+
         if isinstance(regions, dict):
             regions = [regions]
 
@@ -81,14 +81,14 @@ def proofread(request, collId, docId, page, transcriptId):# TODO Decide whether 
                 else: # Assume that lines is a list of lines
                     for line in lines:
                         lineList.extend([line])
-        
+
         # TODO Use "readingorder"?
         if lineList:
             for line in lineList:
                 line['crop'] = crop(line.get("Coords").get("@points"))#,True)
                 line['id'] = line.get("@id")
                 line['Unicode'] = line.get('TextEquiv').get('Unicode')
-        
+
     #RM need to test whether this has been successful
     document = t.document(request, collId, docId, -1)
     if isinstance(document,HttpResponse):
@@ -179,7 +179,7 @@ def correct(request, collId, docId, page, transcriptId=None):# TODO Decide wheth
         thumb_urls =[]
         for thumb_page in pages:
             thumb_urls.append(escape(thumb_page.get("thumbUrl")).replace("&amp;", "&"))# The JavaScript must get the strings like this.
-        
+
         tags = [
             {"name": "Address", "color": "FF34FF"},
             {"name": "abbrev", "color": "FF0000"},
@@ -205,5 +205,6 @@ def correct(request, collId, docId, page, transcriptId=None):# TODO Decide wheth
                  'docId': docId,
                  'pageNo': page,
                  'tags': tags,
+                 'view': request.GET.get('view'),
                  #'regionData': regionData,
             })
