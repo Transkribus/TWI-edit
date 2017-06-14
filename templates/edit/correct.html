@@ -100,6 +100,7 @@
 				var width = coords[2] - coords[0];
 				var height = coords[5] - coords[1];
 				ctx.drawImage(image, coords[0], coords[1], width, height, 0, 0, Math.min(width, 800), Math.min(height, 100));
+				ctx.save();
 			}
 		</script>
 		{% for line in lines %}
@@ -172,6 +173,21 @@
     	$(".lines-div").toggle();
     	if ( correctModal !== undefined && correctModal.isOpen() )
 			correctModal.close();
+
+		contentArray.forEach(function(obj, i) {
+			var c = document.getElementById("canvas_" + obj[0]);
+			if ( c !== null && c !== undefined ) {
+				var ctx = c.getContext("2d");
+				ctx.canvas.width = $("#canvas_" + obj[0]).width();
+				ctx.canvas.height = $("#canvas_" + obj[0]).height();
+				ctx.fillStyle = "rgb(255, 255, 255)";
+				ctx.fillRect(0 ,0, ctx.canvas.width, ctx.canvas.height);
+				ctx.save();
+
+				drawLineImage(obj[0], obj[2]);
+			}
+		});
+
     	{# TODO Handle failures here or are we happy with the current solution? #}
 	});
 	$('.transcript-map-div').draggable({
