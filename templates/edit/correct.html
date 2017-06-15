@@ -94,24 +94,34 @@
 	<div class="lines-div" style="display: none;">
 		<script type="text/javascript">
 			function drawLineImage(lineId, coordinates) {
-				var ctx = document.getElementById("canvas_" + lineId).getContext("2d");
+				var c = document.getElementById("canvas_" + lineId)
+				var ctx = c.getContext("2d");
 				var image = document.getElementById("transcriptImage");
 				var coords = coordinates.toString().split(',');
 				var width = coords[2] - coords[0];
 				var height = coords[5] - coords[1];
-				ctx.drawImage(image, coords[0], coords[1], width, height, 0, 0, Math.min(width, 800), Math.min(height, 100));
+				c.height = height;
+				c.width = width;
+				document.getElementById("line_" + lineId).style.width = Math.max(width, 200) + "px";
+				ctx.drawImage(image, coords[0], coords[1], width, height, 0, 0, width, height);
 				ctx.save();
 			}
 		</script>
 		{% for line in lines %}
-			<div class="input-group" style="padding-bottom: 10px;">
+			<div style="padding-bottom: 10px;">
 				<canvas id="canvas_{{ line|get_item:"@id" }}" width="800" height="100" style="border:1px solid #d3d3d3;">
 					Your browser does not support the HTML5 canvas tag.
 				</canvas>
+				<input id="line_{{ line|get_item:"@id" }}" class="form-control" type="text" name="{{ line|get_item:"@id" }}" value="{{ line|get_item:"Unicode"|default_if_none:"" }}" style="width: 800px;">
 				<script type="text/javascript">
 				    $(function() { drawLineImage("{{ line|get_item:"@id" }}", "{{ line|get_item:"crop"|coords_for_imagemap }}") });
+				    $("#line_{{ line|get_item:"@id" }}").on("keyup", function(e) {
+						contentArray.forEach(function(obj, i) {
+							if ( obj[0] === "{{ line|get_item:"@id" }}" )
+								contentArray[i][1] = $("#line_{{ line|get_item:"@id" }}").val();
+						});
+					});
 				</script>
-				<input class="form-control" type="text" name="{{ line|get_item:"@id" }}" value="{{ line|get_item:"Unicode"}}" style="width: 800px;">
 			</div>
 		{% empty %}
 			<p>{% trans "The page contains no lines." %}</p>
