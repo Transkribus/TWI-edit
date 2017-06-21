@@ -40,6 +40,8 @@ function toggleTag(toggleTag) { // sets/removes the tag depending on whether the
 function removeTag(removeTag) { // removes the given tag from the selection, returns true if removals were made, otherwise false
 	var removals = false;
 	var lastButOne = selectionData.length - 1;
+	if ( selectionData === undefined || selectionData[0] === undefined )
+		return removals;
 	var lineIndex = getIndexFromLineId(selectionData[0][0]);
 	var tagsOnLine = getSortedCustomTagArray(lineIndex, removeTag);
 	var selStart = selectionData[0][1];
@@ -83,44 +85,51 @@ function removeTag(removeTag) { // removes the given tag from the selection, ret
 function tagMenu() { // returns the tag list with tags in the selection highlighted, if any
 	var appliedTags = {}; // an array to be populated with all tags within the selection, may contain duplicates
 	var lastButOne = selectionData.length - 1;
-	var lineIndex = getIndexFromLineId(selectionData[0][0]);
-	var tagsOnLine = getSortedCustomTagArray(lineIndex);
-	var selStart = selectionData[0][1];
-	var selEnd;
-	if (selectionData.length == 1)
-		selEnd = selectionData[0][2];
-	else
-		selEnd = contentArray[lineIndex][1].length;
-	for (var i = 0; i < tagsOnLine.length; i++) {
-		var tagOffset = tagsOnLine[i].offset;
-		if ((tagOffset <= selStart && selStart < (tagOffset + tagsOnLine[i].length)) || (selStart < tagOffset && tagOffset <= selEnd)) {
-			var tag = tagsOnLine[i].tag;
-			appliedTags[tag] = {"name": "<span style=\"color: #" + tagColors[tag] + ";\">" + tag + "</span>", "type": "checkbox", "isHtmlName": true, "selected": true};
-		}
+	if ( selectionData === undefined || selectionData[0] === undefined ) {
+		console.log("nothing selected");
+		var showTags = {"No Text selected": {name: "No Text selected", type: "", isHtmlName: false}};
 	}
-	var j = 1;
-	while (j < lastButOne) {
-		lineIndex++; // we don't check if this goes out of bounds since such a selection shouldn't be possible...
-		tagsOnLine = getSortedCustomTagArray(lineIndex);
-		for (var k = 0; k < tagsOnLine.length; k++) {
-			var tag = tagsOnLine[k].tag;
-			appliedTags[tag] = {"name": "<span style=\"color: #" + tagColors[tag] + ";\">" + tag + "</span>", "type": "checkbox", "isHtmlName": true, "selected": true}; // the selection covers all tags on this line
-		}
-		j++;
-	}
-	if (selectionData.length > 1) {
-		lineIndex++;
-		tagsOnLine = getSortedCustomTagArray(lineIndex);
-		selEnd = selectionData[j][2];
-		selStart = 0;
+	else {
+		var showTags = tagItems;
+		var lineIndex = getIndexFromLineId(selectionData[0][0]);
+		var tagsOnLine = getSortedCustomTagArray(lineIndex);
+		var selStart = selectionData[0][1];
+		var selEnd;
+		if (selectionData.length == 1)
+			selEnd = selectionData[0][2];
+		else
+			selEnd = contentArray[lineIndex][1].length;
 		for (var i = 0; i < tagsOnLine.length; i++) {
-			if (tagsOnLine[i].offset < selEnd) {
+			var tagOffset = tagsOnLine[i].offset;
+			if ((tagOffset <= selStart && selStart < (tagOffset + tagsOnLine[i].length)) || (selStart < tagOffset && tagOffset <= selEnd)) {
 				var tag = tagsOnLine[i].tag;
 				appliedTags[tag] = {"name": "<span style=\"color: #" + tagColors[tag] + ";\">" + tag + "</span>", "type": "checkbox", "isHtmlName": true, "selected": true};
 			}
 		}
+		var j = 1;
+		while (j < lastButOne) {
+			lineIndex++; // we don't check if this goes out of bounds since such a selection shouldn't be possible...
+			tagsOnLine = getSortedCustomTagArray(lineIndex);
+			for (var k = 0; k < tagsOnLine.length; k++) {
+				var tag = tagsOnLine[k].tag;
+				appliedTags[tag] = {"name": "<span style=\"color: #" + tagColors[tag] + ";\">" + tag + "</span>", "type": "checkbox", "isHtmlName": true, "selected": true}; // the selection covers all tags on this line
+			}
+			j++;
+		}
+		if (selectionData.length > 1) {
+			lineIndex++;
+			tagsOnLine = getSortedCustomTagArray(lineIndex);
+			selEnd = selectionData[j][2];
+			selStart = 0;
+			for (var i = 0; i < tagsOnLine.length; i++) {
+				if (tagsOnLine[i].offset < selEnd) {
+					var tag = tagsOnLine[i].tag;
+					appliedTags[tag] = {"name": "<span style=\"color: #" + tagColors[tag] + ";\">" + tag + "</span>", "type": "checkbox", "isHtmlName": true, "selected": true};
+				}
+			}
+		}
 	}
-	return {"items": $.extend({}, tagItems, appliedTags)};
+	return {"items": $.extend({}, showTags, appliedTags)};
 }
 function applyTagTo(applyTag, lineId, start, end, continued) { // applies the tag from start to end on the line the index of which is given, adds "continued:true", if given and true
 	var lineIndex = getIndexFromLineId(lineId);
@@ -165,6 +174,8 @@ function applyTagTo(applyTag, lineId, start, end, continued) { // applies the ta
 	contentArray[lineIndex][4] = custom;
 }
 function applyTag(applyTag) {
+	if ( selectionData === undefined || selectionData[0] === undefined )
+		return;
 	// use selectionData to apply the tag
 	if ("gap" == applyTag) // this tag is an exception
 		applyTagTo(applyTag, selectionData[0][0], selectionData[0][1], selectionData[0][1] + 1);
@@ -811,6 +822,8 @@ function editAction(event) { // trigger: keypress
 			undo();
 		return;
 	}
+	if ( selectionData == undefined || selectionData[0] === undefined )
+		return;
     var editedLineId = selectionData[0][0];
 	var startOffset = selectionData[0][2];
 	var endOffset = selectionData[0][1]; // TODO Some cleanup? This is just for one line edits, changed in the else below...
