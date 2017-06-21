@@ -112,7 +112,7 @@
 				<canvas id="canvas_{{ line|get_item:"@id" }}" width="800" height="100" style="border:1px solid #d3d3d3;">
 					Your browser does not support the HTML5 canvas tag.
 				</canvas>
-				<input id="line_{{ line|get_item:"@id" }}" class="form-control" type="text" name="{{ line|get_item:"@id" }}" value="{{ line|get_item:"Unicode"|default_if_none:"" }}" style="width: 800px;">
+				<input id="line_{{ line|get_item:"@id" }}" class="form-control tag-menu" type="text" name="{{ line|get_item:"@id" }}" value="{{ line|get_item:"Unicode"|default_if_none:"" }}" style="width: 800px;">
 				<script type="text/javascript">
 				    $(function() { drawLineImage("{{ line|get_item:"@id" }}", "{{ line|get_item:"crop"|coords_for_imagemap }}") });
 				    $("#line_{{ line|get_item:"@id" }}").on("keyup", function(e) {
