@@ -108,18 +108,58 @@
 			}
 		</script>
 		{% for line in lines %}
-			<div style="padding-bottom: 10px;">
+			<div lineId="{{ line|get_item:"@id" }}" style="padding-bottom: 10px;">
 				<canvas id="canvas_{{ line|get_item:"@id" }}" width="800" height="100" style="border:1px solid #d3d3d3;">
 					Your browser does not support the HTML5 canvas tag.
 				</canvas>
-				<input id="line_{{ line|get_item:"@id" }}" class="form-control tag-menu" type="text" name="{{ line|get_item:"@id" }}" value="{{ line|get_item:"Unicode"|default_if_none:"" }}" style="width: 800px;">
+				<ol id="line_{{ line|get_item:"@id" }}" class="line-list" contenteditable="true" id="lineList" style="margin-top: 3px;">
+				</ol>
 				<script type="text/javascript">
-				    $(function() { drawLineImage("{{ line|get_item:"@id" }}", "{{ line|get_item:"crop"|coords_for_imagemap }}") });
-				    $("#line_{{ line|get_item:"@id" }}").on("keyup", function(e) {
-						contentArray.forEach(function(obj, i) {
-							if ( obj[0] === "{{ line|get_item:"@id" }}" )
-								contentArray[i][1] = $("#line_{{ line|get_item:"@id" }}").val();
-						});
+				    $(function() {
+				    	drawLineImage("{{ line|get_item:"@id" }}", "{{ line|get_item:"crop"|coords_for_imagemap }}");
+				    });
+				    $("#line_{{ line|get_item:"@id" }}").on("keydown", function(e) {
+						if (e.key.length == 1) // this is a key but if it has an accent or such, keypress won't detect it, during keyup we'll fake it if keypress doesn't handle it
+							keyDownString = e.target.textContent;
+					});
+					$("#line_{{ line|get_item:"@id" }}").on("keypress", function(e) {
+						editAction(e);
+						keyDownString = ''; // we detected the event and took care of it
+					});
+					$("#line_{{ line|get_item:"@id" }}").on("keyup", function(e) {
+						if ('' != keyDownString) { // process the key, if it wasn't taken care of by keypress
+							// clunky way to get the special character but KeyboardEvent cautions against using the properties that seem useful for this case
+							var i = 0;
+							var upArray = [...e.target.textContent];
+							var downArray = [...keyDownString];
+							while (i < downArray.length && upArray[i] == downArray[i])
+								i++;
+							editAction({ // fake keypress event
+								"ctrlKey": false,
+								"altKey": false,
+								"metaKey": false,
+								"length": 1,
+								"key": upArray[i],
+								"preventDefault": function() {
+									// no need to actually prevent the input because buildLineList() is executed anyway..
+								}
+							});
+							keyDownString = '';
+						}
+						updateSelectionData();
+					});
+					$("#line_{{ line|get_item:"@id" }}").on("mouseup", function(e) {
+						updateSelectionData();
+					});
+					$("#line_{{ line|get_item:"@id" }}").on("paste", function(e) {
+						e.preventDefault();
+						pasteAction(e.originalEvent.clipboardData.getData('text'));
+					});
+					$("#line_{{ line|get_item:"@id" }}").on("drop", function(e) {
+						e.preventDefault(); {# Nobody needs to do this and this breaks things. #}
+					});
+					$("#line_{{ line|get_item:"@id" }}").on("cut", function(e) {
+						eraseSelection();
 					});
 				</script>
 			</div>
@@ -198,6 +238,7 @@
 			}
 		});
 		updateCanvas();
+		buildLineList();
 
     	{# TODO Handle failures here or are we happy with the current solution? #}
 	});

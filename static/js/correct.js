@@ -604,12 +604,20 @@ function calculateLineListDimensions() {
 	$(".line-list-div").css("height", modalTextMaxHeight);
 }
 function buildLineList() {
-	var currentIdx = getIndexFromLineId(currentLineId);
-	var showTo = Math.min(currentIdx + surroundingCount, contentArray.length - 1);
-	var index = Math.max(1, currentIdx - surroundingCount); // 1 because the first line is not real
-	$("#lineList").html("");
-	while (index <= showTo)
-		$("#lineList").append(getLineLiWithTags(contentArray[index++][0]));
+	var index;
+	if ( currentLineId !== undefined ) {
+		var currentIdx = getIndexFromLineId(currentLineId);
+		var showTo = Math.min(currentIdx + surroundingCount, contentArray.length - 1);
+		index = Math.max(1, currentIdx - surroundingCount); // 1 because the first line is not real
+		$("#lineList").html("");
+		while (index <= showTo)
+			$("#lineList").append(getLineLiWithTags(contentArray[index++][0]));
+	}
+	index = 1
+	while (index <= contentArray.length - 1) {
+		$("#line_" + contentArray[index][0]).html(getLineLiWithTags(contentArray[index][0]));
+		index++;
+	}
 	highlightLineList();
 	restoreSelection(); // TODO Make this optional?
 }
