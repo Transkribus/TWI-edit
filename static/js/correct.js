@@ -32,6 +32,58 @@ var undoArray = [];
 var keyDownString = '';
 var tagItems, tagColors;
 
+function keydown(e) {
+	if (e.key.length == 1) // this is a key but if it has an accent or such, keypress won't detect it, during keyup we'll fake it if keypress doesn't handle it
+		keyDownString = e.target.textContent;
+}
+function keypress(e) {
+	//Only do keypress on keys where all browsers fire keypress
+	if ( e.keyCode != 8 && e.keyCode != 46 ) {
+		editAction(e);
+		keyDownString = ''; // we detected the event and took care of it
+	}
+}
+function keyup(e) {
+	if ( e.keyCode == 8 || e.keyCode == 46 ) {
+		editAction(e);
+		keyDownString = ''; // we detected the event and took care of it
+	}
+	if ('' != keyDownString) { // process the key, if it wasn't taken care of by keypress
+		// clunky way to get the special character but KeyboardEvent cautions against using the properties that seem useful for this case
+		var i = 0;
+		var upArray = [...e.target.textContent];
+		var downArray = [...keyDownString];
+		while (i < downArray.length && upArray[i] == downArray[i])
+			i++;
+		editAction({ // fake keypress event
+			"ctrlKey": false,
+			"altKey": false,
+			"metaKey": false,
+			"length": 1,
+			"key": upArray[i],
+			"preventDefault": function() {
+				// no need to actually prevent the input because buildLineList() is executed anyway..
+			}
+		});
+		keyDownString = '';
+	}
+	updateSelectionData();
+}
+function mouseup(e) {
+	updateSelectionData();
+}
+function paste(e) {
+	e.preventDefault();
+	pasteAction(e.originalEvent.clipboardData.getData('text'));
+}
+function drop(e) {
+	// Nobody needs to do this and this breaks things.
+	e.preventDefault();
+}
+function cut(e) {
+	eraseSelection();
+}
+
 // Tag functions
 function toggleTag(toggleTag) { // sets/removes the tag depending on whether the selection already has it
 	if (!removeTag(toggleTag)) // if the tag can be removed, we do that...
