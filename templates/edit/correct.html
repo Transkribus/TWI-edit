@@ -295,10 +295,17 @@
 			keyDownString = e.target.textContent;
 	});
 	$('#correctModal').on('keypress', function(e) {
-		editAction(e);
-		keyDownString = ''; // we detected the event and took care of it
+		//Only do keypress on keys where all browsers fire keypress
+		if ( e.keyCode != 8 && e.keyCode != 46 ) {
+			editAction(e);
+			keyDownString = ''; // we detected the event and took care of it
+		}
 	});
 	$('#correctModal').on('keyup', function(e) {
+		if ( e.keyCode == 8 || e.keyCode == 46 ) {
+			editAction(e);
+			keyDownString = ''; // we detected the event and took care of it
+		}
 		if ('' != keyDownString) { // process the key, if it wasn't taken care of by keypress
 			// clunky way to get the special character but KeyboardEvent cautions against using the properties that seem useful for this case
 			var i = 0;
