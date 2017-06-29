@@ -176,6 +176,7 @@
 	$( ".scroll-down" ).on('click', function(e) {
 		scrollToNextTop();
 	});
+<<<<<<< HEAD
 	$('#correctModal').on('keydown', function(e) {
 		if (e.key.length == 1) // this is a key but if it has an accent or such, keypress won't detect it, during keyup we'll fake it if keypress doesn't handle it
 			keyDownString = e.target.textContent;
@@ -210,14 +211,44 @@
 				}
 			});
 			keyDownString = '';
+=======
+	$('#correctModal').on('keydown', function(e) { // if only keyPress worked in all browsers worked like it does in Firefox...
+		if (e.which == 17 || e.which == 112 || e.which == 111) // we handle CTRL like this because of one of the weirdest things I've ever come across. Any one of these (i.e. also F1 and divide) can be triggered when pressing CTRL.
+			ctrlKey = true;
+		else if (!ctrlKey) {
+			if (e.key.length == 1) { // only characters are input
+				e.preventDefault();
+				updateSelectionData();
+				pasteAction(e.key);
+			} else { // TODO Figure out if e.preventDefault() should be here or in correct.js...
+				updateSelectionData();
+				editAction(e);
+			}
 		}
-		updateSelectionData();
+	});
+	$('#correctModal').on('keyup', function(e) { // TODO Refactor this. This now does more than before because we don't have keyPress and a different split between this and editAction might be better....
+ 		if (ctrlKey) { // see above why we do this
+			e.preventDefault(); // TODO what about cut and copy?
+			if (e.which == 17 || e.which == 112 || e.which == 111) // the weird behaviour
+				ctrlKey = false;
+			if (e.key == "z" || e.key == "Z") // we respond to this
+				undo();
+			if (e.key == "v" || e.key == "V") // and this	
+				pasteAction(e.originalEvent.clipboardData.getData('text')); // TODO Rename pasteAction
+			return;
+>>>>>>> 0709df6fc3bd231900235f8388077ec6bc464f65
+		}
+		setTimeout(function () {
+			console.log("delayed update of selectiondata");
+			updateSelectionData();// TODO Figure out if this solved home/end?
+		}, 2000);
 	});
 	$('#correctModal').on('mouseup', function(e) {
 		updateSelectionData();
 	});
 	$("#correctModal").on("paste", function(e) {
 		e.preventDefault();
+		updateSelectionData();
 		pasteAction(e.originalEvent.clipboardData.getData('text'));
 	});
 	$("#correctModal").on("drop", function(e) {
