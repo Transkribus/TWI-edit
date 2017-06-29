@@ -121,9 +121,6 @@
 				    $("#line_{{ line|get_item:"@id" }}").on("keydown", function(e) {
 						keydown(e);
 					});
-					$("#line_{{ line|get_item:"@id" }}").on("keypress", function(e) {
-						keypress(e);
-					});
 					$("#line_{{ line|get_item:"@id" }}").on("keyup", function(e) {
 						keyup(e);
 					});
@@ -266,9 +263,6 @@
 	});
 	$('#correctModal').on('keydown', function(e) {
 		keydown(e);
-	});
-	$('#correctModal').on('keypress', function(e) {
-		keypress(e);
 	});
 	$('#correctModal').on('keyup', function(e) {
 		keyup(e);
