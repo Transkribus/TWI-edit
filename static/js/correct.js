@@ -54,7 +54,7 @@ function tagMenu() { // returns the tag list with tags in the selection highligh
 		}
 	}
 	var j = 1;
-	while (j < lastButOne) { 
+	while (j < lastButOne) {
 		lineIndex++; // we don't check if this goes out of bounds since such a selection shouldn't be possible...
 		tagsOnLine = getSortedCustomTagArray(lineIndex);
 		for (var k = 0; k < tagsOnLine.length; k++) {
@@ -97,10 +97,10 @@ function removeTag(removeTag) { // removes the given tag from the selection, ret
 		if ((tagOffset <= selStart && selStart < (tagOffset + tagsOnLine[i].length)) || (selStart < tagOffset && tagOffset <= selEnd)) {
 			removals = true;
 			contentArray[lineIndex][4] = String(contentArray[lineIndex][4]).replace(new RegExp("\\s" + removeTag + "\\s+{offset:" + tagOffset + ";[^}]*}"), "");
-		} 
+		}
 	}
 	var j = 1;
-	while (j < lastButOne) { 
+	while (j < lastButOne) {
 		lineIndex++; // we don't check if this goes out of bounds since such a selection shouldn't be possible...
 		if (getSortedCustomTagArray(lineIndex, removeTag).length > 0) {
 			removals = true;
@@ -494,7 +494,7 @@ function updateDocking(dock) { // docks (true) / undocks (false) the dialog. Whe
     	$("#correctModal").css("left",  dialogX);
     	$("#correctModal").css("top",  dialogY);
     	$("#correctModal").css("width",  dialogWidth);
-    	$("#correctModal").css("height",  dialogHeight);	
+    	$("#correctModal").css("height",  dialogHeight);
 	}
 	updateDockingStatus(docked);
 	calculateLineListDimensions();
@@ -564,8 +564,8 @@ function buildLineList() {
 }
 function updateSelectionData() { // call after user inputs to put selection information into a more usable format in a 2D array [[lineId, selection start offset, selection end offset], [...]]
 	var selection = window.getSelection();
-	//if ( bElement === undefined || eElement === undefined ) // This probably solved something but also broke things. Please explain how to reproduce what it solved!
-		//return;
+	if ( selection.anchorNode === null )
+		return;
 	var anchorParentNode = selection.anchorNode.parentNode;
 	var aPNtagLineId = anchorParentNode.getAttribute("tagLineId");
 	if (!aPNtagLineId) // this function can be triggered by clicks elsewhere than in just the text
@@ -707,7 +707,7 @@ function setZoom(zoom, x, y) {
 	accumExtraX += initialWidth * (zoomFactor - oldZoomFactor) * xRatio;
 	accumExtraY += initialHeight * (zoomFactor - oldZoomFactor) * yRatio;
 	// ...and move the image accordingly before scaling:
-	$( ".transcript-map-div" ).css("transform",  "translate(" + -accumExtraX +"px, " + -accumExtraY+ "px) scale(" + (1 + zoomFactor) + ")");// Note, the CSS is set to "transform-origin: 0px 0px" 
+	$( ".transcript-map-div" ).css("transform",  "translate(" + -accumExtraX +"px, " + -accumExtraY+ "px) scale(" + (1 + zoomFactor) + ")");// Note, the CSS is set to "transform-origin: 0px 0px"
 	updateCanvas();
 }
 function scrollToNextTop() { // This function scrolls the image up as if it were dragged with the mouse.
@@ -891,7 +891,7 @@ function pasteAction(text) { // TODO This can and should be sped up now that it'
 		lineEditAction(editedLineId, startOffset, endOffset, oneLine);
 		endOffset += oneLine.length; // to update selectionData below...
 	}
-	
+
 	// set the caret to where the pasting ended
 	selectionData = [[selectionData[selectionData.length - 1][0], endOffset, endOffset]]; // the lineId must be the same as the last line affected
 	buildLineList();
