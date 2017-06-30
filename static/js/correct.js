@@ -86,27 +86,6 @@ function toggleTag(toggleTag) { // sets/removes the tag depending on whether the
 function removeTag(removeTag) { // removes the given tag from the selection, returns true if removals were made, otherwise false
 	var removals = false;
 	var lastButOne = selectionData.length - 1;
-<<<<<<< HEAD
-	if ( selectionData === undefined || selectionData[0] === undefined ) {
-		console.log("nothing selected");
-		var showTags = {"No Text selected": {name: "No Text selected", type: "", isHtmlName: false}};
-	}
-	else {
-		var showTags = tagItems;
-		var lineIndex = getIndexFromLineId(selectionData[0][0]);
-		var tagsOnLine = getSortedCustomTagArray(lineIndex);
-		var selStart = selectionData[0][1];
-		var selEnd;
-		if (selectionData.length == 1)
-			selEnd = selectionData[0][2];
-		else
-			selEnd = contentArray[lineIndex][1].length;
-		for (var i = 0; i < tagsOnLine.length; i++) {
-			var tagOffset = tagsOnLine[i].offset;
-			if ((tagOffset <= selStart && selStart < (tagOffset + tagsOnLine[i].length)) || (selStart < tagOffset && tagOffset <= selEnd)) {
-				var tag = tagsOnLine[i].tag;
-				appliedTags[tag] = {"name": "<span style=\"color: #" + tagColors[tag] + ";\">" + tag + "</span>", "type": "checkbox", "isHtmlName": true, "selected": true};
-=======
 	var lineIndex = getIndexFromLineId(selectionData[0][0]);
 	var tagsOnLine = getSortedCustomTagArray(lineIndex, removeTag);
 	var selStart = selectionData[0][1];
@@ -141,7 +120,6 @@ function removeTag(removeTag) { // removes the given tag from the selection, ret
 			if (tagOffset < selEnd) {
 				removals = true;
 				contentArray[lineIndex][4] = String(contentArray[lineIndex][4]).replace(new RegExp("\\s" + removeTag + "\\s+{offset:" + tagOffset + ";[^}]*}"), "");
->>>>>>> 0709df6fc3bd231900235f8388077ec6bc464f65
 			}
 		}
 		var j = 1;
@@ -167,12 +145,8 @@ function removeTag(removeTag) { // removes the given tag from the selection, ret
 			}
 		}
 	}
-<<<<<<< HEAD
-	return {"items": $.extend({}, showTags, appliedTags)};
-=======
 	buildLineList();
 	return removals;
->>>>>>> 0709df6fc3bd231900235f8388077ec6bc464f65
 }
 function applyTagTo(applyTag, lineId, start, end, continued) { // applies the tag from start to end on the line the index of which is given, adds "continued:true", if given and true
 	var lineIndex = getIndexFromLineId(lineId);
