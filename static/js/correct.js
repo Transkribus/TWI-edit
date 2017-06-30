@@ -84,12 +84,7 @@ function cut(e) {
 function tagMenu() { // returns the tag list with tags in the selection highlighted, if any
 	var appliedTags = {}; // an array to be populated with all tags within the selection, may contain duplicates
 	var lastButOne = selectionData.length - 1;
-	if ( selectionData === undefined || selectionData[0] === undefined ) {
-		console.log("nothing selected");
-		var showTags = {"No Text selected": {name: "No Text selected", type: "", isHtmlName: false}};
-	}
-	else {
-		var showTags = tagItems;
+	if ( selectionData !== undefined && selectionData[0] !== undefined ) {
 		var lineIndex = getIndexFromLineId(selectionData[0][0]);
 		var tagsOnLine = getSortedCustomTagArray(lineIndex);
 		var selStart = selectionData[0][1];
@@ -128,7 +123,7 @@ function tagMenu() { // returns the tag list with tags in the selection highligh
 			}
 		}
 	}
-	return {"items": $.extend({}, showTags, appliedTags)};
+	return {"items": $.extend({}, tagItems, appliedTags)};
 }
 function toggleTag(toggleTag) { // sets/removes the tag depending on whether the selection already has it
     if (!removeTag(toggleTag)) // if the tag can be removed, we do that...
