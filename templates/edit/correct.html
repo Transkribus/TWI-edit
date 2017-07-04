@@ -344,6 +344,8 @@
         $.contextMenu({
             selector: '.tag-menu',
             build: function($trigger, e) {
+            	console.log("e: " + e.target.parentNode.spanOffset);//.prop("tagLineId"));
+            	updateSelectionData(); {# TODO What do we do in this case if we also want to have the feature below? #}
             	restoreSelection(); {# TODO Request feedback. This solution has the advantage of allowing a selection to be made and the menu opened elsewhere in order not to cover the relevant text. #}
 				return tagMenu();
         	},

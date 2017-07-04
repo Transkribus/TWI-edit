@@ -41,14 +41,14 @@ function keydown(e) {
 		if (e.key.length == 1) { // only characters are input
 			e.preventDefault();
 			updateSelectionData();
-			pasteAction(e.key);
+			inputAction(e.key);
 		} else { // TODO Figure out if e.preventDefault() should be here or in correct.js...
 			updateSelectionData();
 			editAction(e);
 		}
 	}
 }
-function keyup(e) {// TODO Refactor this. This now does more than before because we don't have keyPress and a different split between this and editAction might be better....
+function keyup(e) { // TODO Refactor this. This now does more than before because we don't have keyPress and a different split between this and editAction might be better....
 	if (ctrlKey) { // see above why we do this
 		e.preventDefault(); // TODO what about cut and copy?
 		if (e.which == 17 || e.which == 112 || e.which == 111) // the weird behaviour
@@ -56,13 +56,9 @@ function keyup(e) {// TODO Refactor this. This now does more than before because
 		if (e.key == "z" || e.key == "Z") // we respond to this
 			undo();
 		if (e.key == "v" || e.key == "V") // and this
-			pasteAction(e.originalEvent.clipboardData.getData('text')); // TODO Rename pasteAction
+			inputAction(e.originalEvent.clipboardData.getData('text'));
 		return;
 	}
-	setTimeout(function () {
-		console.log("delayed update of selectiondata");
-		updateSelectionData();// TODO Figure out if this solved home/end?
-	}, 2000);
 }
 function mouseup(e) {
 	updateSelectionData();
@@ -70,7 +66,7 @@ function mouseup(e) {
 function paste(e) {
 	e.preventDefault();
 	updateSelectionData();
-	pasteAction(e.originalEvent.clipboardData.getData('text'));
+	inputAction(e.originalEvent.clipboardData.getData('text'));
 }
 function drop(e) {
 	// Nobody needs to do this and this breaks things.
@@ -80,119 +76,95 @@ function cut(e) {
 	eraseSelection();
 }
 
-// Tag functions
+// Tag functions:
 function tagMenu() { // returns the tag list with tags in the selection highlighted, if any
-    var appliedTags = {}; // an array to be populated with all tags within the selection, may contain duplicates
-    var lastButOne = selectionData.length - 1;
-    if ( selectionData !== undefined && selectionData[0] !== undefined ) {
-        var lineIndex = getIndexFromLineId(selectionData[0][0]);
-        var tagsOnLine = getSortedCustomTagArray(lineIndex);
-        var selStart = selectionData[0][1];
-        var selEnd;
-        if (selectionData.length == 1)
-            selEnd = selectionData[0][2];
-        else
-            selEnd = contentArray[lineIndex][1].length;
-        for (var i = 0; i < tagsOnLine.length; i++) {
-            var tagOffset = tagsOnLine[i].offset;
-            if ((tagOffset <= selStart && selStart < (tagOffset + tagsOnLine[i].length)) || (selStart < tagOffset && tagOffset <= selEnd)) {
-                var tag = tagsOnLine[i].tag;
-                appliedTags[tag] = {"name": "<span style=\"color: #" + tagColors[tag] + ";\">" + tag + "</span>", "type": "checkbox", "isHtmlName": true, "selected": true};
-            }
-        }
-        var j = 1;
-        while (j < lastButOne) {
-            lineIndex++; // we don't check if this goes out of bounds since such a selection shouldn't be possible...
-            tagsOnLine = getSortedCustomTagArray(lineIndex);
-            for (var k = 0; k < tagsOnLine.length; k++) {
-                var tag = tagsOnLine[k].tag;
-                appliedTags[tag] = {"name": "<span style=\"color: #" + tagColors[tag] + ";\">" + tag + "</span>", "type": "checkbox", "isHtmlName": true, "selected": true}; // the selection covers all tags on this line
-            }
-            j++;
-        }
-        if (selectionData.length > 1) {
-            lineIndex++;
-            tagsOnLine = getSortedCustomTagArray(lineIndex);
-            selEnd = selectionData[j][2];
-            selStart = 0;
-            for (var i = 0; i < tagsOnLine.length; i++) {
-                if (tagsOnLine[i].offset < selEnd) {
-                    var tag = tagsOnLine[i].tag;
-                    appliedTags[tag] = {"name": "<span style=\"color: #" + tagColors[tag] + ";\">" + tag + "</span>", "type": "checkbox", "isHtmlName": true, "selected": true};
-                }
-            }
-        }
-    }
-    return {"items": $.extend({}, tagItems, appliedTags)};
+	var appliedTags = {}; // an array to be populated with all tags within the selection, may contain duplicates
+	var lastButOne = selectionData.length - 1;
+	var lineIndex = getIndexFromLineId(selectionData[0][0]);
+	var tagsOnLine = getSortedCustomTagArray(lineIndex);
+	var selStart = selectionData[0][1];
+	var selEnd;
+	if (selectionData.length == 1)
+		selEnd = selectionData[0][2];
+	else
+		selEnd = contentArray[lineIndex][1].length;
+	for (var i = 0; i < tagsOnLine.length; i++) {
+		var tagOffset = tagsOnLine[i].offset;
+		if ((tagOffset <= selStart && selStart < (tagOffset + tagsOnLine[i].length)) || (selStart < tagOffset && tagOffset <= selEnd)) {
+			var tag = tagsOnLine[i].tag;
+			appliedTags[tag] = {"name": "<span style=\"color: #" + tagColors[tag] + ";\">" + tag + "</span>", "type": "checkbox", "isHtmlName": true, "selected": true};
+		}
+	}
+	var j = 1;
+	while (j < lastButOne) {
+		lineIndex++; // we don't check if this goes out of bounds since such a selection shouldn't be possible...
+		tagsOnLine = getSortedCustomTagArray(lineIndex);
+		for (var k = 0; k < tagsOnLine.length; k++) {
+			var tag = tagsOnLine[k].tag;
+			appliedTags[tag] = {"name": "<span style=\"color: #" + tagColors[tag] + ";\">" + tag + "</span>", "type": "checkbox", "isHtmlName": true, "selected": true}; // the selection covers all tags on this line
+		}
+		j++;
+	}
+	if (selectionData.length > 1) {
+		lineIndex++;
+		tagsOnLine = getSortedCustomTagArray(lineIndex);
+		selEnd = selectionData[j][2];
+		selStart = 0;
+		for (var i = 0; i < tagsOnLine.length; i++) {
+			if (tagsOnLine[i].offset < selEnd) {
+				var tag = tagsOnLine[i].tag;
+				appliedTags[tag] = {"name": "<span style=\"color: #" + tagColors[tag] + ";\">" + tag + "</span>", "type": "checkbox", "isHtmlName": true, "selected": true};
+			}
+		}
+	}
+	return {"items": $.extend({}, tagItems, appliedTags)};
 }
 function toggleTag(toggleTag) { // sets/removes the tag depending on whether the selection already has it
-    if (!removeTag(toggleTag)) // if the tag can be removed, we do that...
-        applyTag(toggleTag);// ...but otherwise we apply it
+	if (!removeTag(toggleTag)) // if the tag can be removed, we do that...
+		applyTag(toggleTag);// ...but otherwise we apply it
 }
 function removeTag(removeTag) { // removes the given tag from the selection, returns true if removals were made, otherwise false
-    var removals = false;
-    var lastButOne = selectionData.length - 1;
-    var lineIndex = getIndexFromLineId(selectionData[0][0]);
-    var tagsOnLine = getSortedCustomTagArray(lineIndex, removeTag);
-    var selStart = selectionData[0][1];
-    var selEnd;
-    if (selectionData.length == 1)
-        selEnd = selectionData[0][2];
-    else
-        selEnd = contentArray[lineIndex][1].length;
-    for (var i = 0; i < tagsOnLine.length; i++) {
-        var tagOffset = tagsOnLine[i].offset;
-        if ((tagOffset <= selStart && selStart < (tagOffset + tagsOnLine[i].length)) || (selStart < tagOffset && tagOffset <= selEnd)) {
-            removals = true;
-            contentArray[lineIndex][4] = String(contentArray[lineIndex][4]).replace(new RegExp("\\s" + removeTag + "\\s+{offset:" + tagOffset + ";[^}]*}"), "");
-        }
-    }
-    var j = 1;
-    while (j < lastButOne) {
-        lineIndex++; // we don't check if this goes out of bounds since such a selection shouldn't be possible...
-        if (getSortedCustomTagArray(lineIndex, removeTag).length > 0) {
-            removals = true;
-            contentArray[lineIndex][4] = String(contentArray[lineIndex][4]).replace(new RegExp("\\s" + removeTag + "[^}]*}"), "");
-        }
-        j++;
-    }
-    if (selectionData.length > 1) {
-        lineIndex++;
-        tagsOnLine = getSortedCustomTagArray(lineIndex, removeTag);
-        selEnd = selectionData[j][2];
-        selStart = 0;
-        for (var i = 0; i < tagsOnLine.length; i++) {
-            var tagOffset = tagsOnLine[i].offset;
-            if (tagOffset < selEnd) {
-                removals = true;
-                contentArray[lineIndex][4] = String(contentArray[lineIndex][4]).replace(new RegExp("\\s" + removeTag + "\\s+{offset:" + tagOffset + ";[^}]*}"), "");
-            }
-        }
-        var j = 1;
-        while (j < lastButOne) {
-            lineIndex++; // we don't check if this goes out of bounds since such a selection shouldn't be possible...
-            tagsOnLine = getSortedCustomTagArray(lineIndex);
-            for (var k = 0; k < tagsOnLine.length; k++) {
-                var tag = tagsOnLine[k].tag;
-                appliedTags[tag] = {"name": "<span style=\"color: #" + tagColors[tag] + ";\">" + tag + "</span>", "type": "checkbox", "isHtmlName": true, "selected": true}; // the selection covers all tags on this line
-            }
-            j++;
-        }
-        if (selectionData.length > 1) {
-            lineIndex++;
-            tagsOnLine = getSortedCustomTagArray(lineIndex);
-            selEnd = selectionData[j][2];
-            selStart = 0;
-            for (var i = 0; i < tagsOnLine.length; i++) {
-                if (tagsOnLine[i].offset < selEnd) {
-                    var tag = tagsOnLine[i].tag;
-                    appliedTags[tag] = {"name": "<span style=\"color: #" + tagColors[tag] + ";\">" + tag + "</span>", "type": "checkbox", "isHtmlName": true, "selected": true};
-                }
-            }
-        }
-    }
-    buildLineList();
-    return removals;
+	var removals = false;
+	var lastButOne = selectionData.length - 1;
+	var lineIndex = getIndexFromLineId(selectionData[0][0]);
+	var tagsOnLine = getSortedCustomTagArray(lineIndex, removeTag);
+	var selStart = selectionData[0][1];
+	var selEnd;
+	if (selectionData.length == 1)
+		selEnd = selectionData[0][2];
+	else
+		selEnd = contentArray[lineIndex][1].length;
+	for (var i = 0; i < tagsOnLine.length; i++) {
+		var tagOffset = tagsOnLine[i].offset;
+		if ((tagOffset <= selStart && selStart < (tagOffset + tagsOnLine[i].length)) || (selStart < tagOffset && tagOffset <= selEnd)) {
+			removals = true;
+			contentArray[lineIndex][4] = String(contentArray[lineIndex][4]).replace(new RegExp("\\s" + removeTag + "\\s+{offset:" + tagOffset + ";[^}]*}"), "");
+		}
+	}
+	var j = 1;
+	while (j < lastButOne) {
+		lineIndex++; // we don't check if this goes out of bounds since such a selection shouldn't be possible...
+		if (getSortedCustomTagArray(lineIndex, removeTag).length > 0) {
+			removals = true;
+			contentArray[lineIndex][4] = String(contentArray[lineIndex][4]).replace(new RegExp("\\s" + removeTag + "[^}]*}"), "");
+		}
+		j++;
+	}
+	if (selectionData.length > 1) {
+		lineIndex++;
+		tagsOnLine = getSortedCustomTagArray(lineIndex, removeTag);
+		selEnd = selectionData[j][2];
+		selStart = 0;
+		for (var i = 0; i < tagsOnLine.length; i++) {
+			var tagOffset = tagsOnLine[i].offset;
+			if (tagOffset < selEnd) {
+				removals = true;
+				contentArray[lineIndex][4] = String(contentArray[lineIndex][4]).replace(new RegExp("\\s" + removeTag + "\\s+{offset:" + tagOffset + ";[^}]*}"), "");
+			}
+		}
+	}
+	buildLineList();
+	return removals;
 }
 function applyTagTo(applyTag, lineId, start, end, continued) { // applies the tag from start to end on the line the index of which is given, adds "continued:true", if given and true
 	var lineIndex = getIndexFromLineId(lineId);
@@ -678,8 +650,13 @@ function updateSelectionData() { // call after user inputs to put selection info
 	}
 }
 function restoreSelection() {
-	if (selectionData.length === 0)
+	if (selectionData.length === 0) { // the stuff below is necessary to restore the caret
+		var range = document.createRange();
+		var sel = window.getSelection();
+		sel.removeAllRanges();
+		sel.addRange(range);
 		return;
+	}
 	var charCount = 0;
 	var begCharCount = selectionData[0][1];
 	var endCharCount = selectionData[selectionData.length - 1][2];
@@ -699,7 +676,6 @@ function restoreSelection() {
 	var range = document.createRange();
 	range.setStart(bElement[0].firstChild, begCharCount - bElement.attr("spanoffset"));
 	range.setEnd(eElement[0].firstChild, endCharCount - eElement.attr("spanoffset"));
-	// TODO Make sure that this indeed is redundant: range.collapse(true);
 	var sel = window.getSelection();
 	sel.removeAllRanges();
 	sel.addRange(range);
@@ -934,7 +910,7 @@ function undo() {
 	buildLineList();
 }
 // TODO Add undo to this when undo works.
-function pasteAction(text) { // TODO This can and should be sped up now that it's used a lot. And renamed.
+function inputAction(text) { // TODO This can and should be sped up now that it's used a lot. And renamed.
 	var lines = text.split("\n");
 	var editedLineId = selectionData[0][0];
 	var startOffset = selectionData[0][2];
@@ -973,7 +949,6 @@ function pasteAction(text) { // TODO This can and should be sped up now that it'
 		lineEditAction(editedLineId, startOffset, endOffset, oneLine);
 		endOffset += oneLine.length; // to update selectionData below...
 	}
-
 	// set the caret to where the pasting ended
 	selectionData = [[selectionData[selectionData.length - 1][0], endOffset, endOffset]]; // the lineId must be the same as the last line affected
 	buildLineList();
