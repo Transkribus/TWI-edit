@@ -80,7 +80,7 @@
 				{% endfor %}
 			</map>
 			<canvas id="transcriptCanvas" style="position: absolute; z-index: 998; pointer-events: none;"></canvas>
-			<img src="{{imageUrl}}" usemap="#transcriptMap" id="transcriptImage" class="transcript-img"  style="z-index: 999;">
+			<img src="{{imageUrl}}" usemap="#transcriptMap" id="transcriptImage" class="transcript-img"  style="z-index: 999;"> 
 		</div>
 	</div>
 </div>
@@ -94,7 +94,7 @@
     <!-- <link rel="stylesheet" href="https://swisnl.github.io/jQuery-contextMenu/css/theme.css" type="text/css"/>-->
     <link rel="stylesheet" href="https://swisnl.github.io/jQuery-contextMenu/css/theme-fixes.css" type="text/css"/>
     <link href="https://swisnl.github.io/jQuery-contextMenu/dist/jquery.contextMenu.css" rel="stylesheet" type="text/css" />
-
+    
     <script src="https://swisnl.github.io/jQuery-contextMenu/dist/jquery.contextMenu.js" type="text/javascript"></script>
 
     <!--<script src="https://swisnl.github.io/jQuery-contextMenu/dist/jquery.ui.position.min.js" type="text/javascript"></script>-->
@@ -118,7 +118,7 @@
     };
 	tagColors = {
 		{% for tag in tags %}"{{tag.name}}": "{{tag.color}}" {% if not forloop.last %}, {% endif %}
-		{% endfor %}
+		{% endfor %}	
 	}
 	$("a[data-target='#saveChanges']").click(function(e) {
     	e.preventDefault();
@@ -149,10 +149,10 @@
 		if (isDragged) {# We ignore clicks if the user has been dragging the image, we assume that that's what the user wants. #}
 			return;
 		//ignoreLeave = true; {# We don't want the original selection "unhighlighted" when the user moves the mouse to the modal. #}
-		updateDialog($(this).attr("line-key"));
+		updateDialog($(this).attr("line-key")); 
 		updateCanvas();
 	});
-	$('area').mouseenter(function(e) {
+	$('area').mouseenter(function(e) { 
 		highlightLine(e.target.id);
 	});
 	$('area').mouseleave(function(e) {
@@ -169,7 +169,7 @@
 	});
 	$( ".last-page" ).on('click', function(e) {
 		gotoPage(Number.MAX_SAFE_INTEGER);
-	});
+	});	
 	$( ".scroll-up" ).on('click', function(e) {
 		scrollToPreviousTop();
 	});
@@ -183,7 +183,7 @@
 			if (e.key.length == 1) { // only characters are input
 				e.preventDefault();
 				updateSelectionData();
-				pasteAction(e.key);
+				inputAction(e.key);
 			} else { // TODO Figure out if e.preventDefault() should be here or in correct.js...
 				updateSelectionData();
 				editAction(e);
@@ -198,21 +198,17 @@
 			if (e.key == "z" || e.key == "Z") // we respond to this
 				undo();
 			if (e.key == "v" || e.key == "V") // and this	
-				pasteAction(e.originalEvent.clipboardData.getData('text')); // TODO Rename pasteAction
+				inputAction(e.originalEvent.clipboardData.getData('text'));
 			return;
 		}
-		setTimeout(function () {
-			console.log("delayed update of selectiondata");
-			updateSelectionData();// TODO Figure out if this solved home/end?
-		}, 2000);
 	});
-	$('#correctModal').on('mouseup', function(e) {
+	$('#correctModal').on('mouseup', function(e) { 
 		updateSelectionData();
 	});
 	$("#correctModal").on("paste", function(e) {
 		e.preventDefault();
 		updateSelectionData();
-		pasteAction(e.originalEvent.clipboardData.getData('text'));
+		inputAction(e.originalEvent.clipboardData.getData('text'));
 	});
 	$("#correctModal").on("drop", function(e) {
 		e.preventDefault(); {# Nobody needs to do this and this breaks things. #}
@@ -257,12 +253,12 @@
 	});
 	$( ".thumbs-right" ).on('click', function(e) {
 		scrollThumbsRight();
-	});
+	});	
     $('.transcript-div').on('mousewheel DOMMouseScroll', function(e) {
     	e.preventDefault();
     	var mouseZoom;
     	if (e.originalEvent.detail > 0 || e.originalEvent.wheelDelta < 0)
-			mouseZoom = -20;
+			mouseZoom = -20;        	
 		else
 			mouseZoom = 20;
     	setZoom(mouseZoom, e.originalEvent.pageX - $( ".transcript-map-div" ).offset().left, e.originalEvent.pageY - $( ".transcript-map-div" ).offset().top);
@@ -283,8 +279,10 @@
 	});
 	$(function() { {# TODO Solution for people using broken computers that don't have more than one mouse button. Issues: z-index (or overflow?) and selections getting deselected... #}
         $.contextMenu({
-            selector: '.tag-menu',
+            selector: '.tag-menu', 
             build: function($trigger, e) {
+            	console.log("e: " + e.target.parentNode.spanOffset);//.prop("tagLineId"));
+            	updateSelectionData(); {# TODO What do we do in this case if we also want to have the feature below? #}
             	restoreSelection(); {# TODO Request feedback. This solution has the advantage of allowing a selection to be made and the menu opened elsewhere in order not to cover the relevant text. #}
 				return tagMenu();
         	},
@@ -303,21 +301,21 @@
 		var search = window.location.search + 'tco=0';// just to avoid NaN below
 		thumbCountOffset = parseInt(search.substring(search.indexOf('tco=') + 4)); // "tco=".length = 4
 
-		// If the current page isn't among the thumbs first shown, we change the offset to make it so
+		// If the current page isn't among the thumbs first shown, we change the offset to make it so 
 		thumbCountOffset = Math.max(thumbCountOffset, -pageNo + 1);
-		thumbCountOffset = Math.min(thumbCountOffset, -pageNo + THUMBS_TO_SHOW);
-
-		// Show the current page number
+		thumbCountOffset = Math.min(thumbCountOffset, -pageNo + THUMBS_TO_SHOW); 
+		
+		// Show the current page number 
 		checkPageNumberInput();
 
 		updateCanvas();
 		calculateAreas();
 		readyToZoom = true;
 		loadThumbs();
-
+		
 		// Getting this from the CSS file for now, set a variable instead?
 		contentLineFontSize = parseInt($('.line-list').css("font-size"), 10);
-
+		
 		correctModal = $("#correctModal").dialog({
 			autoOpen: false,
 		    uiLibrary: 'bootstrap',

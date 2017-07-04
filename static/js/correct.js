@@ -38,8 +38,6 @@ var ctrlKey = false, metaKey = false, altKey = false;
 function tagMenu() { // returns the tag list with tags in the selection highlighted, if any
 	var appliedTags = {}; // an array to be populated with all tags within the selection, may contain duplicates
 	var lastButOne = selectionData.length - 1;
-	if ( selectionData === undefined || selectionData[0] === undefined )
-		return removals;
 	var lineIndex = getIndexFromLineId(selectionData[0][0]);
 	var tagsOnLine = getSortedCustomTagArray(lineIndex);
 	var selStart = selectionData[0][1];
@@ -120,28 +118,6 @@ function removeTag(removeTag) { // removes the given tag from the selection, ret
 			if (tagOffset < selEnd) {
 				removals = true;
 				contentArray[lineIndex][4] = String(contentArray[lineIndex][4]).replace(new RegExp("\\s" + removeTag + "\\s+{offset:" + tagOffset + ";[^}]*}"), "");
-			}
-		}
-		var j = 1;
-		while (j < lastButOne) {
-			lineIndex++; // we don't check if this goes out of bounds since such a selection shouldn't be possible...
-			tagsOnLine = getSortedCustomTagArray(lineIndex);
-			for (var k = 0; k < tagsOnLine.length; k++) {
-				var tag = tagsOnLine[k].tag;
-				appliedTags[tag] = {"name": "<span style=\"color: #" + tagColors[tag] + ";\">" + tag + "</span>", "type": "checkbox", "isHtmlName": true, "selected": true}; // the selection covers all tags on this line
-			}
-			j++;
-		}
-		if (selectionData.length > 1) {
-			lineIndex++;
-			tagsOnLine = getSortedCustomTagArray(lineIndex);
-			selEnd = selectionData[j][2];
-			selStart = 0;
-			for (var i = 0; i < tagsOnLine.length; i++) {
-				if (tagsOnLine[i].offset < selEnd) {
-					var tag = tagsOnLine[i].tag;
-					appliedTags[tag] = {"name": "<span style=\"color: #" + tagColors[tag] + ";\">" + tag + "</span>", "type": "checkbox", "isHtmlName": true, "selected": true};
-				}
 			}
 		}
 	}
@@ -624,8 +600,13 @@ function updateSelectionData() { // call after user inputs to put selection info
 	}
 }
 function restoreSelection() {
-	if (selectionData.length === 0)
+	if (selectionData.length === 0) { // the stuff below is necessary to restore the caret
+		var range = document.createRange(); 
+		var sel = window.getSelection();
+		sel.removeAllRanges();
+		sel.addRange(range);
 		return;
+	}
 	var charCount = 0;
 	var begCharCount = selectionData[0][1];
 	var endCharCount = selectionData[selectionData.length - 1][2];
@@ -645,7 +626,6 @@ function restoreSelection() {
 	var range = document.createRange();
 	range.setStart(bElement[0].firstChild, begCharCount - bElement.attr("spanoffset"));
 	range.setEnd(eElement[0].firstChild, endCharCount - eElement.attr("spanoffset"));
-	// TODO Make sure that this indeed is redundant: range.collapse(true);
 	var sel = window.getSelection();
 	sel.removeAllRanges();
 	sel.addRange(range);
@@ -733,7 +713,7 @@ function setZoom(zoom, x, y) {
 	accumExtraX += initialWidth * (zoomFactor - oldZoomFactor) * xRatio;
 	accumExtraY += initialHeight * (zoomFactor - oldZoomFactor) * yRatio;
 	// ...and move the image accordingly before scaling:
-	$( ".transcript-map-div" ).css("transform",  "translate(" + -accumExtraX +"px, " + -accumExtraY+ "px) scale(" + (1 + zoomFactor) + ")");// Note, the CSS is set to "transform-origin: 0px 0px"
+	$( ".transcript-map-div" ).css("transform",  "translate(" + -accumExtraX +"px, " + -accumExtraY+ "px) scale(" + (1 + zoomFactor) + ")");// Note, the CSS is set to "transform-origin: 0px 0px" 
 	updateCanvas();
 }
 function scrollToNextTop() { // This function scrolls the image up as if it were dragged with the mouse.
@@ -880,7 +860,7 @@ function undo() {
 	buildLineList();
 }
 // TODO Add undo to this when undo works.
-function pasteAction(text) { // TODO This can and should be sped up now that it's used a lot. And renamed.
+function inputAction(text) { // TODO This can and should be sped up now that it's used a lot. And renamed.
 	var lines = text.split("\n");
 	var editedLineId = selectionData[0][0];
 	var startOffset = selectionData[0][2];
@@ -919,7 +899,6 @@ function pasteAction(text) { // TODO This can and should be sped up now that it'
 		lineEditAction(editedLineId, startOffset, endOffset, oneLine);
 		endOffset += oneLine.length; // to update selectionData below...
 	}
-
 	// set the caret to where the pasting ended
 	selectionData = [[selectionData[selectionData.length - 1][0], endOffset, endOffset]]; // the lineId must be the same as the last line affected
 	buildLineList();
