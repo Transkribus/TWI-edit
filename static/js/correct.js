@@ -55,7 +55,7 @@ function keyup(e) { // TODO Refactor this. This now does more than before becaus
 			ctrlKey = false;
 		if (e.key == "z" || e.key == "Z") // we respond to this
 			undo();
-		if (e.key == "v" || e.key == "V") // and this
+		if ( (e.key == "v" || e.key == "V") && e.originalEvent.clipboardData !== undefined ) // and this
 			inputAction(e.originalEvent.clipboardData.getData('text'));
 		return;
 	}
@@ -236,7 +236,7 @@ function getSortedCustomTagArray(tagLineIndex, filterTag) { // returns an array 
 	if ("None" != custom) {
 		custom.forEach(function(attribute) { // turn "tags" into something closer to actual tags (=spans)
 			attribute = attribute.split('{');
-			if ("" != attribute && "readingOrder" != attribute[0]) { // we have no use for readingOrder for now...
+			if ("" != attribute && "readingOrder" != attribute[0] && attribute[1].indexOf("offset:") != -1 && attribute[1].indexOf(";length:") != -1) { // we have no use for readingOrder for now...
 				var split = attribute[1].split("offset:")[1].split(";length:");
 				var start = parseInt(split[0]);
 				var length = parseInt(split[1]); // parseInt doesn't care about what comes after the first int
@@ -435,7 +435,7 @@ function resizeContents() { // Call to perform necessary updates of contents and
 // Thumbnail functions:
 function gotoPage(page) {
 	page = Math.max(Math.min(page, thumbArray.length - 1), 1);
-	window.location.assign(pathWithoutPage + page + '?tco=' + thumbCountOffset + ($(".lines-div").is(':visible') ? '&view=lbl' : '&view=pr'));// TODO Consider tco in situations in which the page to which we go isn't visible, set an appropriate value? If tco = NaN or outside...
+	window.location.assign(pathWithoutPage + page + '?tco=' + thumbCountOffset + ($(".lines-div").is(':visible') ? '&view=lbl' : '&view=i'));// TODO Consider tco in situations in which the page to which we go isn't visible, set an appropriate value? If tco = NaN or outside...
 }
 function scrollThumbsLeft() {
 	thumbCountOffset += THUMBS_TO_SHOW;

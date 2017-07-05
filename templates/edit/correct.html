@@ -49,8 +49,10 @@
 		<div class="col-md-2">
 			<div class="input-group input-group-sm">
 				<div class="btn-group btn-toggle">
-			        <a class="btn btn-sm btn-primary active" data-target="#toggleView">{% trans "Text lines" %}</a>
+			        <a id="toggleView_i" class="btn btn-sm btn-primary active" data-target="#toggleView">{% trans "Image" %}</a>
 			    	<a id="toggleView_lbl" class="btn btn-sm btn-default" data-target="#toggleView">{% trans "Line by line" %}</a>
+			    	<a id="toggleView_sbs" class="btn btn-sm btn-default disabled" data-target="#toggleView">{% trans "Side by side" %}</a>
+			    	<a id="toggleView_t" class="btn btn-sm btn-default disabled" data-target="#toggleView">{% trans "Text" %}</a>
 			    </div>
 			</div>
 		</div>
