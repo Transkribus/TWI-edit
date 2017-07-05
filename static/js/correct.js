@@ -392,10 +392,10 @@ function getContent() { // "JSON.stringifies" (verbing a noun) contentArray and 
 // UX functions not related to text manipulation:
 function checkPageNumberInput() { // Tries to parse input to see if it's a valid page number to go to. If not, resets the contents to show the current page.
 	var value = parseInt($("#pageNumber").val());
-	if (value > 0 && value < thumbArray.length - 1)
+	if (value > 0 && value < thumbArray.length)
 		gotoPage(value);
 	else // Reset to what it was
-		$("#pageNumber").val(pageNo + "/" + (thumbArray.length - 1));
+		$("#pageNumber").val(pageNo + "/" + thumbArray.length);
 }
 function setMessage(message) {
 	$("#message").html(message);
@@ -434,7 +434,7 @@ function resizeContents() { // Call to perform necessary updates of contents and
 }
 // Thumbnail functions:
 function gotoPage(page) {
-	page = Math.max(Math.min(page, thumbArray.length - 1), 1);
+	page = Math.max(Math.min(page, thumbArray.length), 1);
 	window.location.assign(pathWithoutPage + page + '?tco=' + thumbCountOffset + ($(".lines-div").is(':visible') ? '&view=lbl' : '&view=i'));// TODO Consider tco in situations in which the page to which we go isn't visible, set an appropriate value? If tco = NaN or outside...
 }
 function scrollThumbsLeft() {
@@ -465,7 +465,9 @@ function loadThumbs() { // Loads all thumbs and shows the ones which are visible
 	var to = Math.min(THUMBS_TO_SHOW - thumbCountOffset, thumbArray.length);
 	toLoadCount = Math.min(THUMBS_TO_SHOW, to);
 	var tempImg;
-	for (var i = -thumbCountOffset; i <= to; i++) {
+	for (var i = -thumbCountOffset; i < to; i++) {
+		if ( thumbArray[i] === undefined )
+			continue;
 		tempImg = new Image();
 		tempImg.src = thumbArray[i];
 		tempImg.onload = function() {

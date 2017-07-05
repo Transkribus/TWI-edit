@@ -133,7 +133,7 @@ def correct(request, collId, docId, page, transcriptId=None):# TODO Decide wheth
         if isinstance(current_transcript,HttpResponse):
             t_log("current_transcript request has failed... %s" % current_transcript)
             #For now this will do but there may be other reasons the transckribus request fails...
-            return apps.utils.views.error_view(request,current-transcript)
+            return apps.utils.views.error_view(request, current_transcript)
 
         success_message = str(_("Transcript saved!"))
         return HttpResponse("<div class='alert alert-success'>" + success_message + "</div>", content_type="text/plain")
