@@ -618,7 +618,7 @@ function buildLineList() {
 }
 function updateSelectionData() { // call after user inputs to put selection information into a more usable format in a 2D array [[lineId, selection start offset, selection end offset], [...]]
 	var selection = window.getSelection();
-	if ( selection.anchorNode === null )
+	if ( selection.anchorNode === null || selection.anchorNode.parentNode === null )
 		return;
 	var anchorParentNode = selection.anchorNode.parentNode;
 	var aPNtagLineId = anchorParentNode.getAttribute("tagLineId");
@@ -676,8 +676,8 @@ function restoreSelection() {
 	if ( bElement === undefined || eElement === undefined )
 		return;
 	var range = document.createRange();
-	range.setStart(bElement[0].firstChild, begCharCount - bElement.attr("spanoffset"));
-	range.setEnd(eElement[0].firstChild, endCharCount - eElement.attr("spanoffset"));
+	range.setStart(bElement[0].firstChild === null ? bElement[0] : bElement[0].firstChild, begCharCount - bElement.attr("spanoffset"));
+	range.setEnd(eElement[0].firstChild === null ? eElement[0] : eElement[0].firstChild, endCharCount - eElement.attr("spanoffset"));
 	var sel = window.getSelection();
 	sel.removeAllRanges();
 	sel.addRange(range);
