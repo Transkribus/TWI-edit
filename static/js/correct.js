@@ -861,7 +861,7 @@ function editAction(event) {
 			if (endOffset == startOffset && endOffset < contentArray[getIndexFromLineId(editedLineId)][1].length) // can we allow a deletion without removing a linebreak?
 	    		startOffset++; // pretend that the character in front of the caret was selected
     		lineEditAction(editedLineId, startOffset, endOffset);
-	    } else if (event.keyCode == 13) { // return?
+	    } else if (event.keyCode == 13 || event.keyCode == 9) { // return?
 	    	event.preventDefault(); // we don't allow linebreaks
 	        typewriterNext();
 	    } else {
@@ -914,6 +914,8 @@ function undo() {
 // TODO Add undo to this when undo works.
 function inputAction(text) { // TODO This can and should be sped up now that it's used a lot. And renamed.
 	var lines = text.split("\n");
+	if ( selectionData === undefined || selectionData[0] === undefined )
+		return;
 	var editedLineId = selectionData[0][0];
 	var startOffset = selectionData[0][2];
 	var endOffset = selectionData[0][1];
@@ -972,6 +974,7 @@ function typewriterStep(newLineId, delta) {
 	setCurrentLineId(newLineId);
 	updateCanvas();
 	buildLineList();
+	$("#line_" + newLineId).focus();
 }
 // Drawing functions:
 function updateCanvas() {
