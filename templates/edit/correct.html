@@ -138,6 +138,10 @@
 					$("#line_{{ line|get_item:"@id" }}").on("cut", function(e) {
 						cut(e);
 					});
+					$("#line_{{ line|get_item:"@id" }}").on("focus", function() {
+						setCurrentLineId("{{ line|get_item:"@id" }}");
+						buildLineList();
+					});
 				</script>
 			</div>
 		{% empty %}
@@ -208,9 +212,12 @@
 				ctx.save();
 
 				drawLineImage(obj[0], obj[2]);
+				setCurrentLineId(obj[0]);
+				buildLineList();
 			}
 		});
 		updateCanvas();
+		setCurrentLineId(null);
 		buildLineList();
 
     	{# TODO Handle failures here or are we happy with the current solution? #}
