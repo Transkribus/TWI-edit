@@ -11,10 +11,10 @@
 <div class="top-div col-md-12">
     <div class="row">
         <h1>
-            {% trans "Correction Interface, Line by Line (working title)" %}
+            {% trans "Edit Interface" %}
         </h1>
 	</div>
-    <div class="row row-centered">
+    <div class="row row-centered fix_scroll_top">
 	    <div class="col-md-1">
 	    	<div class="input-group input-group-sm">
 	    		<span class="input-group-addon">
@@ -415,6 +415,21 @@
 
 		if ( "{{ view }}" == "lbl" )
 			$("#toggleView_lbl").click();
+	});
+	var fixmeTop = $(".fix_scroll_top").offset().top;
+	$(window).scroll(function() {
+		var currentScroll = $(window).scrollTop();
+	    if (currentScroll >= fixmeTop) {
+	        $(".fix_scroll_top").css({
+	            position: "fixed",
+	            top: "0",
+	            left: "0"
+	        });
+	    } else {
+	        $(".fix_scroll_top").css({
+	            position: "static"
+	        });
+	    }
 	});
 </script>
 

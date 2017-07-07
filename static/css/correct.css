@@ -47,5 +47,10 @@ ol {
 
 }
 li {
-    white-space: nowrap; 
+    white-space: nowrap;
+}
+
+.fix_scroll_top {
+    background: white;
+    z-index: 1000;
 }
