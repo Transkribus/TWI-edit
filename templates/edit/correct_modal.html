@@ -1,16 +1,16 @@
 {% load i18n %}
 
-<div id="correctModal" style="display: none; z-index: 1999; overflow: hidden;" 
+<div id="correctModal" style="display: none; z-index: 1999; overflow: hidden;"
 	title=' {# We (ab)use the Gijgo Dialog like this to get a custom header with more buttons. #}
 		{% trans "Edit line" %}
 		<button type="button" class="close" data-dismiss="modal" aria-hidden="true"></button>
-		<span id="dockButton"></span>{# The fabulous JavaScript manages the button here. #} 
+		<span id="dockButton"></span>{# The fabulous JavaScript manages the button here. #}
 	'>
 	<div data-role="body">
 		<div class="row tool-row">
 			<div class="col-xs-12">
 				<span class="editbutton-group">
-					<div class="btn-group">				
+					<div class="btn-group">
 			    		<button type="button" class="add-line btn btn-default btn-sm">
 			    			<span class="glyphicon glyphicon-plus" aria-hidden="true"></span>
 						</button>
@@ -39,7 +39,12 @@
 						</button>
 					</div>
 				</span>
-		    </div>			
+				<span class="editbutton-group">
+				    <div class="btn-group">
+						<a href="#" class="btn btn-primary btn-sm" data-target="#saveChanges">{% trans "Save changes" %}</a>
+					</div>
+				</span>
+		    </div>
 		</div>
 		<div class="row content-row">
 			<div class="col-xs-12 line-list-div">
@@ -51,6 +56,6 @@
 </div>
 <script>
 	$("#correctModal").on("mouseenter", function(e) {
-		$("#correctModal").removeAttr("title"); {# Prevent the (awful?) title hack above from being shown as a tooltip. #} 	
+		$("#correctModal").removeAttr("title"); {# Prevent the (awful?) title hack above from being shown as a tooltip. #}
 	});
 </script>
