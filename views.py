@@ -181,21 +181,13 @@ def correct(request, collId, docId, page, transcriptId=None):# TODO Decide wheth
             thumb_urls.append(escape(thumb_page.get("thumbUrl")).replace("&amp;", "&"))# The JavaScript must get the strings like this.
 
         tags = [
-            {"name": "Address", "color": "FF34FF"},
             {"name": "abbrev", "color": "FF0000"},
-            {"name": "add", "color": "33FFCC"},
-            {"name": "blackening", "color": "000000"},
             {"name": "date", "color": "0000FF"},
             {"name": "gap", "color": "1CE6FF"},
-            {"name": "organization", "color": "FF00FF"},
             {"name": "person", "color": "00FF00"},
             {"name": "place", "color": "8A2BE2"},
-            {"name": "sic", "color": "FFEB00"},
-            {"name": "speech", "color": "A30059"},
-            {"name": "supplied", "color": "CD5C5C"},
-            {"name": "textStyle", "color": "808080"},
             {"name": "unclear", "color": "FFCC66"},
-            {"name": "work", "color": "008000"}
+            {"name": "organization", "color": "FF00FF"}
         ]
         return render(request, 'edit/correct.html', {
                  'imageUrl': document.get('pageList').get('pages')[int(page) - 1].get("url"),
