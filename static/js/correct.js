@@ -92,7 +92,8 @@ function tagMenu() { // returns the tag list with tags in the selection highligh
 		var tagOffset = tagsOnLine[i].offset;
 		if ((tagOffset <= selStart && selStart < (tagOffset + tagsOnLine[i].length)) || (selStart < tagOffset && tagOffset <= selEnd)) {
 			var tag = tagsOnLine[i].tag;
-			appliedTags[tag] = {"name": "<span style=\"color: #" + tagColors[tag] + ";\">" + tag + "</span>", "type": "checkbox", "isHtmlName": true, "selected": true};
+			if ( tag !== "textStyle" )
+				appliedTags[tag] = {"name": "<span style=\"color: #" + tagColors[tag] + ";\">" + tag + "</span>", "type": "checkbox", "isHtmlName": true, "selected": true};
 		}
 	}
 	var j = 1;
@@ -101,7 +102,8 @@ function tagMenu() { // returns the tag list with tags in the selection highligh
 		tagsOnLine = getSortedCustomTagArray(lineIndex);
 		for (var k = 0; k < tagsOnLine.length; k++) {
 			var tag = tagsOnLine[k].tag;
-			appliedTags[tag] = {"name": "<span style=\"color: #" + tagColors[tag] + ";\">" + tag + "</span>", "type": "checkbox", "isHtmlName": true, "selected": true}; // the selection covers all tags on this line
+			if ( tag !== "textStyle" )
+				appliedTags[tag] = {"name": "<span style=\"color: #" + tagColors[tag] + ";\">" + tag + "</span>", "type": "checkbox", "isHtmlName": true, "selected": true}; // the selection covers all tags on this line
 		}
 		j++;
 	}
@@ -113,7 +115,8 @@ function tagMenu() { // returns the tag list with tags in the selection highligh
 		for (var i = 0; i < tagsOnLine.length; i++) {
 			if (tagsOnLine[i].offset < selEnd) {
 				var tag = tagsOnLine[i].tag;
-				appliedTags[tag] = {"name": "<span style=\"color: #" + tagColors[tag] + ";\">" + tag + "</span>", "type": "checkbox", "isHtmlName": true, "selected": true};
+				if ( tag !== "textStyle" )
+					appliedTags[tag] = {"name": "<span style=\"color: #" + tagColors[tag] + ";\">" + tag + "</span>", "type": "checkbox", "isHtmlName": true, "selected": true};
 			}
 		}
 	}
@@ -124,6 +127,10 @@ function toggleTag(toggleTag) { // sets/removes the tag depending on whether the
 		applyTag(toggleTag);// ...but otherwise we apply it
 }
 function removeTag(removeTag) { // removes the given tag from the selection, returns true if removals were made, otherwise false
+	var tag = removeTag;
+	if ( removeTag === "bold" || removeTag === "italic" || removeTag === "strikethrough" || removeTag === "underline" || removeTag === "subscript" || removeTag === "superscript" )
+		tag = "textStyle";
+
 	var removals = false;
 	var lastButOne = selectionData.length - 1;
 	var lineIndex = getIndexFromLineId(selectionData[0][0]);
@@ -138,7 +145,7 @@ function removeTag(removeTag) { // removes the given tag from the selection, ret
 		var tagOffset = tagsOnLine[i].offset;
 		if ((tagOffset <= selStart && selStart < (tagOffset + tagsOnLine[i].length)) || (selStart < tagOffset && tagOffset <= selEnd)) {
 			removals = true;
-			contentArray[lineIndex][4] = String(contentArray[lineIndex][4]).replace(new RegExp("\\s" + removeTag + "\\s+{offset:" + tagOffset + ";[^}]*}"), "");
+			contentArray[lineIndex][4] = String(contentArray[lineIndex][4]).replace(new RegExp("\\s" + tag + "\\s+{offset:" + tagOffset + ";[^}]*}"), "");
 		}
 	}
 	var j = 1;
@@ -146,7 +153,7 @@ function removeTag(removeTag) { // removes the given tag from the selection, ret
 		lineIndex++; // we don't check if this goes out of bounds since such a selection shouldn't be possible...
 		if (getSortedCustomTagArray(lineIndex, removeTag).length > 0) {
 			removals = true;
-			contentArray[lineIndex][4] = String(contentArray[lineIndex][4]).replace(new RegExp("\\s" + removeTag + "[^}]*}"), "");
+			contentArray[lineIndex][4] = String(contentArray[lineIndex][4]).replace(new RegExp("\\s" + tag + "[^}]*}"), "");
 		}
 		j++;
 	}
@@ -159,7 +166,7 @@ function removeTag(removeTag) { // removes the given tag from the selection, ret
 			var tagOffset = tagsOnLine[i].offset;
 			if (tagOffset < selEnd) {
 				removals = true;
-				contentArray[lineIndex][4] = String(contentArray[lineIndex][4]).replace(new RegExp("\\s" + removeTag + "\\s+{offset:" + tagOffset + ";[^}]*}"), "");
+				contentArray[lineIndex][4] = String(contentArray[lineIndex][4]).replace(new RegExp("\\s" + tag + "\\s+{offset:" + tagOffset + ";[^}]*}"), "");
 			}
 		}
 	}
@@ -195,12 +202,20 @@ function applyTagTo(applyTag, lineId, start, end, continued) { // applies the ta
 	customTagArray.push({"offset": end, "tag": applyTag, "open": false, "length": 0});
 
 	// get everything in custom EXCEPT the applied tag
-	var removalExp = new RegExp(applyTag + "\\s+(.(?!\}))*.{1}\}", "g");
+	if ( applyTag === "bold" || applyTag === "italic" || applyTag === "strikethrough" || applyTag === "underline" || applyTag === "subscript" || applyTag === "superscript" )
+		var removalExp = new RegExp("textStyle\s+[^\}]*" + applyTag + ":true(.(?!\}))*.{1}\}", "g");
+	else
+		var removalExp = new RegExp(applyTag + "\\s+(.(?!\}))*.{1}\}", "g");
 	var custom = String(contentArray[lineIndex][4]).replace(removalExp, "");
 	for (j = 0; j < customTagArray.length; j += 2) {
 		var length = customTagArray[j].length;
 		if (length > 0) {
-			custom += " " + customTagArray[j].tag + " {offset:" + customTagArray[j].offset + "; length:" + length + ";";
+			var tag = customTagArray[j].tag;
+			var textStyle = "";
+			if ( tag === "bold" || tag === "italic" || tag === "strikethrough" || tag === "underline" || tag === "subscript" || tag === "superscript" )
+				textStyle = ";" + tag + ":true"
+				tag = "textStyle";
+			custom += " " + tag + " {offset:" + customTagArray[j].offset + "; length:" + length + textStyle + ";";
 			if (isContinued)
 				custom += " continued:true;"
 			custom += "}";
@@ -242,9 +257,21 @@ function getSortedCustomTagArray(tagLineIndex, filterTag) { // returns an array 
 				var length = parseInt(split[1]); // parseInt doesn't care about what comes after the first int
 				var end = start + length;
 				var tag = attribute[0];
+				if ( split[1].indexOf("bold:true") !== -1 )
+					tag = "bold";
+				else if ( split[1].indexOf("italic:true") !== -1 )
+					tag = "italic";
+				else if ( split[1].indexOf("strikethrough:true") !== -1 )
+					tag = "strikethrough";
+				else if ( split[1].indexOf("underlined:true") !== -1 )
+					tag = "underlined";
+				else if ( split[1].indexOf("subscript:true") !== -1 )
+					tag = "subscript";
+				else if ( split[1].indexOf("superscript:true") !== -1 )
+					tag = "superscript";
 				if (!filter || filter == tag) {
-					customTagArray.push({"offset": start, "tag": attribute[0], "open": true, "length": length});
-					customTagArray.push({"offset": end, "tag": attribute[0], "open": false, "length": 0});
+					customTagArray.push({"offset": start, "tag": tag, "open": true, "length": length});
+					customTagArray.push({"offset": end, "tag": tag, "open": false, "length": 0});
 				}
 			}
 		});
@@ -328,25 +355,61 @@ function getLineLiWithTags(tagLineId) { // generates a line with spans matching 
 				var tagContent = lineUnicode.substring(rangeBegin, offset);
 				while (keepOpenStack.length > 0) {
 					var keepTag = keepOpenStack.pop();
+					var text_decoration = "";
+					if ( keepTag.tag === "bold" )
+						text_decoration = "font-weight: bold;";
+					else if ( keepTag.tag === "italic" )
+						text_decoration = "font-style: italic;";
+					else if ( keepTag.tag === "strikethrough" )
+						text_decoration = "text-decoration: line-through;";
+					else if ( keepTag.tag === "underlined" )
+						text_decoration = "text-decoration: underline;";
 					tagString += "<span tagLineId='" + tagLineId + "' spanOffset=\"" + rangeBegin + "\" "
-											+ "style=\"background-image: url('data:image/svg+xml; utf8, <svg xmlns=\\'http://www.w3.org/2000/svg\\' width=\\'" + initialWidth + "\\' height=\\'" + backgroundHeight + "\\'>" + svgRectsJSON[keepTag] + "</svg>'); padding-bottom: " + bottomPadding + "px;\""
+											+ "style=\"background-image: url('data:image/svg+xml; utf8, <svg xmlns=\\'http://www.w3.org/2000/svg\\' width=\\'" + initialWidth + "\\' height=\\'" + backgroundHeight + "\\'>" + svgRectsJSON[keepTag] + "</svg>'); padding-bottom: " + bottomPadding + "px;" + text_decoration + "\""
 											+ ">";// we use initialWidth here and below because it's guaranteed to be enough
+					if ( keepTag.tag === "subscript" )
+						tagString += "<sub>";
+					else if ( keepTag.tag === "superscript" )
+						tagString += "<sup>";
 					tagStack.push(keepTag);
 				};
 				tagString += '<span tagLineId="' + tagLineId + '" spanOffset="' + rangeBegin + '">' + tagContent + '</span>';// we always need the tagLineId
 				if (tag.open) { // if the new tag opens, just insert it and push it onto the stack
+					var text_decoration = "";
+					if ( tag.tag === "bold" )
+						text_decoration = "font-weight: bold;";
+					else if ( tag.tag === "italic" )
+						text_decoration = "font-style: italic;";
+					else if ( tag.tag === "strikethrough" )
+						text_decoration = "text-decoration: line-through;";
+					else if ( tag.tag === "underlined" )
+						text_decoration = "text-decoration: underline;";
 					tagString += "<span offset=\"" + offset + "\" spanOffset=\"" + offset + "\" tagLength=\"" + length +  "\" tagLineId='" + tagLineId + "' tag='" + currentTag + "' " //" // a "tag" = span with a tag attribute
-											+ "style=\"background-image: url('data:image/svg+xml; utf8, <svg xmlns=\\'http://www.w3.org/2000/svg\\' width=\\'" + initialWidth + "\\' height=\\'" + backgroundHeight + "\\'>" + svgRectsJSON[currentTag] + "</svg>'); padding-bottom: " + bottomPadding + "px;\""
+											+ "style=\"background-image: url('data:image/svg+xml; utf8, <svg xmlns=\\'http://www.w3.org/2000/svg\\' width=\\'" + initialWidth + "\\' height=\\'" + backgroundHeight + "\\'>" + svgRectsJSON[currentTag] + "</svg>'); padding-bottom: " + bottomPadding + "px;" + text_decoration + "\""
 											+ ">";
+					if ( tag.tag === "subscript" )
+						tagString += "<sub>";
+					else if ( tag.tag === "superscript" )
+						tagString += "<sup>";
 					tagStack.push(currentTag);
 				} else { // if the tag closes, we have to close all open tags until we reach the "original" opening tag
 					var precedingTag = tagStack.pop();
 					while (precedingTag && currentTag != precedingTag) {
 						keepOpenStack.push(precedingTag);
-						tagString += "</span>"; // easy to close since we don't need to care about what the opening tag type was...
+						if ( precedingTag.tag === "subscript" )
+							tagString += "</sub></span>";
+						else if ( precedingTag.tag === "superscript" )
+							tagString += "</sup></span>";
+						else
+							tagString += "</span>"; // easy to close since we don't need to care about what the opening tag type was...
 						precedingTag = tagStack.pop();
 					}
-					tagString += "</span>";
+					if ( tag.tag === "subscript" )
+						tagString += "</sub></span>";
+					else if ( tag.tag === "superscript" )
+						tagString += "</sup></span>";
+					else
+						tagString += "</span>";
 				}
 			}
 			previousTag = currentTag;

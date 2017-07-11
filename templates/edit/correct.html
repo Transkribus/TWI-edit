@@ -105,17 +105,21 @@
 				c.height = height;
 				c.width = width;
 				document.getElementById("line_" + lineId).style.width = Math.max(width, 200) + "px";
+				document.getElementById("options_" + lineId).style.width = Math.max(width, 200) + "px";
 				ctx.drawImage(image, coords[0], coords[1], width, height, 0, 0, width, height);
 				ctx.save();
 			}
 		</script>
 		{% for line in lines %}
-			<div lineId="{{ line|get_item:"@id" }}" style="padding-bottom: 10px;">
+			<div lineId="{{ line|get_item:"@id" }}" style="margin-bottom: 10px;">
 				<canvas id="canvas_{{ line|get_item:"@id" }}" width="800" height="100" style="border:1px solid #d3d3d3;">
 					Your browser does not support the HTML5 canvas tag.
 				</canvas>
-				<ol id="line_{{ line|get_item:"@id" }}" class="line-list" contenteditable="true" id="lineList" style="margin-top: 3px;">
+				<ol id="line_{{ line|get_item:"@id" }}" class="line-list" contenteditable="true" id="lineList" style="margin-top: 3px; margin-bottom: 0;">
 				</ol>
+				<div id="options_{{ line|get_item:"@id" }}" class="option-box">
+					{% include "edit/option_box.html" %}
+				</div>
 				<script type="text/javascript">
 				    $(function() {
 				    	drawLineImage("{{ line|get_item:"@id" }}", "{{ line|get_item:"crop"|coords_for_imagemap }}");
@@ -139,8 +143,11 @@
 						cut(e);
 					});
 					$("#line_{{ line|get_item:"@id" }}").on("focus", function() {
-						setCurrentLineId("{{ line|get_item:"@id" }}");
-						buildLineList();
+						$("#options_{{ line|get_item:"@id" }}").show();
+					});
+					$("#line_{{ line|get_item:"@id" }}").on("blur", function() {
+						if ( !$("#options_{{ line|get_item:"@id" }}").is(":hover") )
+							$("#options_{{ line|get_item:"@id" }}").hide();
 					});
 				</script>
 			</div>
@@ -313,6 +320,24 @@
 	$( ".shrink-text" ).on('click', function(e) {
 		resizeText(-1);
 	});
+	$(".bold-text").on("click", function(e) {
+		toggleTag("bold");
+	});
+	$(".italic-text").on("click", function(e) {
+		toggleTag("italic");
+	});
+	$(".strikethrough-text").on("click", function(e) {
+		toggleTag("strikethrough");
+	});
+	$(".underline-text").on("click", function(e) {
+		toggleTag("underlined");
+	});
+	$(".subscript-text").on("click", function(e) {
+		toggleTag("subscript");
+	});
+	$(".superscript-text").on("click", function(e) {
+		toggleTag("superscript");
+	});
 	$( ".remove-line" ).on('click', function(e) {
 		surroundingCount--; {# TODO A function instead? #}
 		if (surroundingCount >= 0)
@@ -352,6 +377,7 @@
 	$(function() { {# TODO Solution for people using broken computers that don't have more than one mouse button. Issues: z-index (or overflow?) and selections getting deselected... #}
         $.contextMenu({
             selector: '.tag-menu',
+            zIndex: 2000,
             build: function($trigger, e) {
             	console.log("e: " + e.target.parentNode.spanOffset);//.prop("tagLineId"));
             	updateSelectionData(); {# TODO What do we do in this case if we also want to have the feature below? #}
