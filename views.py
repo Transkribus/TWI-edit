@@ -197,6 +197,6 @@ def correct(request, collId, docId, page, transcriptId=None):# TODO Decide wheth
                  'docId': docId,
                  'pageNo': page,
                  'tags': tags,
-                 'view': request.GET.get('view'),
+                 'view': request.GET.get('view') if request.GET.get('view') else "i",
                  #'regionData': regionData,
             })

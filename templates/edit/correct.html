@@ -131,6 +131,9 @@
 						keyup(e);
 					});
 					$("#line_{{ line|get_item:"@id" }}").on("mouseup", function(e) {
+						setCurrentLineId("{{ line|get_item:"@id" }}");
+						updateCanvas();
+						buildLineList();
 						mouseup(e);
 					});
 					$("#line_{{ line|get_item:"@id" }}").on("paste", function(e) {
@@ -193,6 +196,7 @@
 		{% for tag in tags %}"{{tag.name}}": "{{tag.color}}" {% if not forloop.last %}, {% endif %}
 		{% endfor %}
 	}
+	view = "{{ view }}";
 	$("a[data-target='#saveChanges']").click(function(e) {
     	e.preventDefault();
     	$.post(window.location.href, {content: getContent(), csrfmiddlewaretoken: '{{ csrf_token }}'}, function( data ) {
@@ -439,7 +443,7 @@
     		}
         });
 
-		if ( "{{ view }}" == "lbl" )
+		if ( view == "lbl" )
 			$("#toggleView_lbl").click();
 	});
 	var fixmeTop = $(".fix_scroll_top").offset().top;

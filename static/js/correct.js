@@ -33,6 +33,7 @@ var keyDownString = '';
 var keyDownCount = 0;
 var tagItems, tagColors;
 var ctrlKey = false, metaKey = false, altKey = false;
+var view = "";
 
 function keydown(e) {
 	if (e.which == 17 || e.which == 112 || e.which == 111) // we handle CTRL like this because of one of the weirdest things I've ever come across. Any one of these (i.e. also F1 and divide) can be triggered when pressing CTRL.
@@ -498,7 +499,7 @@ function resizeContents() { // Call to perform necessary updates of contents and
 // Thumbnail functions:
 function gotoPage(page) {
 	page = Math.max(Math.min(page, thumbArray.length), 1);
-	window.location.assign(pathWithoutPage + page + '?tco=' + thumbCountOffset + ($(".lines-div").is(':visible') ? '&view=lbl' : '&view=i'));// TODO Consider tco in situations in which the page to which we go isn't visible, set an appropriate value? If tco = NaN or outside...
+	window.location.assign(pathWithoutPage + page + '?tco=' + thumbCountOffset + "&amp;view=" + view);// TODO Consider tco in situations in which the page to which we go isn't visible, set an appropriate value? If tco = NaN or outside...
 }
 function scrollThumbsLeft() {
 	thumbCountOffset += THUMBS_TO_SHOW;
@@ -928,10 +929,10 @@ function editAction(event) {
 	    	event.preventDefault(); // we don't allow linebreaks
 	        typewriterNext();
 	    } else {
-	    	if (event.key == "ArrowUp" && getIndexFromLineId(editedLineId) == (getIndexFromLineId(currentLineId) - surroundingCount)) {
+	    	if (event.key == "ArrowUp" && getIndexFromLineId(editedLineId) == (getIndexFromLineId(currentLineId) - surroundingCount) && view === "i") {
     			 typewriterPrevious();
     			 restoreSelection();
-	    	} else if (event.key == "ArrowDown" && getIndexFromLineId(editedLineId) == (getIndexFromLineId(currentLineId) + surroundingCount)) {
+	    	} else if (event.key == "ArrowDown" && getIndexFromLineId(editedLineId) == (getIndexFromLineId(currentLineId) + surroundingCount) && view === "i") {
 	    		typewriterNext();
 	    		restoreSelection();
 	    	} else if (event.key == "Home") // In some cases the "parent" is the LI which doesn't yield the right offset in updateSelection
@@ -1037,7 +1038,12 @@ function typewriterStep(newLineId, delta) {
 	setCurrentLineId(newLineId);
 	updateCanvas();
 	buildLineList();
+
+	// Line by line interface
 	$("#line_" + newLineId).focus();
+	var prev = getPreviousLineId(newLineId);
+	if ( prev )
+		$("#options_" + prev).hide();
 }
 // Drawing functions:
 function updateCanvas() {
