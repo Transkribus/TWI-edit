@@ -131,9 +131,11 @@
 						keyup(e);
 					});
 					$("#line_{{ line|get_item:"@id" }}").on("mouseup", function(e) {
-						setCurrentLineId("{{ line|get_item:"@id" }}");
-						updateCanvas();
-						buildLineList();
+						if ( currentLineId !== "{{ line|get_item:"@id" }}" ) {
+							setCurrentLineId("{{ line|get_item:"@id" }}");
+							updateCanvas();
+							buildLineList();
+						}
 						mouseup(e);
 					});
 					$("#line_{{ line|get_item:"@id" }}").on("paste", function(e) {
@@ -208,7 +210,11 @@
 	$("a[data-target='#toggleView']").click(function(e) {
     	e.preventDefault();
     	$(".transcript-div").toggle();
+    	if ( $(".transcript-div").is(":visible") )
+    		view = "i";
     	$(".lines-div").toggle();
+    	if ( $(".lines-div").is(":visible") )
+    		view = "lbl";
     	if ( correctModal !== undefined && correctModal.isOpen() )
 			correctModal.close();
 

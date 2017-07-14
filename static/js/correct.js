@@ -93,7 +93,7 @@ function tagMenu() { // returns the tag list with tags in the selection highligh
 		var tagOffset = tagsOnLine[i].offset;
 		if ((tagOffset <= selStart && selStart < (tagOffset + tagsOnLine[i].length)) || (selStart < tagOffset && tagOffset <= selEnd)) {
 			var tag = tagsOnLine[i].tag;
-			if ( tag !== "textStyle" )
+			if ( tag !== "bold" && tag !== "italic" && tag !== "strikethrough" && tag !== "underlined" && tag !== "subscript" && tag !== "superscript" )
 				appliedTags[tag] = {"name": "<span style=\"color: #" + tagColors[tag] + ";\">" + tag + "</span>", "type": "checkbox", "isHtmlName": true, "selected": true};
 		}
 	}
@@ -103,7 +103,7 @@ function tagMenu() { // returns the tag list with tags in the selection highligh
 		tagsOnLine = getSortedCustomTagArray(lineIndex);
 		for (var k = 0; k < tagsOnLine.length; k++) {
 			var tag = tagsOnLine[k].tag;
-			if ( tag !== "textStyle" )
+			if ( tag !== "bold" && tag !== "italic" && tag !== "strikethrough" && tag !== "underlined" && tag !== "subscript" && tag !== "superscript" )
 				appliedTags[tag] = {"name": "<span style=\"color: #" + tagColors[tag] + ";\">" + tag + "</span>", "type": "checkbox", "isHtmlName": true, "selected": true}; // the selection covers all tags on this line
 		}
 		j++;
@@ -116,7 +116,7 @@ function tagMenu() { // returns the tag list with tags in the selection highligh
 		for (var i = 0; i < tagsOnLine.length; i++) {
 			if (tagsOnLine[i].offset < selEnd) {
 				var tag = tagsOnLine[i].tag;
-				if ( tag !== "textStyle" )
+				if ( tag !== "bold" && tag !== "italic" && tag !== "strikethrough" && tag !== "underlined" && tag !== "subscript" && tag !== "superscript" )
 					appliedTags[tag] = {"name": "<span style=\"color: #" + tagColors[tag] + ";\">" + tag + "</span>", "type": "checkbox", "isHtmlName": true, "selected": true};
 			}
 		}
@@ -129,7 +129,7 @@ function toggleTag(toggleTag) { // sets/removes the tag depending on whether the
 }
 function removeTag(removeTag) { // removes the given tag from the selection, returns true if removals were made, otherwise false
 	var tag = removeTag;
-	if ( removeTag === "bold" || removeTag === "italic" || removeTag === "strikethrough" || removeTag === "underline" || removeTag === "subscript" || removeTag === "superscript" )
+	if ( removeTag === "bold" || removeTag === "italic" || removeTag === "strikethrough" || removeTag === "underlined" || removeTag === "subscript" || removeTag === "superscript" )
 		tag = "textStyle";
 
 	var removals = false;
@@ -203,7 +203,7 @@ function applyTagTo(applyTag, lineId, start, end, continued) { // applies the ta
 	customTagArray.push({"offset": end, "tag": applyTag, "open": false, "length": 0});
 
 	// get everything in custom EXCEPT the applied tag
-	if ( applyTag === "bold" || applyTag === "italic" || applyTag === "strikethrough" || applyTag === "underline" || applyTag === "subscript" || applyTag === "superscript" )
+	if ( applyTag === "bold" || applyTag === "italic" || applyTag === "strikethrough" || applyTag === "underlined" || applyTag === "subscript" || applyTag === "superscript" )
 		var removalExp = new RegExp("textStyle\s+[^\}]*" + applyTag + ":true(.(?!\}))*.{1}\}", "g");
 	else
 		var removalExp = new RegExp(applyTag + "\\s+(.(?!\}))*.{1}\}", "g");
@@ -213,12 +213,13 @@ function applyTagTo(applyTag, lineId, start, end, continued) { // applies the ta
 		if (length > 0) {
 			var tag = customTagArray[j].tag;
 			var textStyle = "";
-			if ( tag === "bold" || tag === "italic" || tag === "strikethrough" || tag === "underline" || tag === "subscript" || tag === "superscript" )
-				textStyle = ";" + tag + ":true"
+			if ( tag === "bold" || tag === "italic" || tag === "strikethrough" || tag === "underlined" || tag === "subscript" || tag === "superscript" ) {
+				textStyle = ";" + tag + ":true";
 				tag = "textStyle";
+			}
 			custom += " " + tag + " {offset:" + customTagArray[j].offset + "; length:" + length + textStyle + ";";
 			if (isContinued)
-				custom += " continued:true;"
+				custom += " continued:true;";
 			custom += "}";
 		}
 	}
@@ -499,7 +500,7 @@ function resizeContents() { // Call to perform necessary updates of contents and
 // Thumbnail functions:
 function gotoPage(page) {
 	page = Math.max(Math.min(page, thumbArray.length), 1);
-	window.location.assign(pathWithoutPage + page + '?tco=' + thumbCountOffset + "&amp;view=" + view);// TODO Consider tco in situations in which the page to which we go isn't visible, set an appropriate value? If tco = NaN or outside...
+	window.location.assign(pathWithoutPage + page + '?tco=' + thumbCountOffset + "&view=" + view);// TODO Consider tco in situations in which the page to which we go isn't visible, set an appropriate value? If tco = NaN or outside...
 }
 function scrollThumbsLeft() {
 	thumbCountOffset += THUMBS_TO_SHOW;
