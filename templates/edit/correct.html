@@ -110,57 +110,55 @@
 				ctx.save();
 			}
 		</script>
-		<!--
-					{% for line in lines %}
-				<div lineId="{{ line|get_item:"@id" }}" style="margin-bottom: 10px;">
-					<canvas id="canvas_{{ line|get_item:"@id" }}" width="800" height="100" style="border:1px solid #d3d3d3;">
-						Your browser does not support the HTML5 canvas tag.
-					</canvas>
-					<ol id="line_{{ line|get_item:"@id" }}" class="line-list" contenteditable="true" id="lineList" style="margin-top: 3px; margin-bottom: 0;">
-					</ol>
-					<div id="options_{{ line|get_item:"@id" }}" class="option-box">
-						{% include "edit/option_box.html" %}
-					</div>
-					<script type="text/javascript">
-					    $(function() {
-					    	drawLineImage("{{ line|get_item:"@id" }}", "{{ line|get_item:"crop"|coords_for_imagemap }}");
-					    });
-					    $("#line_{{ line|get_item:"@id" }}").on("keydown", function(e) {
-							keydown(e);
-						});
-						$("#line_{{ line|get_item:"@id" }}").on("keyup", function(e) {
-							keyup(e);
-						});
-						$("#line_{{ line|get_item:"@id" }}").on("mouseup", function(e) {
-							if ( currentLineId !== "{{ line|get_item:"@id" }}" ) {
-								setCurrentLineId("{{ line|get_item:"@id" }}");
-								updateCanvas();
-								buildLineList();
-							}
-							mouseup(e);
-						});
-						$("#line_{{ line|get_item:"@id" }}").on("paste", function(e) {
-							paste(e);
-						});
-						$("#line_{{ line|get_item:"@id" }}").on("drop", function(e) {
-							drop(e);
-						});
-						$("#line_{{ line|get_item:"@id" }}").on("cut", function(e) {
-							cut(e);
-						});
-						$("#line_{{ line|get_item:"@id" }}").on("focus", function() {
-							$("#options_{{ line|get_item:"@id" }}").show();
-						});
-						$("#line_{{ line|get_item:"@id" }}").on("blur", function() {
-							if ( !$("#options_{{ line|get_item:"@id" }}").is(":hover") )
-								$("#options_{{ line|get_item:"@id" }}").hide();
-						});
-					</script>
+		{% for line in lines %}
+			<div lineId="{{ line|get_item:"@id" }}" style="margin-bottom: 10px;">
+				<canvas id="canvas_{{ line|get_item:"@id" }}" width="800" height="100" style="border:1px solid #d3d3d3;">
+					Your browser does not support the HTML5 canvas tag.
+				</canvas>
+				<ol id="line_{{ line|get_item:"@id" }}" class="line-list" contenteditable="true" id="lineList" style="margin-top: 3px; margin-bottom: 0;">
+				</ol>
+				<div id="options_{{ line|get_item:"@id" }}" class="option-box">
+					{% include "edit/option_box.html" %}
 				</div>
-			{% empty %}
-				<p>{% trans "The page contains no lines." %}</p>
-			{% endfor %}
-		-->
+				<script type="text/javascript">
+				    $(function() {
+				    	drawLineImage("{{ line|get_item:"@id" }}", "{{ line|get_item:"crop"|coords_for_imagemap }}");
+				    });
+				    $("#line_{{ line|get_item:"@id" }}").on("keydown", function(e) {
+						keydown(e);
+					});
+					$("#line_{{ line|get_item:"@id" }}").on("keyup", function(e) {
+						keyup(e);
+					});
+					$("#line_{{ line|get_item:"@id" }}").on("mouseup", function(e) {
+						if ( currentLineId !== "{{ line|get_item:"@id" }}" ) {
+							setCurrentLineId("{{ line|get_item:"@id" }}");
+							updateCanvas();
+							buildLineList();
+						}
+						mouseup(e);
+					});
+					$("#line_{{ line|get_item:"@id" }}").on("paste", function(e) {
+						paste(e);
+					});
+					$("#line_{{ line|get_item:"@id" }}").on("drop", function(e) {
+						drop(e);
+					});
+					$("#line_{{ line|get_item:"@id" }}").on("cut", function(e) {
+						cut(e);
+					});
+					$("#line_{{ line|get_item:"@id" }}").on("focus", function() {
+						$("#options_{{ line|get_item:"@id" }}").show();
+					});
+					$("#line_{{ line|get_item:"@id" }}").on("blur", function() {
+						if ( !$("#options_{{ line|get_item:"@id" }}").is(":hover") )
+							$("#options_{{ line|get_item:"@id" }}").hide();
+					});
+				</script>
+			</div>
+		{% empty %}
+			<p>{% trans "The page contains no lines." %}</p>
+		{% endfor %}
 	</div>
 </div>
 {% include "edit/correct_modal.html" %}
