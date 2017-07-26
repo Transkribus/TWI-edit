@@ -36,20 +36,24 @@ var ctrlKey = false, metaKey = false, altKey = false;
 var view = "";
 
 function keydown(e) {
+	console.log("keydown:" + e.key);
 	if (e.which == 17 || e.which == 112 || e.which == 111) // we handle CTRL like this because of one of the weirdest things I've ever come across. Any one of these (i.e. also F1 and divide) can be triggered when pressing CTRL.
 		ctrlKey = true;
 	else if (!ctrlKey) {
 		if (e.key.length == 1) { // only characters are input
 			e.preventDefault();
 			updateSelectionData();
+			console.log("inputA:" + e.key);
 			inputAction(e.key);
 		} else { // TODO Figure out if e.preventDefault() should be here or in correct.js...
+			console.log("something else than input");
 			updateSelectionData();
 			editAction(e);
 		}
 	}
 }
 function keyup(e) { // TODO Refactor this. This now does more than before because we don't have keyPress and a different split between this and editAction might be better....
+	console.log("keyup:" + e.key);
 	if (ctrlKey) { // see above why we do this
 		e.preventDefault(); // TODO what about cut and copy?
 		if (e.which == 17 || e.which == 112 || e.which == 111) // the weird behaviour
@@ -294,6 +298,7 @@ function getLineLiWithTags(tagLineId) { // generates a line with spans matching 
 	// "tags"-2-tags:
 	var tagLineIndex = getIndexFromLineId(tagLineId);
 	var lineUnicode = contentArray[tagLineIndex][1];
+	console.log("lineUnicode:" + lineUnicode);
 	var highlightCurrent = "";
 	var lineNo = String(String(contentArray[tagLineIndex][4]).match(/readingOrder {index:\d+;}/)).match(/\d+/g);
 	if (!lineNo)
@@ -598,7 +603,7 @@ function updateDocking(dock) { // docks (true) / undocks (false) the dialog. Whe
 		$("#correctModal").css("height", dockedHeight);
 		$("#correctModal").css("position", "fixed");
 		$("#correctModal").css("top", $(window).height() - dockedHeight + "px");// using "bottom" is problematic
-		$("#correctModal").on("mousedown touchdwon", function (e) { // TODO Test touchdown when an appropriate device is available...
+		$("#correctModal").on("mousedown touchdown", function (e) { // TODO Test touchdown when an appropriate device is available...
 			$("#correctModal").css("position", "fixed"); // gijgo dialog messes with this undesirably...
 		});
 	} else {
@@ -862,6 +867,7 @@ function scrollToPreviousTop() {
 	$( ".transcript-map-div" ).css("transform",  "translate(" + -accumExtraX +"px, " + -accumExtraY+ "px) scale(" + (1 + zoomFactor) + ")"); // Note, the CSS is set to "transform-origin: 0px 0px"
 }
 function lineEditAction(editedLineId, startOffset, endOffset, textInjection) { // if no text injection is given, we just update the tags and assume that the input went straight to the "contenteditable", if startOffset > endOffset the action is a deletion (possibly followed by an injection into the same offset)
+	console.log("injection:" + textInjection);
 	var contentDelta;
 	var injectionDelta = 0;
 	if (arguments.length == 4) // this could set endOffset so that any given value is ignored because it makes no sense to consider that parameter in this case
