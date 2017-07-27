@@ -36,24 +36,20 @@ var ctrlKey = false, metaKey = false, altKey = false;
 var view = "";
 
 function keydown(e) {
-	console.log("keydown:" + e.key);
 	if (e.which == 17 || e.which == 112 || e.which == 111) // we handle CTRL like this because of one of the weirdest things I've ever come across. Any one of these (i.e. also F1 and divide) can be triggered when pressing CTRL.
 		ctrlKey = true;
 	else if (!ctrlKey) {
 		if (e.key.length == 1) { // only characters are input
 			e.preventDefault();
 			updateSelectionData();
-			console.log("inputA:" + e.key);
 			inputAction(e.key);
 		} else { // TODO Figure out if e.preventDefault() should be here or in correct.js...
-			console.log("something else than input");
 			updateSelectionData();
 			editAction(e);
 		}
 	}
 }
 function keyup(e) { // TODO Refactor this. This now does more than before because we don't have keyPress and a different split between this and editAction might be better....
-	console.log("keyup:" + e.key);
 	if (ctrlKey) { // see above why we do this
 		e.preventDefault(); // TODO what about cut and copy?
 		if (e.which == 17 || e.which == 112 || e.which == 111) // the weird behaviour
@@ -298,7 +294,6 @@ function getLineLiWithTags(tagLineId) { // generates a line with spans matching 
 	// "tags"-2-tags:
 	var tagLineIndex = getIndexFromLineId(tagLineId);
 	var lineUnicode = contentArray[tagLineIndex][1];
-	console.log("lineUnicode:" + lineUnicode);
 	var highlightCurrent = "";
 	var lineNo = String(String(contentArray[tagLineIndex][4]).match(/readingOrder {index:\d+;}/)).match(/\d+/g);
 	if (!lineNo)
@@ -684,7 +679,7 @@ function buildLineList() {
 		index++;
 	}
 	highlightLineList();
-	restoreSelection(); // TODO Make this optional?
+	restoreSelection();
 }
 function updateSelectionData() { // call after user inputs to put selection information into a more usable format in a 2D array [[lineId, selection start offset, selection end offset], [...]]
 	var selection = window.getSelection();
@@ -867,7 +862,6 @@ function scrollToPreviousTop() {
 	$( ".transcript-map-div" ).css("transform",  "translate(" + -accumExtraX +"px, " + -accumExtraY+ "px) scale(" + (1 + zoomFactor) + ")"); // Note, the CSS is set to "transform-origin: 0px 0px"
 }
 function lineEditAction(editedLineId, startOffset, endOffset, textInjection) { // if no text injection is given, we just update the tags and assume that the input went straight to the "contenteditable", if startOffset > endOffset the action is a deletion (possibly followed by an injection into the same offset)
-	console.log("injection:" + textInjection);
 	var contentDelta;
 	var injectionDelta = 0;
 	if (arguments.length == 4) // this could set endOffset so that any given value is ignored because it makes no sense to consider that parameter in this case
@@ -935,6 +929,7 @@ function editAction(event) {
 	    } else if (event.keyCode == 13 || event.keyCode == 9) { // return?
 	    	event.preventDefault(); // we don't allow linebreaks
 	        typewriterNext();
+	        return; // TODO We don't restoreSelection() here as we do below. Which behaviour is preferable?
 	    } else {
 	    	if (event.key == "ArrowUp" && getIndexFromLineId(editedLineId) == (getIndexFromLineId(currentLineId) - surroundingCount) && view === "i") {
     			 typewriterPrevious();
@@ -1031,8 +1026,14 @@ function inputAction(text) { // TODO This can and should be sped up now that it'
 // UX action helpers
 function typewriterNext() { // Aka. "press typewriter enter scroll". Changes the selected lines and the modal content.
 	newLineId = getNextLineId(currentLineId);
-	if (newLineId != null)
-		typewriterStep(newLineId, (contentArray[Math.min(getIndexFromLineId(newLineId), contentArray.length - 1)][2][5]) - Math.round(contentArray[Math.min(getIndexFromLineId(currentLineId), contentArray.length - 1)][2][5]))
+	if (newLineId != null) {
+		// move the caret one line down (the offset is measured in characters, hence the differs from a browser-provided when moving with the arrow keys)
+		// TODO Replicate arrow down behaviour more accurately?
+		var caretLineId = getNextLineId(selectionData[0][0]);
+		var caretOffset = Math.min(selectionData[0][1], contentArray[getIndexFromLineId(caretLineId)][1].length);
+		selectionData = [[caretLineId, caretOffset, caretOffset]];
+		typewriterStep(newLineId, (contentArray[Math.min(getIndexFromLineId(newLineId), contentArray.length - 1)][2][5]) - Math.round(contentArray[Math.min(getIndexFromLineId(currentLineId), contentArray.length - 1)][2][5]));
+	}
 }
 function typewriterPrevious() {
 	newLineId = getPreviousLineId(currentLineId);
