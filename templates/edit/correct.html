@@ -397,14 +397,13 @@
             selector: '.tag-menu',
             zIndex: 2000,
             build: function($trigger, e) {
-            	console.log("e: " + e.target.parentNode.spanOffset);//.prop("tagLineId"));
             	updateSelectionData(); {# TODO What do we do in this case if we also want to have the feature below? #}
             	restoreSelection(); {# TODO Request feedback. This solution has the advantage of allowing a selection to be made and the menu opened elsewhere in order not to cover the relevant text. #}
 				return tagMenu();
         	},
 		});
     });
-    $(document.body).on("contextmenu: focus", ".context-menu-item", function(e) { // TODO Place this somewhere else....
+    $(document.body).on("click", ".context-menu-input", function(e) { // TODO Place this somewhere else....
 		toggleTag($(e.target).prop("name").substr(19)); // "context-menu-input-".length is 19
 	});
 	$(window).on("load", function() {
