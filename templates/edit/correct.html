@@ -112,10 +112,10 @@
 		</script>
 		{% for line in lines %}
 			<div lineId="{{ line|get_item:"@id" }}" style="margin-bottom: 10px;">
-				<canvas id="canvas_{{ line|get_item:"@id" }}" width="800" height="100" style="border:1px solid #d3d3d3;">
+				<canvas id="canvas_{{ line|get_item:"@id" }}" width="800" height="100" style="border: 1px solid #d3d3d3;">
 					Your browser does not support the HTML5 canvas tag.
 				</canvas>
-				<ol id="line_{{ line|get_item:"@id" }}" class="line-list" contenteditable="true" id="lineList" style="margin-top: 3px; margin-bottom: 0;">
+				<ol id="line_{{ line|get_item:"@id" }}" class="line-list" contenteditable="true" style="margin-top: 3px; margin-bottom: 0;">
 				</ol>
 				<div id="options_{{ line|get_item:"@id" }}" class="option-box">
 					{% include "edit/option_box.html" %}
@@ -209,12 +209,16 @@
 	});
 	$("a[data-target='#toggleView']").click(function(e) {
     	e.preventDefault();
+    	setCurrentLineId(null);
+
     	$(".transcript-div").toggle();
     	if ( $(".transcript-div").is(":visible") )
     		view = "i";
     	$(".lines-div").toggle();
-    	if ( $(".lines-div").is(":visible") )
+    	if ( $(".lines-div").is(":visible") ) {
     		view = "lbl";
+    		$("#lineList").html("");
+    	}
     	if ( correctModal !== undefined && correctModal.isOpen() )
 			correctModal.close();
 
@@ -229,8 +233,12 @@
 				ctx.save();
 
 				drawLineImage(obj[0], obj[2]);
-				setCurrentLineId(obj[0]);
-				buildLineList();
+				if ( $(".transcript-div").is(":visible") )
+					$("line_" + obj[0]).html("");
+				if ( $(".lines-div").is(":visible") ) {
+					setCurrentLineId(obj[0]);
+					buildLineList();
+				}
 			}
 		});
 		updateCanvas();

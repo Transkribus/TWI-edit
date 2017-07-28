@@ -492,7 +492,7 @@ function resizeContents() { // Call to perform necessary updates of contents and
 	calculateAreas();
 	generateThumbGrid();
 	updateCanvas();
-	if (correctModal.isOpen()) {
+	if ( correctModal !== undefined && correctModal.isOpen() ) {
 		updateDialog();
 		updateDocking();
 	}
@@ -665,18 +665,24 @@ function calculateLineListDimensions() {
 }
 function buildLineList() {
 	var index;
-	if ( currentLineId !== undefined ) {
-		var currentIdx = getIndexFromLineId(currentLineId);
-		var showTo = Math.min(currentIdx + surroundingCount, contentArray.length - 1);
-		index = Math.max(1, currentIdx - surroundingCount); // 1 because the first line is not real
-		$("#lineList").html("");
-		while (index <= showTo)
-			$("#lineList").append(getLineLiWithTags(contentArray[index++][0]));
+
+	if ( $(".transcript-div").is(":visible") ) {
+		if ( currentLineId !== undefined ) {
+			var currentIdx = getIndexFromLineId(currentLineId);
+			var showTo = Math.min(currentIdx + surroundingCount, contentArray.length - 1);
+			index = Math.max(1, currentIdx - surroundingCount); // 1 because the first line is not real
+			$("#lineList").html("");
+			while (index <= showTo)
+				$("#lineList").append(getLineLiWithTags(contentArray[index++][0]));
+		}
 	}
-	index = 1
-	while (index <= contentArray.length - 1) {
-		$("#line_" + contentArray[index][0]).html(getLineLiWithTags(contentArray[index][0]));
-		index++;
+
+	if ( $(".lines-div").is(":visible") ) {
+		index = 1
+		while (index <= contentArray.length - 1) {
+			$("#line_" + contentArray[index][0]).html(getLineLiWithTags(contentArray[index][0]));
+			index++;
+		}
 	}
 	highlightLineList();
 	restoreSelection();
