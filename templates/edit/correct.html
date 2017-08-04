@@ -46,11 +46,11 @@
 	    				<span class="caret"></span>
 	    			</button>
 	    			<ul id="page_status" class="dropdown-menu">
-						<li {% if pageStatus == "NEW" %}class="active"{% endif %}><a href="#" name="in_progress">{% trans "New" %}</a></li>
-						<li {% if pageStatus == "IN_PROGRESS" %}class="active"{% endif %}><a href="#" name="in_progress">{% trans "In Progress" %}</a></li>
-						<li {% if pageStatus == "DONE" %}class="active"{% endif %}><a href="#" name="done">{% trans "Done" %}</a></li>
-						<li {% if pageStatus == "FINAL" %}class="active"{% endif %}><a href="#" name="final">{% trans "Final" %}</a></li>
-						<li {% if pageStatus == "GT" %}class="active"{% endif %}><a href="#" name="gound_truth">{% trans "Ground Truth" %}</a></li>
+						<li {% if pageStatus == "NEW" %}class="active"{% endif %}><a href="#" name="NEW">{% trans "New" %}</a></li>
+						<li {% if pageStatus == "IN_PROGRESS" %}class="active"{% endif %}><a href="#" name="IN_PROGRESS">{% trans "In Progress" %}</a></li>
+						<li {% if pageStatus == "DONE" %}class="active"{% endif %}><a href="#" name="DONE">{% trans "Done" %}</a></li>
+						<li {% if pageStatus == "FINAL" %}class="active"{% endif %}><a href="#" name="FINAL">{% trans "Final" %}</a></li>
+						<li {% if pageStatus == "GT" %}class="active"{% endif %}><a href="#" name="GT">{% trans "Ground Truth" %}</a></li>
 					</ul>
 				</div>
 	    	</div>
@@ -225,7 +225,10 @@
 	$("#page_status a").click(function(e) {
 		$("#page_status li.active").toggleClass("active");
 		$("#page_status a[name='" + e.currentTarget.name + "']").parent().toggleClass("active");
-		{# TODO API REQUEST #}
+		$.post(window.location.href, {status: e.currentTarget.name, csrfmiddlewaretoken: "{{ csrf_token }}"}, function( data ) {
+			setMessage(data);
+		});
+    	{# TODO Handle failures here or are we happy with the current solution? #}
 	});
 	$("a[data-target='#toggleView']").click(function(e) {
     	e.preventDefault();
