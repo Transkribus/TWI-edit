@@ -191,6 +191,7 @@ def correct(request, collId, docId, page, transcriptId=None):# TODO Decide wheth
         ]
         return render(request, 'edit/correct.html', {
                  'imageUrl': document.get('pageList').get('pages')[int(page) - 1].get("url"),
+                 'pageStatus': document.get('pageList').get('pages')[int(page) - 1].get("tsList").get('transcripts')[0].get('status'),
                  'lines': lineList,
                  'thumbArray': "['" + "', '".join(thumb_urls) + "']",
                  'collId': collId,

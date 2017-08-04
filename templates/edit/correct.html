@@ -15,7 +15,7 @@
         </h1>
 	</div>
     <div class="row row-centered fix_scroll_top">
-	    <div class="col-md-1">
+	    <div class="col-md-2">
 	    	<div class="input-group input-group-sm">
 	    		<span class="input-group-addon">
 	    			<a class="zoom-in btn-sm" href="#"><span class="glyphicon glyphicon-zoom-in"></span></a>
@@ -23,13 +23,9 @@
 	    		<span class="input-group-addon">
 	    			<a class="zoom-out btn-sm" href="#"><span class="glyphicon glyphicon-zoom-out"></span></a>
 	    		</span>
-	    	</div>
-		</div>
-		<div class="col-md-1">
-	    	<div class="input-group input-group-sm">
-				<button class="reset-image" >
+	    		<span class="input-group-addon">
 					<a class="reset-image btn-sm" href="#"><span class="glyphicon glyphicon-screenshot"></span></a>
-				</button>
+				</span>
 	    	</div>
 		</div>
 		<div class="col-md-1">
@@ -42,9 +38,26 @@
 	    		</span>
     		</div>
 		</div>
-	    <div class="col-md-3">
+		<div class="col-md-1">
+	    	<div class="input-group input-group-sm">
+	    		<div class="btn-group">
+	    			<button class="btn btn-default btn-sm dropdown-toggle" type="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+	    				{% trans "Page status" %}
+	    				<span class="caret"></span>
+	    			</button>
+	    			<ul id="page_status" class="dropdown-menu">
+						<li {% if pageStatus == "NEW" %}class="active"{% endif %}><a href="#" name="in_progress">{% trans "New" %}</a></li>
+						<li {% if pageStatus == "IN_PROGRESS" %}class="active"{% endif %}><a href="#" name="in_progress">{% trans "In Progress" %}</a></li>
+						<li {% if pageStatus == "DONE" %}class="active"{% endif %}><a href="#" name="done">{% trans "Done" %}</a></li>
+						<li {% if pageStatus == "FINAL" %}class="active"{% endif %}><a href="#" name="final">{% trans "Final" %}</a></li>
+						<li {% if pageStatus == "GT" %}class="active"{% endif %}><a href="#" name="gound_truth">{% trans "Ground Truth" %}</a></li>
+					</ul>
+				</div>
+	    	</div>
+		</div>
+	    <div class="col-md-2">
 			<div id="message"></div>
-			<a href="#" class="btn btn-primary" data-target="#saveChanges">{% trans "Save changes" %}</a><br/><br/><br/>{# TODO CSS for this purpose. #}
+			<a href="#" class="btn btn-sm btn-primary" data-target="#saveChanges">{% trans "Save changes" %}</a><br/><br/><br/>{# TODO CSS for this purpose. #}
 		</div>
 		<div class="col-md-2">
 			<div class="input-group input-group-sm">
@@ -206,6 +219,11 @@
     		changed = false;
 		});
     	{# TODO Handle failures here or are we happy with the current solution? #}
+	});
+	$("#page_status a").click(function(e) {
+		$("#page_status li.active").toggleClass("active");
+		$("#page_status a[name='" + e.currentTarget.name + "']").parent().toggleClass("active");
+		{# TODO API REQUEST #}
 	});
 	$("a[data-target='#toggleView']").click(function(e) {
     	e.preventDefault();
