@@ -359,17 +359,17 @@ function getLineLiWithTags(tagLineId) { // generates a line with spans matching 
 				var tagContent = lineUnicode.substring(rangeBegin, offset);
 				while (keepOpenStack.length > 0) {
 					var keepTag = keepOpenStack.pop();
-					var text_decoration = "";
+					var tagDecoration = "background-image: url('data:image/svg+xml; utf8, <svg xmlns=\\'http://www.w3.org/2000/svg\\' width=\\'" + initialWidth + "\\' height=\\'" + backgroundHeight + "\\'>" + svgRectsJSON[keepTag] + "</svg>');";
 					if ( keepTag.tag === "bold" )
-						text_decoration = "font-weight: bold;";
+						tagDecoration = "font-weight: bold;";
 					else if ( keepTag.tag === "italic" )
-						text_decoration = "font-style: italic;";
+						tagDecoration = "font-style: italic;";
 					else if ( keepTag.tag === "strikethrough" )
-						text_decoration = "text-decoration: line-through;";
+						tagDecoration = "text-decoration: line-through;";
 					else if ( keepTag.tag === "underlined" )
-						text_decoration = "text-decoration: underline;";
+						tagDecoration = "text-decoration: underline;";
 					tagString += "<span tagLineId='" + tagLineId + "' spanOffset=\"" + rangeBegin + "\" "
-											+ "style=\"background-image: url('data:image/svg+xml; utf8, <svg xmlns=\\'http://www.w3.org/2000/svg\\' width=\\'" + initialWidth + "\\' height=\\'" + backgroundHeight + "\\'>" + svgRectsJSON[keepTag] + "</svg>'); padding-bottom: " + bottomPadding + "px;" + text_decoration + "\""
+											+ "style=\"padding-bottom: " + bottomPadding + "px; " + tagDecoration + "\""
 											+ ">";// we use initialWidth here and below because it's guaranteed to be enough
 					if ( keepTag.tag === "subscript" )
 						tagString += "<sub>";
@@ -379,17 +379,17 @@ function getLineLiWithTags(tagLineId) { // generates a line with spans matching 
 				};
 				tagString += '<span tagLineId="' + tagLineId + '" spanOffset="' + rangeBegin + '">' + tagContent + '</span>';// we always need the tagLineId
 				if (tag.open) { // if the new tag opens, just insert it and push it onto the stack
-					var text_decoration = "";
+					var tagDecoration = "background-image: url('data:image/svg+xml; utf8, <svg xmlns=\\'http://www.w3.org/2000/svg\\' width=\\'" + initialWidth + "\\' height=\\'" + backgroundHeight + "\\'>" + svgRectsJSON[currentTag] + "</svg>');";
 					if ( tag.tag === "bold" )
-						text_decoration = "font-weight: bold;";
+						tagDecoration = "font-weight: bold;";
 					else if ( tag.tag === "italic" )
-						text_decoration = "font-style: italic;";
+						tagDecoration = "font-style: italic;";
 					else if ( tag.tag === "strikethrough" )
-						text_decoration = "text-decoration: line-through;";
+						tagDecoration = "text-decoration: line-through;";
 					else if ( tag.tag === "underlined" )
-						text_decoration = "text-decoration: underline;";
+						tagDecoration = "text-decoration: underline;";
 					tagString += "<span offset=\"" + offset + "\" spanOffset=\"" + offset + "\" tagLength=\"" + length +  "\" tagLineId='" + tagLineId + "' tag='" + currentTag + "' " //" // a "tag" = span with a tag attribute
-											+ "style=\"background-image: url('data:image/svg+xml; utf8, <svg xmlns=\\'http://www.w3.org/2000/svg\\' width=\\'" + initialWidth + "\\' height=\\'" + backgroundHeight + "\\'>" + svgRectsJSON[currentTag] + "</svg>'); padding-bottom: " + bottomPadding + "px;" + text_decoration + "\""
+											+ "style=\"padding-bottom: " + bottomPadding + "px; " + tagDecoration + "\""
 											+ ">";
 					if ( tag.tag === "subscript" )
 						tagString += "<sub>";

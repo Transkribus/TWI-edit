@@ -112,31 +112,36 @@ def correct(request, collId, docId, page, transcriptId=None):# TODO Decide wheth
 
     transcriptId = str(transcript.get("tsId"))
     if request.method == 'POST':# This is by JQuery...
-        content = json.loads(request.POST.get('content'))
-        transcript_xml = t.transcript_xml(request, transcriptId, current_transcript.get("url"))
-        if isinstance(transcript_xml,HttpResponse):
-            return apps.utils.views.error_view(request,transcript_xml)
-        transcript_root = ElementTree.fromstring(transcript_xml)
-        # TODO Decide what to do about regionId... It's not necessary....
-        for text_region in transcript_root.iter('{http://schema.primaresearch.org/PAGE/gts/pagecontent/2013-07-15}TextRegion'):# We have to have the namespace...
-            regionTextEquiv = ""
-            for line in text_region.iter('{http://schema.primaresearch.org/PAGE/gts/pagecontent/2013-07-15}TextLine'):
-                modified_content = content.get(text_region.get("id") + line.get("id"))
-                line.set("custom", modified_content.get("custom"))
-                modified_text = modified_content.get("Unicode")
-                regionTextEquiv += modified_text +"\r\n"
-                line.find('{http://schema.primaresearch.org/PAGE/gts/pagecontent/2013-07-15}TextEquiv').find('{http://schema.primaresearch.org/PAGE/gts/pagecontent/2013-07-15}Unicode').text = modified_text
-            text_region.find('{http://schema.primaresearch.org/PAGE/gts/pagecontent/2013-07-15}TextEquiv').find('{http://schema.primaresearch.org/PAGE/gts/pagecontent/2013-07-15}Unicode').text = regionTextEquiv
-        t.save_transcript(request, ElementTree.tostring(transcript_root), collId, docId, page)
-        current_transcript = t.current_transcript(request, collId, docId, page)# We want the updated transcript now.
-        #RM add some error catching (though somewhat suboptimal)
-        if isinstance(current_transcript,HttpResponse):
-            t_log("current_transcript request has failed... %s" % current_transcript)
-            #For now this will do but there may be other reasons the transckribus request fails...
-            return apps.utils.views.error_view(request, current_transcript)
+        if 'content' in request.POST:
+            content = json.loads(request.POST.get('content'))
+            transcript_xml = t.transcript_xml(request, transcriptId, current_transcript.get("url"))
+            if isinstance(transcript_xml,HttpResponse):
+                return apps.utils.views.error_view(request,transcript_xml)
+            transcript_root = ElementTree.fromstring(transcript_xml)
+            # TODO Decide what to do about regionId... It's not necessary....
+            for text_region in transcript_root.iter('{http://schema.primaresearch.org/PAGE/gts/pagecontent/2013-07-15}TextRegion'):# We have to have the namespace...
+                regionTextEquiv = ""
+                for line in text_region.iter('{http://schema.primaresearch.org/PAGE/gts/pagecontent/2013-07-15}TextLine'):
+                    modified_content = content.get(text_region.get("id") + line.get("id"))
+                    line.set("custom", modified_content.get("custom"))
+                    modified_text = modified_content.get("Unicode")
+                    regionTextEquiv += modified_text +"\r\n"
+                    line.find('{http://schema.primaresearch.org/PAGE/gts/pagecontent/2013-07-15}TextEquiv').find('{http://schema.primaresearch.org/PAGE/gts/pagecontent/2013-07-15}Unicode').text = modified_text
+                text_region.find('{http://schema.primaresearch.org/PAGE/gts/pagecontent/2013-07-15}TextEquiv').find('{http://schema.primaresearch.org/PAGE/gts/pagecontent/2013-07-15}Unicode').text = regionTextEquiv
+            t.save_transcript(request, ElementTree.tostring(transcript_root), collId, docId, page)
+            current_transcript = t.current_transcript(request, collId, docId, page)# We want the updated transcript now.
+            #RM add some error catching (though somewhat suboptimal)
+            if isinstance(current_transcript,HttpResponse):
+                t_log("current_transcript request has failed... %s" % current_transcript)
+                #For now this will do but there may be other reasons the transckribus request fails...
+                return apps.utils.views.error_view(request, current_transcript)
 
-        success_message = str(_("Transcript saved!"))
-        return HttpResponse("<div class='alert alert-success'>" + success_message + "</div>", content_type="text/plain")
+            success_message = str(_("Transcript saved!"))
+            return HttpResponse("<div class='alert alert-success'>" + success_message + "</div>", content_type="text/plain")
+        elif 'status' in request.POST:
+            t.save_page_status(request, request.POST.get('status'), collId, docId, page, transcriptId)
+            success_message = str(_("Page status changed!"))
+            return HttpResponse("<div class='alert alert-success'>" + success_message + "</div>", content_type="text/plain")
     else:
         regions = transcript.get("PcGts").get("Page").get("TextRegion");
         if isinstance(regions, dict):
@@ -191,6 +196,7 @@ def correct(request, collId, docId, page, transcriptId=None):# TODO Decide wheth
         ]
         return render(request, 'edit/correct.html', {
                  'imageUrl': document.get('pageList').get('pages')[int(page) - 1].get("url"),
+                 'pageStatus': document.get('pageList').get('pages')[int(page) - 1].get("tsList").get('transcripts')[0].get('status'),
                  'lines': lineList,
                  'thumbArray': "['" + "', '".join(thumb_urls) + "']",
                  'collId': collId,

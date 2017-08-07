@@ -53,6 +53,11 @@ li {
 .fix_scroll_top {
     background: white;
     z-index: 1000;
+    margin-left: 10px;
+    margin-right: 10px;
+    padding-top: 5px;
+    padding-bottom: 5px;
+    width: 100%;
 }
 
 .option-box {
