@@ -4,7 +4,6 @@ var savedZoom = 0;
 var surroundingCount = 1;
 var currentLineId;
 var modalFromMouse = 50;// TODO Decide whether to calculate this or have a simple default. Note pages with text near the lower edge...
-var modalHeight = 250;// TODO Consider whether to calculate this somehow, this value is just a rough guess...
 var modalMinWidth, modalMinHeight, modalTextMaxHeight, dockedHeight = 250;// TODO Decide how to calculate this.
 var ballRadius = 50;// TODO Decide how to set this.
 var ignoreLeave = false;
@@ -34,6 +33,9 @@ var keyDownCount = 0;
 var tagItems, tagColors;
 var ctrlKey = false, metaKey = false, altKey = false;
 var view = "";
+var canOpenContextMenu = false;
+var caretOffsetInPixels = null;
+var saveCaretPixelOffset = false;
 
 function keydown(e) {
 	if (e.which == 17 || e.which == 112 || e.which == 111) // we handle CTRL like this because of one of the weirdest things I've ever come across. Any one of these (i.e. also F1 and divide) can be triggered when pressing CTRL.
@@ -43,7 +45,7 @@ function keydown(e) {
 			e.preventDefault();
 			updateSelectionData();
 			inputAction(e.key);
-		} else { // TODO Figure out if e.preventDefault() should be here or in correct.js...
+		} else {
 			updateSelectionData();
 			editAction(e);
 		}
@@ -424,6 +426,20 @@ function getLineLiWithTags(tagLineId) { // generates a line with spans matching 
 		return '<li value="' + lineNo + '" class="tag-menu" id="text_' + tagLineId + '" spellcheck="false"' + highlightCurrent + '><div style="min-height: ' + backgroundHeight + 'px;"><span tagLineId="' + tagLineId + '" spanOffset="0">' + lineUnicode + '</span></div></li>';
 }
 // Various functions:
+function pixelsToCharOffset(element, pixels) { // returns the character index within the element which best corresponds to the no. of pixels given
+	var hiddenCopy = $(element).clone();
+	var testText, previousWidth;
+	var width = $(element).outerWidth();
+	do {
+		previousWidth = width;
+		testText = $(hiddenCopy).text();
+		$(hiddenCopy).text(testText.substr(0, testText.length - 1));
+		$(hiddenCopy).appendTo(element);
+		width = $(hiddenCopy).outerWidth();
+		$(hiddenCopy).remove();
+	} while (pixels < width); 
+	return testText.length - 1 + (pixels > ((width + previousWidth) / 2)); // also checking whether the click was closer to the left or to the right of the character
+}
 function contenteditableToArray(lineId, overwriteText) { // converts an editable line with tags as spans line into the original format, i.e. array with the text and custom attribute content. Optionally text content can be given.
 	var lineIndex = getIndexFromLineId(lineId);
 	var tagStack = []; // 2d array with tags:  [[tag, offset, length], ...]
@@ -628,9 +644,10 @@ function updateDialog(lineId) {
 	if (1 == arguments.length) // This function can be called without a line ID to reset the dialog after resizing the window
 		setCurrentLineId(lineId);
 	var lineIdx = getIndexFromLineId(currentLineId);
-	if (!correctModal.isOpen()) { // Do we have to open the dialog first?
+	//if (!correctModal.isOpen()) { // Do we have to open the dialog first? TODO Decide how this should actually work when clicking around. Some - but not all - users prefer this behavious....
 		correctModal.open(); // We have to open the dialog already here in order to calculate its minimum width
 		if (null == dialogWidth) { // Unless the size has already been calculated and possibly manually modified, we use the region width to set it...
+			console.log("calculating dialog width");
 			modalMinWidth = 2 - 2*parseInt($(".tool-row").css("margin-left"), 10);// equal and negative margins (sic!)
 			$(".editbutton-group").each(function (i) { // We ensure that the minimum size is sufficient for all the buttons to remain in a row. This works but could be more accurate.
 				modalMinWidth += $(this).outerWidth(true);
@@ -655,7 +672,7 @@ function updateDialog(lineId) {
 		$("#correctModal").css("width",  dialogWidth);
 		$("#correctModal").css("height",  dialogHeight);
 		updateDocking(); // We restore the dialog to a docked state, if it was docked when closed
-	}
+	//}
 	calculateLineListDimensions();
 	buildLineList();
 }
@@ -687,7 +704,17 @@ function buildLineList() {
 	highlightLineList();
 	restoreSelection();
 }
+function setSelectionData(lineId, startOffset, endOffset) { // set the selectiondata, endOffset is optional and if not given, it is set to startOffset
+	if (2 == arguments.length) {
+		endOffset  = startOffset;
+	}
+	selectionData = [[lineId, startOffset, endOffset]];
+}
 function updateSelectionData() { // call after user inputs to put selection information into a more usable format in a 2D array [[lineId, selection start offset, selection end offset], [...]]
+	if (!saveCaretPixelOffset) // unless the previous call was a "typewriter step"...
+		caretOffsetInPixels = null; // ...we forget the old offset
+	else
+		saveCaretPixelOffset = false; // we don't reset the offset this time (but will do next time unless told otherwise)
 	var selection = window.getSelection();
 	if ( selection.anchorNode === null || selection.anchorNode.parentNode === null )
 		return;
@@ -701,7 +728,7 @@ function updateSelectionData() { // call after user inputs to put selection info
 	var totAnchorOffset = selection.anchorOffset + parseInt(anchorParentNode.getAttribute("spanOffset"));
 	var totFocusOffset = selection.focusOffset + parseInt(focusParentNode.getAttribute("spanOffset"));
 	var startOffset, endOffset;
-
+	
 	if (anchorLineIndex == focusLineIndex) {
 		startOffset = Math.min(totAnchorOffset, totFocusOffset);
 		endOffset = Math.max(totAnchorOffset, totFocusOffset);
@@ -806,8 +833,56 @@ function setCurrentLineId(newId) { // We're not happy with just "=" to set the n
 	}
 	currentLineId = newId;
 }
-
 // Other UX Actions
+function contextMenuOpenable(contextMenuEvent) { // ensures that the caret is also moved when the user clicks the right mouse button unless the tag menu should be opened to set tags to a new selection, sets the contextMenuOk flag
+	if ("" != selectionData && (selectionData.length > 1 || (selectionData[0][1] != selectionData[0][2]))) // have we got a non-zero length selection? if so, the user wants to set tags to the selection and we thus don't move the caret
+		return true;
+	var line;
+	$("[id^='text_']").each(function() { // first find the line on which the click was
+		var y = 0, testElement = this;
+		do {
+			y += testElement.offsetTop;
+			testElement = testElement.offsetParent;
+		} while (testElement != null);
+		if (y < contextMenuEvent.pageY && contextMenuEvent.pageY < (y + this.offsetHeight)) {
+			line = this;
+			return false;
+		}
+	});
+	if (line) { // if we have a line, find the correct span, if any
+		var span, spanOffset, toTheLeft = false;
+		var lineId = line.getAttribute("id").substr(5); // "text_".length is 5...
+		$("[tagLineId=" + lineId + "]").each(function() { 
+			var x = 0, testElement = this;
+			do {
+				x += testElement.offsetLeft;
+				testElement = testElement.offsetParent;
+			} while (testElement != null);
+			if (contextMenuEvent.pageX < x) { // if the click is outside the first span, we quit and set the caret to the beginning of that line
+				toTheLeft = true;
+				return false;
+			}
+			if (x < contextMenuEvent.pageX && contextMenuEvent.pageX < (x + this.offsetWidth)) {
+				span = this;
+				spanOffset = x;
+			}
+			// we don't break because in case there are nested spans, we want the innermost one TODO Check if this is correct? It could be completely wrong even if it works....
+		});
+		if (span) {
+			setSelectionData(lineId, parseInt(span.getAttribute("spanOffset")) + pixelsToCharOffset(span, contextMenuEvent.pageX - spanOffset));
+			restoreSelection();
+			return true;
+		} else { // set the caret to the end/beginning of the line for consistent behaviour compared with left clicks
+			if (toTheLeft)
+				setSelectionData(lineId, 0); // beginning
+			else // only remaining possibility if we have a line but no span
+				setSelectionData(lineId, contentArray[getIndexFromLineId(lineId)][1].length);
+			restoreSelection();
+			return false;
+		}
+    }
+	return false;
+}
 function resetImage() {
 	savedZoom = 0;
 	zoomFactor = 0;
@@ -1033,11 +1108,46 @@ function inputAction(text) { // TODO This can and should be sped up now that it'
 function typewriterNext() { // Aka. "press typewriter enter scroll". Changes the selected lines and the modal content.
 	newLineId = getNextLineId(currentLineId);
 	if (newLineId != null) {
-		// move the caret one line down (the offset is measured in characters, hence the differs from a browser-provided when moving with the arrow keys)
-		// TODO Replicate arrow down behaviour more accurately?
+		// move the caret one line down to the closest matching character offset by pixels, when moved repeatedly without other actions inbetween, we use the first offset in pixels		
 		var caretLineId = getNextLineId(selectionData[0][0]);
-		var caretOffset = Math.min(selectionData[0][1], contentArray[getIndexFromLineId(caretLineId)][1].length);
+		if (null === caretOffsetInPixels) { // if we don't have a stored offset in pixels, we calculate it, otherwise we use it
+			// get the relative caret offset in pixels...
+			var selection = window.getSelection();
+			if ( selection.anchorNode === null || selection.anchorNode.parentNode === null )
+				return;
+			var parentElement = selection.anchorNode.parentElement;
+			var hiddenCopy = $(parentElement).clone();
+			$(hiddenCopy).text($(hiddenCopy).text().substr(0, selection.anchorOffset));
+			$(hiddenCopy).appendTo(parentElement);
+			caretOffsetInPixels = parentElement.offsetLeft + $(hiddenCopy).outerWidth();
+			$(hiddenCopy).remove();
+		}
+		saveCaretPixelOffset = true; // set this since if the very first user action after this iis also a "typewriter step" we will use the same offset
+		// get the closest span offset on the new line
+		var span, spanOffset;
+		$("[tagLineId=" + caretLineId + "]").each(function() { 
+			if (this.offsetLeft < caretOffsetInPixels) {
+				span = this;
+				spanOffset = this.offsetLeft;
+			}
+			// we don't break, we want the closest span in case there are nested ones
+		});
+		// we have the span offset, get the character offset
+		hiddenCopy = $(span).clone();
+		testText = $(hiddenCopy).text();
+		var cA = 0, cB, t;// pixel offsets of the previous and the current character (= [t])
+		for (t = 0; t <= testText.length; t++) {
+			$(hiddenCopy).text(testText.substr(0, t));
+			$(hiddenCopy).appendTo(span);
+			cB = $(hiddenCopy).outerWidth();
+			$(hiddenCopy).remove();
+			if ((cB + cA) / 2 > (caretOffsetInPixels - spanOffset)) // we want the offset which is closest to this
+				break;
+			cA = cB;
+		}
+		var caretOffset = Math.min(t - 1 + parseInt($(span).attr("spanOffset")), contentArray[Math.min(getIndexFromLineId(caretLineId))][1].length);
 		selectionData = [[caretLineId, caretOffset, caretOffset]];
+		// TODO Move the caret down even when we cannot make the lines move anymore?
 		typewriterStep(newLineId, (contentArray[Math.min(getIndexFromLineId(newLineId), contentArray.length - 1)][2][5]) - Math.round(contentArray[Math.min(getIndexFromLineId(currentLineId), contentArray.length - 1)][2][5]));
 	}
 }

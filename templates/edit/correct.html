@@ -397,12 +397,23 @@
             selector: '.tag-menu',
             zIndex: 2000,
             build: function($trigger, e) {
-            	updateSelectionData(); {# TODO What do we do in this case if we also want to have the feature below? #}
-            	restoreSelection(); {# TODO Request feedback. This solution has the advantage of allowing a selection to be made and the menu opened elsewhere in order not to cover the relevant text. #}
-				return tagMenu();
+            	if (canOpenContextMenu) {
+	            	updateSelectionData(); {# TODO What do we do in this case if we also want to have the feature below? #}
+	            	restoreSelection(); {# TODO Request feedback. This solution has the advantage of allowing a selection to be made and the menu opened elsewhere in order not to cover the relevant text. #}
+					return tagMenu();
+				} else
+					return null;
         	},
+       	    events: {
+				hide : function(){
+					selectionData = ""; // the old selection must be forgotten to avoid strange behaviour
+				}            
+	       },
 		});
     });
+	$(".line-list").bind('contextmenu', function(e) {	// if we get a right click within the line list, we have to place the caret where the click was unless we already have a non-zero length selection
+		canOpenContextMenu = contextMenuOpenable(e);
+	});
     $(document.body).on("click", ".context-menu-input", function(e) { // TODO Place this somewhere else....
 		toggleTag($(e.target).prop("name").substr(19)); // "context-menu-input-".length is 19
 	});
@@ -441,10 +452,11 @@
 				ignoreLeave = false;
 		    },
 		    resize: function (e) {
-				modalHeight = parseInt(this.style.height, 10);
+				// TODO IF this is to be used, it's dialogHeight now, i.e. dialogHeight = parseInt(this.style.height, 10); 
 	        	calculateLineListDimensions();
     		},
     		resizeStart: function (e) {
+    			console.log("width when starting resize: " + this.style.width);
     			dialogBeingResized = true;
     			updateDockingStatus(false);
     		},
@@ -452,6 +464,8 @@
     			updateDockingStatus(false);
     		},
     		resizeStop: function (e) {
+    			console.log("width when stopping resize: " + this.style.width);
+    			dialogWidth = parseInt(this.style.width, 10); // saving this... TODO Ask if this is to be saved? User opinions vary...!?
     			dialogBeingResized = false;
     		}
         });
