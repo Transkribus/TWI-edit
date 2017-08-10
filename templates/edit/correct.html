@@ -174,6 +174,11 @@
 
 
     <link rel="stylesheet" href="https://swisnl.github.io/jQuery-contextMenu/css/screen.css" type="text/css"/>
+    <style type="text/css">{# The above lib sets the padding-bottom to 150, removing this. #}
+		html body {
+		    padding-bottom: 0;
+		}
+    </style>
     <!-- <link rel="stylesheet" href="https://swisnl.github.io/jQuery-contextMenu/css/theme.css" type="text/css"/>-->
     <link rel="stylesheet" href="https://swisnl.github.io/jQuery-contextMenu/css/theme-fixes.css" type="text/css"/>
     <link href="https://swisnl.github.io/jQuery-contextMenu/dist/jquery.contextMenu.css" rel="stylesheet" type="text/css" />
@@ -434,6 +439,7 @@
 		initialWidth = $('#transcriptImage').width();
 		initialHeight = $('#transcriptImage').height();
 		naturalWidth = $('#transcriptImage').get(0).naturalWidth;
+		$(".transcript-div").height(window.innerHeight - 280);
 		initialScale = initialWidth / naturalWidth;
 		pathWithoutPage = "{% url 'edit:correct' collId docId %}";
 		pageNo = {{pageNo}};
