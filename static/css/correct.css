@@ -46,6 +46,10 @@
 ol {
 
 }
+ol.line-list {
+    list-style: none;
+    padding-left: 0;
+}
 li {
     white-space: nowrap;
 }
