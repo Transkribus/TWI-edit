@@ -437,7 +437,7 @@ function pixelsToCharOffset(element, pixels) { // returns the character index wi
 		$(hiddenCopy).appendTo(element);
 		width = $(hiddenCopy).outerWidth();
 		$(hiddenCopy).remove();
-	} while (pixels < width); 
+	} while (pixels < width);
 	return testText.length - 1 + (pixels > ((width + previousWidth) / 2)); // also checking whether the click was closer to the left or to the right of the character
 }
 function contenteditableToArray(lineId, overwriteText) { // converts an editable line with tags as spans line into the original format, i.e. array with the text and custom attribute content. Optionally text content can be given.
@@ -728,7 +728,7 @@ function updateSelectionData() { // call after user inputs to put selection info
 	var totAnchorOffset = selection.anchorOffset + parseInt(anchorParentNode.getAttribute("spanOffset"));
 	var totFocusOffset = selection.focusOffset + parseInt(focusParentNode.getAttribute("spanOffset"));
 	var startOffset, endOffset;
-	
+
 	if (anchorLineIndex == focusLineIndex) {
 		startOffset = Math.min(totAnchorOffset, totFocusOffset);
 		endOffset = Math.max(totAnchorOffset, totFocusOffset);
@@ -852,7 +852,7 @@ function contextMenuOpenable(contextMenuEvent) { // ensures that the caret is al
 	if (line) { // if we have a line, find the correct span, if any
 		var span, spanOffset, toTheLeft = false;
 		var lineId = line.getAttribute("id").substr(5); // "text_".length is 5...
-		$("[tagLineId=" + lineId + "]").each(function() { 
+		$("[tagLineId=" + lineId + "]").each(function() {
 			var x = 0, testElement = this;
 			do {
 				x += testElement.offsetLeft;
@@ -1107,8 +1107,8 @@ function inputAction(text) { // TODO This can and should be sped up now that it'
 // UX action helpers
 function typewriterNext() { // Aka. "press typewriter enter scroll". Changes the selected lines and the modal content.
 	newLineId = getNextLineId(currentLineId);
-	if (newLineId != null) {
-		// move the caret one line down to the closest matching character offset by pixels, when moved repeatedly without other actions inbetween, we use the first offset in pixels		
+	if (newLineId != null && selectionData !== undefined && selectionData[0] !== undefined) {
+		// move the caret one line down to the closest matching character offset by pixels, when moved repeatedly without other actions inbetween, we use the first offset in pixels
 		var caretLineId = getNextLineId(selectionData[0][0]);
 		if (null === caretOffsetInPixels) { // if we don't have a stored offset in pixels, we calculate it, otherwise we use it
 			// get the relative caret offset in pixels...
@@ -1125,7 +1125,7 @@ function typewriterNext() { // Aka. "press typewriter enter scroll". Changes the
 		saveCaretPixelOffset = true; // set this since if the very first user action after this iis also a "typewriter step" we will use the same offset
 		// get the closest span offset on the new line
 		var span, spanOffset;
-		$("[tagLineId=" + caretLineId + "]").each(function() { 
+		$("[tagLineId=" + caretLineId + "]").each(function() {
 			if (this.offsetLeft < caretOffsetInPixels) {
 				span = this;
 				spanOffset = this.offsetLeft;
