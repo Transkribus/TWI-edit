@@ -109,9 +109,10 @@
 				var height = coords[5] - coords[1];
 				c.height = height;
 				c.width = width;
-				document.getElementById("line_" + lineId).style.width = Math.max(width, 200) + "px";
-				document.getElementById("options_" + lineId).style.width = Math.max(width, 200) + "px";
-				ctx.drawImage(image, coords[0], coords[1], width, height, 0, 0, width, height);
+				ctx.canvas.width = Math.min(window.innerWidth - 70, Math.max(width, 250));
+				document.getElementById("line_" + lineId).style.width = Math.min(window.innerWidth - 70, Math.max(width, 250)) + "px";
+				document.getElementById("options_" + lineId).style.width = Math.min(window.innerWidth - 70, Math.max(width, 250)) + "px";
+				ctx.drawImage(image, coords[0], coords[1], width, height, 0, 0, Math.min(window.innerWidth - 70, Math.max(width, 250)), height);
 				ctx.save();
 			}
 		</script>
