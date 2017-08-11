@@ -137,6 +137,10 @@
 					});
 					$("#line_{{ line|get_item:"@id" }}").on("mouseup", function(e) {
 						if ( currentLineId !== "{{ line|get_item:"@id" }}" ) {
+							var sel = window.getSelection();
+							console.log(sel);
+							sel.removeAllRanges();
+							selectionData = [];
 							setCurrentLineId("{{ line|get_item:"@id" }}");
 							updateCanvas();
 							buildLineList();
