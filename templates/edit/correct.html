@@ -3,17 +3,18 @@
 
 {% load staticfiles %}
 
+{% block breadcrumb %}
+    <li><a href="{% url "index" %}">{% trans "My Collections" %}</a></li>
+    <li><a href="{% url "library:collection" collId %}">{{ collName }} <small>{{ collId }}</small></a></li>
+    <li class="active">{{ title }} <small>{{ docId }}</small></li>
+{% endblock %}
+
 {% block content %}
 
 <link href="{% static "css/correct.css" %}" rel="stylesheet">
 <link href="{% static "css/gijgo.min.css" %}" rel="stylesheet">
 
 <div class="top-div col-md-12">
-    <div class="row">
-        <h1>
-            {% trans "Edit Interface" %}
-        </h1>
-	</div>
     <div class="row row-centered fix_scroll_top">
 	    <div class="col-md-2">
 	    	<div class="input-group input-group-sm">
@@ -444,7 +445,7 @@
 		initialWidth = $('#transcriptImage').width();
 		initialHeight = $('#transcriptImage').height();
 		naturalWidth = $('#transcriptImage').get(0).naturalWidth;
-		$(".transcript-div").height(window.innerHeight - 280);
+		$(".transcript-div").height(window.innerHeight - 260);
 		initialScale = initialWidth / naturalWidth;
 		pathWithoutPage = "{% url 'edit:correct' collId docId %}";
 		pageNo = {{pageNo}};
