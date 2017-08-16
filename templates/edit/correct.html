@@ -476,10 +476,6 @@
 				updateCanvas();
 				ignoreLeave = false;
 		    },
-		    resize: function (e) {
-				// TODO IF this is to be used, it's dialogHeight now, i.e. dialogHeight = parseInt(this.style.height, 10);
-	        	calculateLineListDimensions();
-    		},
     		resizeStart: function (e) {
     			console.log("width when starting resize: " + this.style.width);
     			dialogBeingResized = true;
@@ -491,7 +487,9 @@
     		resizeStop: function (e) {
     			console.log("width when stopping resize: " + this.style.width);
     			dialogWidth = parseInt(this.style.width, 10); // saving this... TODO Ask if this is to be saved? User opinions vary...!?
+    			dialogHeight = parseInt(this.style.height, 10);
     			dialogBeingResized = false;
+				$(".line-list").css("min-height", (dialogHeight - dialogAbsoluteMinHeight) + "px"); // TODO Put this and the actions above in a separate function...?
     		}
         });
 
