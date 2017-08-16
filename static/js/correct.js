@@ -3,7 +3,6 @@ var changed = false;
 var savedZoom = 0;
 var surroundingCount = 1;
 var currentLineId;
-var modalFromMouse = 50;// TODO Decide whether to calculate this or have a simple default. Note pages with text near the lower edge...
 var modalMinWidth, modalMinHeight, modalTextMaxHeight, dockedHeight = 250;// TODO Decide how to calculate this.
 var ballRadius = 50;// TODO Decide how to set this.
 var ignoreLeave = false;
@@ -23,8 +22,7 @@ var contentLineFontSize;
 var correctModal;
 var docked = false;
 var dialogX, dialogY;
-var dialogWidth, dialogHeight = 250; // This is 250 for no particular reason. TODO Calculate some appropriate value?
-var activeLine;
+var dialogWidth = Number.MAX_SAFE_INTEGER, dialogHeight = 0; // Math.min( and max( are involved in setting these when the dialog is first opened
 var currentlyEditedLiPreviousLength;
 var selectionData = [];
 var undoArray = [];
@@ -36,6 +34,8 @@ var view = "";
 var canOpenContextMenu = false;
 var caretOffsetInPixels = null;
 var saveCaretPixelOffset = false;
+var dialogAbsoluteMinWidth = null;
+var dialogAbsoluteMinHeight = null;
 
 function keydown(e) {
 	if (e.which == 17 || e.which == 112 || e.which == 111) // we handle CTRL like this because of one of the weirdest things I've ever come across. Any one of these (i.e. also F1 and divide) can be triggered when pressing CTRL.
@@ -437,7 +437,7 @@ function pixelsToCharOffset(element, pixels) { // returns the character index wi
 		$(hiddenCopy).appendTo(element);
 		width = $(hiddenCopy).outerWidth();
 		$(hiddenCopy).remove();
-	} while (pixels < width);
+	} while (pixels < width); 
 	return testText.length - 1 + (pixels > ((width + previousWidth) / 2)); // also checking whether the click was closer to the left or to the right of the character
 }
 function contenteditableToArray(lineId, overwriteText) { // converts an editable line with tags as spans line into the original format, i.e. array with the text and custom attribute content. Optionally text content can be given.
@@ -615,7 +615,7 @@ function updateDocking(dock) { // docks (true) / undocks (false) the dialog. Whe
 		$("#correctModal").css("position", "fixed");
 		$("#correctModal").css("top", $(window).height() - dockedHeight + "px");// using "bottom" is problematic
 		$("#correctModal").on("mousedown touchdown", function (e) { // TODO Test touchdown when an appropriate device is available...
-			$("#correctModal").css("position", "fixed"); // gijgo dialog messes with this undesirably...
+		$("#correctModal").css("position", "fixed"); // gijgo dialog messes with this undesirably...
 		});
 	} else {
     	$("#correctModal").css("left",  dialogX);
@@ -624,7 +624,7 @@ function updateDocking(dock) { // docks (true) / undocks (false) the dialog. Whe
     	$("#correctModal").css("height",  dialogHeight);
 	}
 	updateDockingStatus(docked);
-	calculateLineListDimensions();
+
 }
 function updateDockingStatus(dock) { // Toggles the docking status and the docking button
 	docked = dock;
@@ -640,49 +640,61 @@ function saveDialog() { // Saves the undocked dialog properties...
 	dialogWidth = $("#correctModal").width(); // TODO Search width vs. outerWidth
 	dialogHeight = $("#correctModal").height();
 }
-function updateDialog(lineId) {
-	if (1 == arguments.length) // This function can be called without a line ID to reset the dialog after resizing the window
+function updateDialog(lineId) { // This function can be called without a line ID to reset the dialog after resizing the window
+	if (1 == arguments.length) 
 		setCurrentLineId(lineId);
 	var lineIdx = getIndexFromLineId(currentLineId);
-	//if (!correctModal.isOpen()) { // Do we have to open the dialog first? TODO Decide how this should actually work when clicking around. Some - but not all - users prefer this behavious....
-		correctModal.open(); // We have to open the dialog already here in order to calculate its minimum width
-		if (null == dialogWidth) { // Unless the size has already been calculated and possibly manually modified, we use the region width to set it...
-			console.log("calculating dialog width");
-			modalMinWidth = 2 - 2*parseInt($(".tool-row").css("margin-left"), 10);// equal and negative margins (sic!)
-			$(".editbutton-group").each(function (i) { // We ensure that the minimum size is sufficient for all the buttons to remain in a row. This works but could be more accurate.
-				modalMinWidth += $(this).outerWidth(true);
-			});
-			dialogWidth = Math.max(contentArray[lineIdx][3] * initialScale, modalMinWidth); // We don't let it become too narrow...
-			modalMinHeight = $(".modal-header").outerHeight() + $(".tool-row").outerHeight() + $(".editbutton-group").outerHeight();
-        	correctModal.css("min-width",  modalMinWidth + "px");
-        	correctModal.css("min-height",  modalMinHeight + "px");
-		}
-		dialogX =  Math.max(Math.min(initialScale*contentArray[lineIdx][2][0] + $(".transcript-div").offset().left - accumExtraX, window.innerWidth - dialogWidth - 20), $(".transcript-div").offset().left);
-		// If possible, the dialog top should match the top of the second line below the current one:
-		if (contentArray.length - 1 == lineIdx) // Is it the last line? If so...
-			dialogY = (2 * contentArray[lineIdx][2][7] - contentArray[lineIdx][2][1]) * initialScale + $(".transcript-div" ).offset().top - accumExtraY; // ...place the dialog the current line height below it
-		else if (contentArray.length - 2 == lineIdx) // If it's the last but one...
-			dialogY = contentArray[lineIdx + 1][2][7] * initialScale + $(".transcript-div" ).offset().top - accumExtraY; // ...place it at the bottom of the line below the current one
-		else // And usually place it...
-			dialogY = contentArray[lineIdx + 2][2][1] * initialScale + $(".transcript-div" ).offset().top - accumExtraY; // ...at the top of the second line below the current one
-		// Make sure that the header is inside the div
-		dialogY = Math.min(dialogY, $(".transcript-div" ).height() + $(".transcript-div" ).offset().top - modalMinHeight*initialScale);
- 		$("#correctModal").css("left",  dialogX + "px");
-		$("#correctModal").css("top",  dialogY + "px");
-		$("#correctModal").css("width",  dialogWidth);
-		$("#correctModal").css("height",  dialogHeight);
-		updateDocking(); // We restore the dialog to a docked state, if it was docked when closed
-	//}
-	calculateLineListDimensions();
+	correctModal.open();
 	buildLineList();
+	dialogX =  Math.max(Math.min(initialScale * (1 + zoomFactor) * contentArray[lineIdx][2][0] + $(".transcript-div").offset().left - accumExtraX, window.innerWidth - dialogWidth - 20), $(".transcript-div").offset().left);
+	// get the last shown line index
+	var lastShown = Math.min(lineIdx + surroundingCount, contentArray.length - 1);
+	// place the dialog one "last line height" below the last shown BELOW the clicked line (a higher index does not guarantee a lower position)
+	var lowest;
+	for (lowest = lineIdx; lowest < lastShown && contentArray[lowest][2][7] < contentArray[lowest + 1][2][7]; lowest++);
+	dialogY = initialScale * (1 + zoomFactor) * (2 * contentArray[lowest][2][7] - contentArray[lowest][2][1]) + $(".transcript-div" ).offset().top - accumExtraY; 
+	$("#correctModal").css("left",  dialogX + "px");
+	$("#correctModal").css("top",  dialogY + "px");
+	updateDocking(); // We restore the dialog to a docked state, if it was docked when closed
 }
-function calculateLineListDimensions() {
-	modalTextMaxHeight = $("#correctModal").height() - modalMinHeight; // TODO Which height? outer? true? Also: -5 to give the "fake text area" border some margin below it as well
-	$(".line-list-div").css("height", modalTextMaxHeight);
+function updateDialogSize() {
+	if (null === dialogAbsoluteMinWidth) { // if we're doing this for the very first time, we calculate the absolute minimum, which means space for all buttons on a single row
+		var buttonSum = 0;
+		// get the delta between a button group and the span containing it when there's another button following it 
+		var spanPadding = $(".dialogbutton-group").first().parent().outerWidth(true) - $(".dialogbutton-group").first().outerWidth(true);
+		$(".dialogbutton-group").each(function() {
+			buttonSum += $(this).outerWidth(true) + spanPadding; // spanPadding must be added to avoid line breaks
+		});
+		dialogAbsoluteMinWidth =  buttonSum + 2 * ($(".dialogbutton-group").first().offset().left - $("#correctModal").offset().left); // we use the same width for the space surrounding the text on both sides...
+		dialogWidth = dialogAbsoluteMinWidth; // we must set this when setting the absolute minimum for the first time
+		dialogAbsoluteMinHeight = $(".modal-header").outerHeight() + 2 * parseInt($(".modal-body").css("padding-top")) + $(".dialogbutton-group").outerHeight(true); // height with no text
+	} 
+	var currentMinH = dialogAbsoluteMinHeight;
+	if ($(".transcript-div").is(":visible") && currentLineId !== undefined ) { // check if any line is longer than the absolute minimum
+		var longestLine = 0;
+		var currentIdx = getIndexFromLineId(currentLineId);
+		var showTo = Math.min(currentIdx + surroundingCount, contentArray.length - 1);
+		var index = Math.max(1, currentIdx - surroundingCount); // 1 because the first line is not real
+		while (index <= showTo) {
+			var lineId = contentArray[index++][0];
+			longestLine = Math.max(longestLine, $("[tagLineId=" + lineId + "]").last().offset().left + $("[tagLineId=" + lineId + "]").last().outerWidth() - $("#text_" + lineId).offset().left);
+			console.log("cmh before: " + currentMinH);
+			currentMinH += $("#text_" + lineId).outerHeight(true);
+			console.log("cmh after: " + currentMinH);
+		}
+	}
+	var dialogTextHeight = 10;//currentMinH - dialogAbsoluteMinHeight + 60; // TODO Don't shrink the text area either... TODO 6 because of the style =  in the modal...
+	currentMinW = Math.max(dialogAbsoluteMinWidth, longestLine + 2 * ($("[tagLineId]").first().offset().left - $("#correctModal").offset().left));
+	dialogWidth = Math.max(dialogWidth, currentMinW); // we don't shrink the dialog automatically 
+	dialogHeight = Math.max(dialogHeight, currentMinH);
+	$("#correctModal").css("width",  dialogWidth + "px");
+	$("#correctModal").css("height",  dialogHeight + "px");
+	$("#correctModal").css("min-width",  currentMinW + "px");
+	$("#correctModal").css("min-height",  currentMinH + "px");
+	$(".line-list").css("min-height", (dialogHeight - dialogAbsoluteMinHeight) + "px"); // the text contenteditable isn't updated automagically
 }
 function buildLineList() {
 	var index;
-
 	if ( $(".transcript-div").is(":visible") ) {
 		if ( currentLineId !== undefined ) {
 			var currentIdx = getIndexFromLineId(currentLineId);
@@ -693,7 +705,6 @@ function buildLineList() {
 				$("#lineList").append(getLineLiWithTags(contentArray[index++][0]));
 		}
 	}
-
 	if ( $(".lines-div").is(":visible") ) {
 		index = 1
 		while (index <= contentArray.length - 1) {
@@ -703,6 +714,7 @@ function buildLineList() {
 	}
 	highlightLineList();
 	restoreSelection();
+	updateDialogSize();
 }
 function setSelectionData(lineId, startOffset, endOffset) { // set the selectiondata, endOffset is optional and if not given, it is set to startOffset
 	if (2 == arguments.length) {
@@ -728,7 +740,7 @@ function updateSelectionData() { // call after user inputs to put selection info
 	var totAnchorOffset = selection.anchorOffset + parseInt(anchorParentNode.getAttribute("spanOffset"));
 	var totFocusOffset = selection.focusOffset + parseInt(focusParentNode.getAttribute("spanOffset"));
 	var startOffset, endOffset;
-
+	
 	if (anchorLineIndex == focusLineIndex) {
 		startOffset = Math.min(totAnchorOffset, totFocusOffset);
 		endOffset = Math.max(totAnchorOffset, totFocusOffset);
@@ -852,7 +864,7 @@ function contextMenuOpenable(contextMenuEvent) { // ensures that the caret is al
 	if (line) { // if we have a line, find the correct span, if any
 		var span, spanOffset, toTheLeft = false;
 		var lineId = line.getAttribute("id").substr(5); // "text_".length is 5...
-		$("[tagLineId=" + lineId + "]").each(function() {
+		$("[tagLineId=" + lineId + "]").each(function() { 
 			var x = 0, testElement = this;
 			do {
 				x += testElement.offsetLeft;
@@ -1107,8 +1119,8 @@ function inputAction(text) { // TODO This can and should be sped up now that it'
 // UX action helpers
 function typewriterNext() { // Aka. "press typewriter enter scroll". Changes the selected lines and the modal content.
 	newLineId = getNextLineId(currentLineId);
-	if (newLineId != null && selectionData !== undefined && selectionData[0] !== undefined) {
-		// move the caret one line down to the closest matching character offset by pixels, when moved repeatedly without other actions inbetween, we use the first offset in pixels
+	if (newLineId != null) {
+		// move the caret one line down to the closest matching character offset by pixels, when moved repeatedly without other actions inbetween, we use the first offset in pixels		
 		var caretLineId = getNextLineId(selectionData[0][0]);
 		if (null === caretOffsetInPixels) { // if we don't have a stored offset in pixels, we calculate it, otherwise we use it
 			// get the relative caret offset in pixels...
@@ -1125,7 +1137,7 @@ function typewriterNext() { // Aka. "press typewriter enter scroll". Changes the
 		saveCaretPixelOffset = true; // set this since if the very first user action after this iis also a "typewriter step" we will use the same offset
 		// get the closest span offset on the new line
 		var span, spanOffset;
-		$("[tagLineId=" + caretLineId + "]").each(function() {
+		$("[tagLineId=" + caretLineId + "]").each(function() { 
 			if (this.offsetLeft < caretOffsetInPixels) {
 				span = this;
 				spanOffset = this.offsetLeft;
