@@ -23,6 +23,7 @@ from apps.utils.services import *
 from apps.utils.utils import crop
 import settings
 import apps.edit.settings
+from apps.navigation import navigation
 
 #Imports from app (library)
 #import library.settings
@@ -32,8 +33,12 @@ import apps.edit.settings
 #from profiler import profile #profile is a decorator, but things get circular if I include it in decorators.py so...
 
 @login_required
-def proofread(request, collId, docId, page, transcriptId):# TODO Decide whether to select which transcript to work with unless it should always be the newest?
+def proofread(request, collId, docId, page=None, transcriptId=None):# TODO Decide whether to select which transcript to work with unless it should always be the newest?
     t = request.user.tsdata.t
+
+    #RM default to page 1
+    if page is None :
+        page = 1
 
     current_transcript = t.current_transcript(request, collId, docId, page)
     if isinstance(current_transcript,HttpResponse):
@@ -100,8 +105,12 @@ def proofread(request, collId, docId, page, transcriptId):# TODO Decide whether 
         })
 
 @login_required
-def correct(request, collId, docId, page, transcriptId=None):# TODO Decide whether to select which transcript to work with unless it should always be the newest?
+def correct(request, collId, docId, page=None, transcriptId=None):# TODO Decide whether to select which transcript to work with unless it should always be the newest?
     t = request.user.tsdata.t
+
+    #RM default to page 1
+    if page is None :
+        page = 1
 
     current_transcript = t.current_transcript(request, collId, docId, page)
     if isinstance(current_transcript,HttpResponse):
@@ -109,6 +118,12 @@ def correct(request, collId, docId, page, transcriptId=None):# TODO Decide wheth
     transcript = t.transcript(request, current_transcript.get("tsId"), current_transcript.get("url"))
     if isinstance(transcript,HttpResponse):
         return apps.utils.views.error_view(request,transcript)
+
+    #RM Add arrow-in-breadcrumb-bar navigation to sibling documents
+    collection = t.collection(request, {'collId': collId})
+    nav = navigation.up_next_prev(request,"document",docId,collection,[collId])
+
+    navdata = navigation.get_nav(collection,docId,'docId','title')
 
     transcriptId = str(transcript.get("tsId"))
     if request.method == 'POST':# This is by JQuery...
@@ -194,7 +209,7 @@ def correct(request, collId, docId, page, transcriptId=None):# TODO Decide wheth
             {"name": "unclear", "color": "FFCC66"},
             {"name": "organization", "color": "FF00FF"}
         ]
-        return render(request, 'edit/correct.html', {
+        view_data = {
                  'imageUrl': document.get('pageList').get('pages')[int(page) - 1].get("url"),
                  'pageStatus': document.get('pageList').get('pages')[int(page) - 1].get("tsList").get('transcripts')[0].get('status'),
                  'lines': lineList,
@@ -207,4 +222,6 @@ def correct(request, collId, docId, page, transcriptId=None):# TODO Decide wheth
                  'tags': tags,
                  'view': request.GET.get('view') if request.GET.get('view') else "i",
                  #'regionData': regionData,
-            })
+            }
+        view_data.update(navdata)
+        return render(request, 'edit/correct.html', view_data)
