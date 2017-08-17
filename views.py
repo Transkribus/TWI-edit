@@ -209,6 +209,7 @@ def correct(request, collId, docId, page=None, transcriptId=None):# TODO Decide 
             {"name": "unclear", "color": "FFCC66"},
             {"name": "organization", "color": "FF00FF"}
         ]
+        #RM defined the dict for all the stuff going to the view so...
         view_data = {
                  'imageUrl': document.get('pageList').get('pages')[int(page) - 1].get("url"),
                  'pageStatus': document.get('pageList').get('pages')[int(page) - 1].get("tsList").get('transcripts')[0].get('status'),
@@ -221,7 +222,10 @@ def correct(request, collId, docId, page=None, transcriptId=None):# TODO Decide 
                  'pageNo': page,
                  'tags': tags,
                  'view': request.GET.get('view') if request.GET.get('view') else "i",
+		 'metadata' : document.get('md'),
                  #'regionData': regionData,
             }
+        # we can add the navdata to the end of it
         view_data.update(navdata)
+
         return render(request, 'edit/correct.html', view_data)
