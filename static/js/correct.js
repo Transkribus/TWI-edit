@@ -76,7 +76,7 @@ function drop(e) {
 	e.preventDefault();
 }
 function cut(e) {
-	eraseSelection();
+	eraseSelection(); // TODO This!
 }
 
 // Tag functions:
@@ -633,7 +633,7 @@ function updateDockingStatus(dock) { // Toggles the docking status and the docki
 	else
 		$("#dockButton").html('<button type="button" class="dock-toggle close" onclick="updateDocking(true);"><small><span class="glyphicon glyphicon-resize-full" aria-hidden="true"></span></small></button>');
 }
-function saveDialog() { // Saves the undocked dialog properties...
+function saveDialogProperties() { // Saves the undocked dialog properties...
 	$("#correctModal").css("position", "absolute");
 	dialogX = $("#correctModal").offset().left;
 	dialogY = $("#correctModal").offset().top;
@@ -678,9 +678,7 @@ function updateDialogSize() {
 		while (index <= showTo) {
 			var lineId = contentArray[index++][0];
 			longestLine = Math.max(longestLine, $("[tagLineId=" + lineId + "]").last().offset().left + $("[tagLineId=" + lineId + "]").last().outerWidth() - $("#text_" + lineId).offset().left);
-			console.log("cmh before: " + currentMinH);
 			currentMinH += $("#text_" + lineId).outerHeight(true);
-			console.log("cmh after: " + currentMinH);
 		}
 	}
 	var dialogTextHeight = 10;//currentMinH - dialogAbsoluteMinHeight + 60; // TODO Don't shrink the text area either... TODO 6 because of the style =  in the modal...
@@ -824,25 +822,8 @@ function getPreviousLineId(lineId) {
 	else
 		return contentArray[index - 1][0];
 }
-// TODO Replace this since we've begun to set the content after each edit instead...
-function setCurrentLineId(newId) { // We're not happy with just "=" to set the new id because we want to detect changes, if any, to the lines in the dialog so we have this function. TODO Rename? Its purpose is so different now...
-	if (null != currentLineId) {
-		var currentIdx = getIndexFromLineId(currentLineId);
-		var i = Math.max(1, currentIdx - surroundingCount); // 1 because the first line is not real
-		var to = Math.min(currentIdx + surroundingCount, contentArray.length - 1);
-		while (i <= to) {
-			var currentContent = $("#text_" + contentArray[i][0]).text();
-			var savedContent = contentArray[i][1];
-			if (currentContent != savedContent) {
-				// TODO Redo, the message breaks the layout...
-				//if (!changed)
-				//	setMessage("<div class='alert alert-warning'>" + transUnsavedChanges + "</div>");
-				contentArray[i][1] = currentContent;
-				changed = true;
-			}
-			i++;
-		}
-	}
+// TODO Remove this since we've begun to set the content after each edit instead...
+function setCurrentLineId(newId) { 
 	currentLineId = newId;
 }
 // Other UX Actions
@@ -1072,6 +1053,9 @@ function undo() {
 }
 // TODO Add undo to this when undo works.
 function inputAction(text) { // TODO This can and should be sped up now that it's used a lot. And renamed.
+	if (!changed)
+		setMessage("<div class='alert alert-warning'>" + transUnsavedChanges + "</div>");
+	changed = true;
 	var lines = text.split("\n");
 	if ( selectionData === undefined || selectionData[0] === undefined )
 		return;
