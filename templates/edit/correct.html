@@ -365,14 +365,15 @@
 	});
 	$( "#transcriptMap  area" ).on('click', function(e) {
     	e.preventDefault();
-		if (isDragged) {# We ignore clicks if the user has been dragging the image, we assume that that's what the user wants. #}
+		if (isDragged || "i" != view) {# We ignore clicks if the user has been dragging the image, we assume that that's what the user wants. #}
 			return;
 		//ignoreLeave = true; {# We don't want the original selection "unhighlighted" when the user moves the mouse to the modal. #}
 		updateDialog($(this).attr("line-key"));
 		updateCanvas();
 	});
 	$('area').mouseenter(function(e) {
-		highlightLine(e.target.id);
+		if ("i" == view)
+			highlightLine(e.target.id);
 	});
 	$('area').mouseleave(function(e) {
 		updateCanvas();
