@@ -205,6 +205,6 @@ def correct(request, collId, docId, page, transcriptId=None):# TODO Decide wheth
                  'title': document.get('md').get('title'),
                  'pageNo': page,
                  'tags': tags,
-                 'view': request.GET.get('view') if request.GET.get('view') else "i",
+                 'view': request.GET.get('view') if request.GET.get('view') else "v",
                  #'regionData': regionData,
             })
