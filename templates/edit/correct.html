@@ -3,11 +3,21 @@
 
 {% load staticfiles %}
 
+{% comment %}
 {% block breadcrumb %}
     <li><a href="{% url "index" %}">{% trans "My Collections" %}</a></li>
     <li><a href="{% url "library:collection" collId %}">{{ collName }} <small>{{ collId }}</small></a></li>
     <li class="active">{{ title }} <small>{{ docId }}</small></li>
 {% endblock %}
+{% endcomment %}
+
+{% block breadcrumb %}
+<!--    <li><a href="{% url "index" %}">{% trans "My Collections" %}</a></li> -->
+    <li><img src="https://d30y9cdsu7xlg0.cloudfront.net/png/482165-200.png" class="breadcrumb_arrow"/></li>
+    <li><a href="{% url "library:collection" collId %}">{{ collName }} <small>{{ collId }}</small></a></li>
+    <li class="active">{{ title }} <small>{{ docId }}</small></li>
+{% endblock %}
+
 
 {% block content %}
 
@@ -194,6 +204,42 @@
 	</div>
 </div>
 {% include "edit/correct_modal.html" %}
+
+
+ <div class="modal fade"  id="document_metadata_modal" role="dialog">
+    <div class="modal-dialog">
+
+      <!-- Modal content-->
+      <div class="modal-content">
+        <div class="modal-header">
+          <button type="button" class="close" data-dismiss="modal">&times;</button>
+          <h4>Document details</h4>
+        </div>
+        <div class="modal-body">
+	<dl>
+	     {% for item in metadata %}
+		{% if item != 'collectionList' %}
+		<dt>{{item}}</dt>
+		<dd>{{ metadata|get_item:item }}</dd>
+		{% endif %}
+	     {% endfor %}
+	</dl>
+        </div>
+      </div>
+    </div>
+  </div> 
+</div>
+
+
+<div class="modal">
+
+	<ul>
+     {% for item in metadata %}
+	<li>{{ item }} - {{ metadata|get_item:item }}</li>
+     {% endfor %}
+	</ul>
+</div>
+
 <script src="{% static "js/correct.js" %}"></script>
 <script src="{% static "js/btn-toggle.js" %}"></script>
 <!-- gijgo js can't be included here, it must come after everything else -->
