@@ -29,39 +29,60 @@
 				</span>
 	    	</div>
 		</div>
-		<div class="col-md-1">
-	    	<div class="input-group input-group-sm">
-	    		<div class="btn-group">
-	    			<button class="btn btn-default btn-sm dropdown-toggle" type="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-	    				{% trans "Page status" %}
-	    				<span class="caret"></span>
-	    			</button>
-	    			<ul id="page_status" class="dropdown-menu">
-						<li {% if pageStatus == "NEW" %}class="active"{% endif %}><a href="#" name="NEW">{% trans "New" %}</a></li>
-						<li {% if pageStatus == "IN_PROGRESS" %}class="active"{% endif %}><a href="#" name="IN_PROGRESS">{% trans "In Progress" %}</a></li>
-						<li {% if pageStatus == "DONE" %}class="active"{% endif %}><a href="#" name="DONE">{% trans "Done" %}</a></li>
-						<li {% if pageStatus == "FINAL" %}class="active"{% endif %}><a href="#" name="FINAL">{% trans "Final" %}</a></li>
-						<li {% if pageStatus == "GT" %}class="active"{% endif %}><a href="#" name="GT">{% trans "Ground Truth" %}</a></li>
-					</ul>
+		{% if lines %}
+			{% if "v" == view %}
+				<div id="editStart">
+					<div class="col-md-1"></div>
+					<div class="col-md-5">
+						<a id="activateI" class="btn btn-sm btn-primary" data-target="#startEdit">{% trans "Click here to start editing this document." %}</a>
+					</div>
+					<div class="col-md-1"></div>
 				</div>
-	    	</div>
-		</div>
-		<div class="col-md-1">
-			<a href="#" class="btn btn-sm btn-primary" data-target="#saveChanges">{% trans "Save changes" %}</a>
-		</div>
-	    <div class="col-md-2">
-			<div id="message"></div>
-		</div>
-		<div class="col-md-3">
-			<div class="input-group input-group-sm">
-				<div class="btn-group btn-toggle">
-			        <a id="toggleView_i" class="btn btn-sm btn-primary active" data-target="#toggleView">{% trans "Image" %}</a>
-			    	<a id="toggleView_lbl" class="btn btn-sm btn-default" data-target="#toggleView">{% trans "Line by line" %}</a>
-			    	<a id="toggleView_sbs" class="btn btn-sm btn-default disabled" data-target="#toggleView">{% trans "Side by side" %}</a>
-			    	<a id="toggleView_t" class="btn btn-sm btn-default disabled" data-target="#toggleView">{% trans "Text" %}</a>
-			    </div>
+				<div id="editControls" style="display: none;">
+			{% endif %}
+				<div class="col-md-1">
+			    	<div class="input-group input-group-sm">
+			    		<div class="btn-group">
+			    			<button class="btn btn-default btn-sm dropdown-toggle" type="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+			    				{% trans "Page status" %}
+			    				<span class="caret"></span>
+			    			</button>
+			    			<ul id="page_status" class="dropdown-menu">
+								<li {% if pageStatus == "NEW" %}class="active"{% endif %}><a href="#" name="NEW">{% trans "New" %}</a></li>
+								<li {% if pageStatus == "IN_PROGRESS" %}class="active"{% endif %}><a href="#" name="IN_PROGRESS">{% trans "In Progress" %}</a></li>
+								<li {% if pageStatus == "DONE" %}class="active"{% endif %}><a href="#" name="DONE">{% trans "Done" %}</a></li>
+								<li {% if pageStatus == "FINAL" %}class="active"{% endif %}><a href="#" name="FINAL">{% trans "Final" %}</a></li>
+								<li {% if pageStatus == "GT" %}class="active"{% endif %}><a href="#" name="GT">{% trans "Ground Truth" %}</a></li>
+							</ul>
+						</div>
+			    	</div>
+				</div>
+				<div class="col-md-1">
+					<a href="#" class="btn btn-sm btn-primary" data-target="#saveChanges">{% trans "Save changes" %}</a>
+				</div>
+			    <div class="col-md-2">
+					<div id="message"></div>
+				</div>
+				<div class="col-md-3">
+					<div class="input-group input-group-sm">
+						<div class="btn-group btn-toggle">
+					        <a id="toggleView_i" class="btn btn-sm btn-primary active" data-target="#toggleView">{% trans "Image" %}</a>
+					    	<a id="toggleView_lbl" class="btn btn-sm btn-default" data-target="#toggleView">{% trans "Line by line" %}</a>
+					    	<a id="toggleView_sbs" class="btn btn-sm btn-default disabled" data-target="#toggleView">{% trans "Side by side" %}</a>
+					    	<a id="toggleView_t" class="btn btn-sm btn-default disabled" data-target="#toggleView">{% trans "Text" %}</a>
+					    </div>
+					</div>
+				</div>
+			{% if "v" == view %}
+				</div>
+			{% endif %}
+		{% else %}
+			<div class="col-md-1"></div>
+			<div class="col-md-5">
+				{% trans "This page lacks segmentation and cannot be edited. Please use the expert client to create a segmentation first." %}
 			</div>
-		</div>
+			<div class="col-md-1"></div>
+		{% endif %}
 		<div class="col-md-3">
 			<div class="input-group input-group-sm">
 				<span class="input-group-addon">
@@ -217,6 +238,7 @@
 	view = "{{ view }}";
 	$("a[data-target='#saveChanges']").click(function(e) {
     	e.preventDefault();
+    	setMessage('<div class="alert alert-warning">' + '{% trans "Saving changes..." %} ' + '</div>');
     	$.post(window.location.href, {content: getContent(), csrfmiddlewaretoken: '{{ csrf_token }}'}, function( data ) {
     		setMessage(data);
     		changed = false;
@@ -230,6 +252,14 @@
 			setMessage(data);
 		});
     	{# TODO Handle failures here or are we happy with the current solution? #}
+	});
+	$("a[data-target='#startEdit']").click(function(e) {
+    	e.preventDefault();
+    	view = "i";
+    	$("#editControls").toggle();
+    	$("#editStart").html("");
+		updateCanvas();
+		buildLineList();
 	});
 	$("a[data-target='#toggleView']").click(function(e) {
     	e.preventDefault();
@@ -510,6 +540,10 @@
 	            position: "static"
 	        });
 	    }
+	});
+	$(window).bind('beforeunload', function(){
+		if (changed)
+			return '{% trans "You have unsaved changes. Are you sure you want to leave?" %}'; // custom messages aren't supported by all browsers now, this is for those that do show them
 	});
 </script>
 
