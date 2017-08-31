@@ -123,7 +123,7 @@
 		<div class="transcript-map-div">
 			<map name="transcriptMap" id="transcriptMap">
 				{% for line in lines %}
-						<area line-key="{{ line|get_item:"@id"}}" id="{{ line|get_item:"@id"}}"  href="{{ line|get_item:"@id"}}"  shape="poly" >
+						<area line-key="{{ line|get_item:"@id"}}" id="{{ line|get_item:"@id"}}"  href="{{ line|get_item:"@id"}}"  shape="poly"  style="cursor: default;">
 				{% endfor %}
 			</map>
 			<canvas id="transcriptCanvas" style="position: absolute; z-index: 998; pointer-events: none;"></canvas>
@@ -174,7 +174,7 @@
 							console.log(sel);
 							sel.removeAllRanges();
 							selectionData = [];
-							setCurrentLineId("{{ line|get_item:"@id" }}");
+							currentLineId = "{{ line|get_item:"@id" }}";
 							updateCanvas();
 							buildLineList();
 						}
@@ -304,12 +304,13 @@
     	view = "i";
     	$("#editControls").toggle();
     	$("#editStart").html("");
+    	$("area").css("cursor", "pointer");
 		updateCanvas();
 		buildLineList();
 	});
 	$("a[data-target='#toggleView']").click(function(e) {
     	e.preventDefault();
-    	setCurrentLineId(null);
+    	currentLineId = null;
 
     	$(".transcript-div").toggle();
     	if ( $(".transcript-div").is(":visible") )
@@ -336,13 +337,13 @@
 				if ( $(".transcript-div").is(":visible") )
 					$("line_" + obj[0]).html("");
 				if ( $(".lines-div").is(":visible") ) {
-					setCurrentLineId(obj[0]);
+					currentLineId = obj[0];
 					buildLineList();
 				}
 			}
 		});
 		updateCanvas();
-		setCurrentLineId(null);
+		currentLineId = null;
 		buildLineList();
 
     	{# TODO Handle failures here or are we happy with the current solution? #}
@@ -549,7 +550,7 @@
 		    uiLibrary: 'bootstrap',
             resizable: true,
 		    closed: function(e) {
-		        setCurrentLineId(null);
+		        currentLineId = null;
 				updateCanvas();
 				ignoreLeave = false;
 		    },

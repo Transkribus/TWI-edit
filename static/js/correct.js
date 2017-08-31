@@ -642,7 +642,7 @@ function saveDialogProperties() { // Saves the undocked dialog properties...
 }
 function updateDialog(lineId) { // This function can be called without a line ID to reset the dialog after resizing the window
 	if (1 == arguments.length) 
-		setCurrentLineId(lineId);
+		currentLineId = lineId;
 	var lineIdx = getIndexFromLineId(currentLineId);
 	correctModal.open();
 	buildLineList();
@@ -822,10 +822,6 @@ function getPreviousLineId(lineId) {
 	else
 		return contentArray[index - 1][0];
 }
-// TODO Remove this since we've begun to set the content after each edit instead...
-function setCurrentLineId(newId) { 
-	currentLineId = newId;
-}
 // Other UX Actions
 function contextMenuOpenable(contextMenuEvent) { // ensures that the caret is also moved when the user clicks the right mouse button unless the tag menu should be opened to set tags to a new selection, sets the contextMenuOk flag
 	if ("" != selectionData && (selectionData.length > 1 || (selectionData[0][1] != selectionData[0][2]))) // have we got a non-zero length selection? if so, the user wants to set tags to the selection and we thus don't move the caret
@@ -908,7 +904,6 @@ function setZoom(zoom, x, y) {
 	updateCanvas();
 }
 function scrollToNextTop() { // This function scrolls the image up as if it were dragged with the mouse.
-	resizeModal(10);
 	var currentTop = accumExtraY / (initialScale * (1 + zoomFactor)) + 1;// +1 to ensure that a new top is obtained for every click
 	if (contentArray[contentArray.length - 1][2][1] < currentTop)
 		return; // If the page has been moved so that the last line is above the top, we don't do anything.
@@ -1155,7 +1150,7 @@ function typewriterPrevious() {
 function typewriterStep(newLineId, delta) {
 	accumExtraY += delta * initialScale * (1 + zoomFactor);
 	$( ".transcript-map-div" ).css("transform",  "translate(" + -accumExtraX +"px, " + -accumExtraY+ "px) scale(" + (1 + zoomFactor) + ")");// Note, the CSS is set to "transform-origin: 0px 0px"
-	setCurrentLineId(newLineId);
+	currentLineId = newLineId;
 	updateCanvas();
 	buildLineList();
 
