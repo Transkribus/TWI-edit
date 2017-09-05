@@ -242,25 +242,28 @@
 
 <script src="{% static "js/correct.js" %}"></script>
 <script src="{% static "js/btn-toggle.js" %}"></script>
+<script src="{% static "js/thumbs.js" %}"></script>
+<script src="{% static "js/image.js" %}"></script>
+<script src="{% static "js/tags.js" %}"></script>
+<script src="{% static "js/dialog.js" %}"></script>
+<script src="{% static "js/text.js" %}"></script>
 <!-- gijgo js can't be included here, it must come after everything else -->
 
+<link rel="stylesheet" href="https://swisnl.github.io/jQuery-contextMenu/css/screen.css" type="text/css"/>
+<style type="text/css">{# The above lib sets the padding-bottom to 150, removing this. #}
+	html body {
+	    padding-bottom: 0;
+	}
+</style>
+<!-- <link rel="stylesheet" href="https://swisnl.github.io/jQuery-contextMenu/css/theme.css" type="text/css"/>-->
+<link rel="stylesheet" href="https://swisnl.github.io/jQuery-contextMenu/css/theme-fixes.css" type="text/css"/>
+<link href="https://swisnl.github.io/jQuery-contextMenu/dist/jquery.contextMenu.css" rel="stylesheet" type="text/css" />
 
+<script src="https://swisnl.github.io/jQuery-contextMenu/dist/jquery.contextMenu.js" type="text/javascript"></script>
 
-    <link rel="stylesheet" href="https://swisnl.github.io/jQuery-contextMenu/css/screen.css" type="text/css"/>
-    <style type="text/css">{# The above lib sets the padding-bottom to 150, removing this. #}
-		html body {
-		    padding-bottom: 0;
-		}
-    </style>
-    <!-- <link rel="stylesheet" href="https://swisnl.github.io/jQuery-contextMenu/css/theme.css" type="text/css"/>-->
-    <link rel="stylesheet" href="https://swisnl.github.io/jQuery-contextMenu/css/theme-fixes.css" type="text/css"/>
-    <link href="https://swisnl.github.io/jQuery-contextMenu/dist/jquery.contextMenu.css" rel="stylesheet" type="text/css" />
+<!--<script src="https://swisnl.github.io/jQuery-contextMenu/dist/jquery.ui.position.min.js" type="text/javascript"></script>-->
 
-    <script src="https://swisnl.github.io/jQuery-contextMenu/dist/jquery.contextMenu.js" type="text/javascript"></script>
-
-    <!--<script src="https://swisnl.github.io/jQuery-contextMenu/dist/jquery.ui.position.min.js" type="text/javascript"></script>-->
-
-    <script src="https://swisnl.github.io/jQuery-contextMenu/js/main.js" type="text/javascript"></script>
+<script src="https://swisnl.github.io/jQuery-contextMenu/js/main.js" type="text/javascript"></script>
 
 <script>
 	var contentArray= [[0, '', [0, 0, 0, 0, 0, 0, 0, 0], 0, '']
@@ -273,6 +276,11 @@
 	 {# var regionData = {{ regionData | safe }}; We don't need this yet, after all, but lets leave it here for now.  #}
 	var transUnsavedChanges = "{% trans "You have unsaved changes." %}";
 	var dialogBeingResized = false; {# a "semaphore" to avoid false resize events (resizing the dialog triggers such events and we only want those triggered by the window) #}
+	var canOpenContextMenu = false;
+	var ignoreLeave = false;
+	var isDragged = false;
+	var resizeTimeout;
+	
 	tagItems = {
 		{% for tag in tags %}"{{tag.name}}": {name: "<span href=\"#\" style=\"color: #{{tag.color}};\">{{tag.name}}</span>", type: "checkbox", isHtmlName: true} {% if not forloop.last %}, {% endif %}
 		{% endfor %}
