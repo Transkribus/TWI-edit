@@ -171,9 +171,8 @@
 					$("#line_{{ line|get_item:"@id" }}").on("mouseup", function(e) {
 						if ( currentLineId !== "{{ line|get_item:"@id" }}" ) {
 							var sel = window.getSelection();
-							console.log(sel);
 							sel.removeAllRanges();
-							selectionData = [];
+							selectionData = [["{{ line|get_item:"@id" }}", 0, 0]];
 							currentLineId = "{{ line|get_item:"@id" }}";
 							updateCanvas();
 							buildLineList();
@@ -227,7 +226,7 @@
         </div>
       </div>
     </div>
-  </div> 
+  </div>
 </div>
 
 
@@ -280,7 +279,7 @@
 	var ignoreLeave = false;
 	var isDragged = false;
 	var resizeTimeout;
-	
+
 	tagItems = {
 		{% for tag in tags %}"{{tag.name}}": {name: "<span href=\"#\" style=\"color: #{{tag.color}};\">{{tag.name}}</span>", type: "checkbox", isHtmlName: true} {% if not forloop.last %}, {% endif %}
 		{% endfor %}
