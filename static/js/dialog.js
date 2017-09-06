@@ -14,10 +14,11 @@ var accumExtraY = 0;*/
 //these JavaScripts must also be imported
 
 function updateDocking(dock) { // docks (true) / undocks (false) the dialog. When not specified, docking status remains unchanged and just the dialog position and size gets updated
+	console.log("updatedocking: " + dock);
 	if (1 == arguments.length)
 		docked = dock;
 	if (docked) {
-		saveDialog();
+		saveDialogProperties();
 		var leftOffset = $("#sidebar-wrapper").width();
 		$("#correctModal").css("left", 0);
 		$("#correctModal").css("width", document.body.clientWidth);
@@ -34,7 +35,6 @@ function updateDocking(dock) { // docks (true) / undocks (false) the dialog. Whe
     	$("#correctModal").css("height",  dialogHeight);
 	}
 	updateDockingStatus(docked);
-
 }
 function updateDockingStatus(dock) { // Toggles the docking status and the docking button
 	docked = dock;
@@ -77,7 +77,10 @@ function updateDialogSize() {
 		});
 		dialogAbsoluteMinWidth =  buttonSum + 2 * ($(".dialogbutton-group").first().offset().left - $("#correctModal").offset().left); // we use the same width for the space surrounding the text on both sides...
 		dialogWidth = dialogAbsoluteMinWidth; // we must set this when setting the absolute minimum for the first time
-		dialogAbsoluteMinHeight = $(".modal-header").outerHeight() + 2 * parseInt($(".modal-body").css("padding-top")) + $(".dialogbutton-group").outerHeight(true); // height with no text
+		dialogAbsoluteMinHeight = 2 * parseInt($(".modal-header").css("padding-top"))
+				+ $(".modal-title").outerHeight(true)
+				+ $(".dialogbutton-group").outerHeight(true)
+				+ 2 * parseInt($(".modal-body").css("padding-top")); // the sum of these is the height of the dialog without any text 
 	} 
 	var currentMinH = dialogAbsoluteMinHeight;
 	if ($(".transcript-div").is(":visible") && currentLineId !== undefined ) { // check if any line is longer than the absolute minimum
@@ -91,8 +94,7 @@ function updateDialogSize() {
 			currentMinH += $("#text_" + lineId).outerHeight(true);
 		}
 	}
-	var dialogTextHeight = 10;//currentMinH - dialogAbsoluteMinHeight + 60; // TODO Don't shrink the text area either... TODO 6 because of the style =  in the modal...
-	currentMinW = Math.max(dialogAbsoluteMinWidth, longestLine + 2 * ($("[tagLineId]").first().offset().left - $("#correctModal").offset().left));
+	var currentMinW = Math.max(dialogAbsoluteMinWidth, longestLine + 2 * ($("[tagLineId]").first().offset().left - $("#correctModal").offset().left));	
 	dialogWidth = Math.max(dialogWidth, currentMinW); // we don't shrink the dialog automatically 
 	dialogHeight = Math.max(dialogHeight, currentMinH);
 	$("#correctModal").css("width",  dialogWidth + "px");

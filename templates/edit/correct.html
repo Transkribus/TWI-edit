@@ -226,7 +226,7 @@
         </div>
       </div>
     </div>
-  </div>
+  </div> 
 </div>
 
 
@@ -279,7 +279,7 @@
 	var ignoreLeave = false;
 	var isDragged = false;
 	var resizeTimeout;
-
+	
 	tagItems = {
 		{% for tag in tags %}"{{tag.name}}": {name: "<span href=\"#\" style=\"color: #{{tag.color}};\">{{tag.name}}</span>", type: "checkbox", isHtmlName: true} {% if not forloop.last %}, {% endif %}
 		{% endfor %}
@@ -313,7 +313,6 @@
     	$("#editStart").html("");
     	$("area").css("cursor", "pointer");
 		updateCanvas();
-		buildLineList();
 	});
 	$("a[data-target='#toggleView']").click(function(e) {
     	e.preventDefault();
