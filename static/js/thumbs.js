@@ -71,7 +71,7 @@ function generateThumbGrid() {
 	thumbTDs += '<td class="thumb" style="padding: ' + padding + 'px; min-width: ' + thumbWidth + 'px;"><img style="max-width: "' + (thumbWidth - 2 * padding) + 'px;" class="thumb thumb-current" src="' + thumbArray[i - 1] + '"><br/><span style="color: white;">' + i +'</span></td>';
 	i++;
 	// After the current page:
-	while(i < thumbArray.length) {
+	while(i <= thumbArray.length) {
 		thumbTDs += '<td class="thumb" style="padding: ' + padding + 'px;  min-width: ' + thumbWidth + 'px;"><a href="#" onclick="gotoPage(' + i + ')"><img style="max-width: "' + (thumbWidth - 2 * padding) + 'px;" class="thumb thumb-img" src="' + thumbArray[i - 1] + '"><br/><span style="color: white;">' + i +'</span></a></td>';
 		i++;
 	}
@@ -93,7 +93,7 @@ function generateThumbGrid() {
 }
 function checkPageNumberInput() { // Tries to parse input to see if it's a valid page number to go to. If not, resets the contents to show the current page.
 	var value = parseInt($("#pageNumber").val());
-	if (value > 0 && value < thumbArray.length)
+	if (value > 0 && value <= thumbArray.length)
 		gotoPage(value);
 	else // Reset to what it was
 		$("#pageNumber").val(pageNo + "/" + thumbArray.length);
@@ -111,7 +111,7 @@ function scrollThumbsLeft() {
 }
 function scrollThumbsRight() {
 	thumbCountOffset -= THUMBS_TO_SHOW;
-	thumbCountOffset = Math.max(thumbCountOffset, -thumbArray.length + THUMBS_TO_SHOW + 1);
+	thumbCountOffset = Math.max(thumbCountOffset, -thumbArray.length + THUMBS_TO_SHOW);
 	$(".thumbs" ).css("transition", "1s");
 	$(".thumbs" ).css("transform",  "translateX(" + thumbCountOffset * thumbWidth + "px)");
 	updateArrows();
