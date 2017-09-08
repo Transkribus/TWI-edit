@@ -16,6 +16,16 @@
 
 <div class="top-div col-md-12">
     <div class="row row-centered fix_scroll_top">
+    	<div class="col-md-2">
+			<div class="input-group input-group-sm">
+				<div class="btn-group btn-toggle">
+			        <a id="toggleView_i" class="btn btn-sm btn-primary active" data-target="#toggleView">{% trans "Image" %}</a>
+			    	<a id="toggleView_lbl" class="btn btn-sm btn-default" data-target="#toggleView">{% trans "Line by line" %}</a>
+			    	<a id="toggleView_sbs" class="btn btn-sm btn-default disabled" data-target="#toggleView">{% trans "Side by side" %}</a>
+			    	<a id="toggleView_t" class="btn btn-sm btn-default disabled" data-target="#toggleView">{% trans "Text" %}</a>
+			    </div>
+			</div>
+		</div>
 	    <div class="col-md-2">
 	    	<div class="input-group input-group-sm">
 	    		<span class="input-group-addon" title="{% trans "Zoom in" %}">
@@ -29,15 +39,31 @@
 				</span>
 	    	</div>
 		</div>
+		<div class="col-md-3">
+			<div class="input-group input-group-sm">
+				<span class="input-group-addon">
+					<a class="first-page btn-sm" href="#" title="{% trans "First page" %}"><span class="glyphicon glyphicon-step-backward"></span></a>
+					<a class="previous-page btn-sm" href="#" title="{% trans "Previous page" %}"><span class="glyphicon glyphicon-triangle-left"></span></a>
+				</span>
+				<input type="text" class="form-control" id="pageNumber">
+				<span class="input-group-addon">
+					<a class="next-page btn-sm" href="#" title="{% trans "Next page" %}"><span class="glyphicon glyphicon-triangle-right"></span></a>
+					<a class="last-page btn-sm" href="#" title="{% trans "Last page" %}"><span class="glyphicon glyphicon-step-forward"></span></a>
+				</span>
+				<span class="input-group-addon" title="{% trans "Thumb overview" %}">
+					<a class="btn-sm" data-toggle="collapse" href="#thumbDiv" aria-expanded="false" aria-controls="thumbDiv"><span class="glyphicon glyphicon-th-large"></span></a>
+				</span>
+			</div>
+		</div>
+		<div>
+			<div class="col-md-1"></div>
+			<div class="col-md-5">
+				<a id="editToggle" class="btn btn-sm btn-primary" data-target="#toggleEdit">{% trans "Edit" %}</a>
+			</div>
+			<div class="col-md-1"></div>
+		</div>
 		{% if lines %}
-			{% if "v" == view %}
-				<div id="editStart">
-					<div class="col-md-1"></div>
-					<div class="col-md-5">
-						<a id="activateI" class="btn btn-sm btn-primary" data-target="#startEdit">{% trans "Click here to start editing this document." %}</a>
-					</div>
-					<div class="col-md-1"></div>
-				</div>
+			{% if "view" in request.path %}
 				<div id="editControls" style="display: none;">
 			{% endif %}
 				<div class="col-md-1">
@@ -60,20 +86,10 @@
 				<div class="col-md-1">
 					<a href="#" class="btn btn-sm btn-primary" data-target="#saveChanges">{% trans "Save changes" %}</a>
 				</div>
-			    <div class="col-md-2">
+			    <div class="col-md-3">
 					<div id="message"></div>
 				</div>
-				<div class="col-md-3">
-					<div class="input-group input-group-sm">
-						<div class="btn-group btn-toggle">
-					        <a id="toggleView_i" class="btn btn-sm btn-primary active" data-target="#toggleView">{% trans "Image" %}</a>
-					    	<a id="toggleView_lbl" class="btn btn-sm btn-default" data-target="#toggleView">{% trans "Line by line" %}</a>
-					    	<a id="toggleView_sbs" class="btn btn-sm btn-default disabled" data-target="#toggleView">{% trans "Side by side" %}</a>
-					    	<a id="toggleView_t" class="btn btn-sm btn-default disabled" data-target="#toggleView">{% trans "Text" %}</a>
-					    </div>
-					</div>
-				</div>
-			{% if "v" == view %}
+			{% if "view" in request.path %}
 				</div>
 			{% endif %}
 		{% else %}
@@ -83,22 +99,6 @@
 			</div>
 			<div class="col-md-1"></div>
 		{% endif %}
-		<div class="col-md-3">
-			<div class="input-group input-group-sm">
-				<span class="input-group-addon">
-					<a class="first-page btn-sm" href="#" title="{% trans "First page" %}"><span class="glyphicon glyphicon-step-backward"></span></a>
-					<a class="previous-page btn-sm" href="#" title="{% trans "Previous page" %}"><span class="glyphicon glyphicon-triangle-left"></span></a>
-				</span>
-				<input type="text" class="form-control" id="pageNumber">
-				<span class="input-group-addon">
-					<a class="next-page btn-sm" href="#" title="{% trans "Next page" %}"><span class="glyphicon glyphicon-triangle-right"></span></a>
-					<a class="last-page btn-sm" href="#" title="{% trans "Last page" %}"><span class="glyphicon glyphicon-step-forward"></span></a>
-				</span>
-				<span class="input-group-addon" title="{% trans "Thumb overview" %}">
-					<a class="btn-sm" data-toggle="collapse" href="#thumbDiv" aria-expanded="false" aria-controls="thumbDiv"><span class="glyphicon glyphicon-th-large"></span></a>
-				</span>
-			</div>
-		</div>
 	</div>
 	<div class="collapse" id="thumbDiv" style="background-color: black;">
 		<div>
@@ -296,11 +296,26 @@
 		});
     	{# TODO Handle failures here or are we happy with the current solution? #}
 	});
-	$("a[data-target='#startEdit']").click(function(e) {
+	$("a[data-target='#toggleEdit']").click(function(e) {
     	e.preventDefault();
-    	view = "i";
+
+    	if(window.location.href.indexOf("view") != -1) {
+    		var newURL = window.location.href.replace('view', 'edit');
+    		var newButtonText = "{% trans 'View' %}";
+    	}else{
+    		var newURL = window.location.href.replace('edit', 'view');
+    		var newButtonText = "{% trans 'Edit' %}";
+    	}
+
+    	window.history.pushState(null, document.title, newURL);
+    	
+    	pathWithoutPage = newURL
+    	if(pathWithoutPage.indexOf('?') != -1) {
+    		pathWithoutPage = pathWithoutPage.substring(0, pathWithoutPage.indexOf('?'));
+    	}
+
     	$("#editControls").toggle();
-    	$("#editStart").html("");
+    	$("#editToggle").html(newButtonText);
     	$("area").css("cursor", "pointer");
 		updateCanvas();
 	});
