@@ -5,16 +5,16 @@ var dialogAbsoluteMinHeight = null;
 var docked = false;
 var dockedHeight = 250;// TODO Decide how to calculate this.
 
-// these must be initialized...
-/*var initialScale;
-var previousInnerWidth = window.innerWidth;
-var zoomFactor = 0;
-var accumExtraX = 0;
-var accumExtraY = 0;*/
-//these JavaScripts must also be imported
+// these vars must be initialized when importing this JavaScript
+// initialScale;
+// previousInnerWidth = window.innerWidth;
+// zoomFactor
+// accumExtraX
+// accumExtraY
+// these JavaScripts must also be imported
+// TODO Check which...?
 
 function updateDocking(dock) { // docks (true) / undocks (false) the dialog. When not specified, docking status remains unchanged and just the dialog position and size gets updated
-	console.log("updatedocking: " + dock);
 	if (1 == arguments.length)
 		docked = dock;
 	if (docked) {

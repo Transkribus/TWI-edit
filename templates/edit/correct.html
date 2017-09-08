@@ -4,7 +4,9 @@
 {% load staticfiles %}
 
 {% block breadcrumb %}
-    <li><a class="navbar-brand" href="/library">{% trans "My Collections" %}</a></li>
+    <li class="dropdown" id="dropdown">
+	<a href="{% url "index" %}" class="dropdown-toggle navbar-brand" data-toggle="dropdown">{% trans "My Collections" %}</a>
+    </li>
     <a class="navbar-brand" href="{% url "library:collection" collId %}">/ {{ collName }} <small>{{ collId }}</small></a></li>
     <a class="navbar-brand"><b>/ {{ title }} <small>{{ docId }}</small></b></a>
 {% endblock %}
@@ -263,7 +265,9 @@
 	// TODO Clean...
 	var thumbArray = {{ thumbArray | safe }}; {# We assume that this is safe because each url is escape()d in the for loop in the view #}
 	 {# var regionData = {{ regionData | safe }}; We don't need this yet, after all, but lets leave it here for now.  #}
+	var csrf_token = "{{ csrf_token }}";
 	var transUnsavedChanges = "{% trans "You have unsaved changes." %}";
+	var transSavingChanges = "{% trans "Saving changes..." %}";
 	var dialogBeingResized = false; {# a "semaphore" to avoid false resize events (resizing the dialog triggers such events and we only want those triggered by the window) #}
 	var canOpenContextMenu = false;
 	var ignoreLeave = false;
@@ -280,13 +284,7 @@
 	}
 	view = "{{ view }}";
 	$("a[data-target='#saveChanges']").click(function(e) {
-    	e.preventDefault();
-    	setMessage('<div class="alert alert-warning">' + '{% trans "Saving changes..." %} ' + '</div>');
-    	$.post(window.location.href, {content: getContent(), csrfmiddlewaretoken: '{{ csrf_token }}'}, function( data ) {
-    		setMessage(data);
-    		changed = false;
-		});
-    	{# TODO Handle failures here or are we happy with the current solution? #}
+		saveChanges(e);
 	});
 	$("#page_status a").click(function(e) {
 		$("#page_status li.active").toggleClass("active");
