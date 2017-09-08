@@ -1,6 +1,6 @@
 var tagItems, tagColors;
 // these vars must be initialized when using this JavaScript
-// selectionData
+// selectionData, changed
 // these JavaScripts must also be imported
 // TODO List
 
@@ -52,12 +52,14 @@ function tagMenu() { // returns the tag list with tags in the selection highligh
 function toggleTag(toggleTag) { // sets/removes the tag depending on whether the selection already has it
 	if (!removeTag(toggleTag)) // if the tag can be removed, we do that...
 		applyTag(toggleTag);// ...but otherwise we apply it
+	if (!changed)
+		setMessage("<div class='alert alert-warning'>" + transUnsavedChanges + "</div>");
+	changed = true;
 }
 function removeTag(removeTag) { // removes the given tag from the selection, returns true if removals were made, otherwise false
 	var tag = removeTag;
 	if ( removeTag === "bold" || removeTag === "italic" || removeTag === "strikethrough" || removeTag === "underlined" || removeTag === "subscript" || removeTag === "superscript" )
 		tag = "textStyle";
-
 	var removals = false;
 	var lastButOne = selectionData.length - 1;
 	var lineIndex = getIndexFromLineId(selectionData[0][0]);

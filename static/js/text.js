@@ -1,4 +1,3 @@
-var changed = false;
 var undoArray = [];
 var keyDownString = '';
 var keyDownCount = 0;
@@ -8,15 +7,16 @@ var saveCaretPixelOffset = false;
 var selectionData = [];
 var contentLineFontSize = parseInt($('.line-list').css("font-size"));
 // these vars must be initialized when importing this JavaScript
-// surroundingCount, currentLineId, view
+// surroundingCount, currentLineId, view, changed
 // these JavaScripts must also be imported
 // TODO Check
 
 // text editing
 function keydown(e) {
-	if (e.which == 17 || e.which == 112 || e.which == 111) // we handle CTRL like this because of one of the weirdest things I've ever come across. Any one of these (i.e. also F1 and divide) can be triggered when pressing CTRL.
+	console.log("KD: e.key: " + e.key);
+	if (e.which == 17 || e.which == 112 || e.which == 111) { // we handle CTRL like this because of one of the weirdest things I've ever come across. Any one of these (i.e. also F1 and divide) can be triggered when pressing CTRL.
 		ctrlKey = true;
-	else if (!ctrlKey) {
+	} else if (!ctrlKey) {
 		if (e.key.length == 1) { // only characters are input
 			e.preventDefault();
 			updateSelectionData();
@@ -28,6 +28,7 @@ function keydown(e) {
 	}
 }
 function keyup(e) { // TODO Refactor this. This now does more than before because we don't have keyPress and a different split between this and editAction might be better....
+	console.log("KU e.key: " + e.key);
 	if (ctrlKey) { // see above why we do this
 		e.preventDefault(); // TODO what about cut and copy?
 		if (e.which == 17 || e.which == 112 || e.which == 111) // the weird behaviour
@@ -173,6 +174,7 @@ function undoAction() {
 }
 // TODO Add undo to this when undo works.
 function inputAction(text) { // TODO This can and should be sped up now that it's used a lot. And renamed.
+	console.log("calling input action with text = " + text);
 	if (!changed)
 		setMessage("<div class='alert alert-warning'>" + transUnsavedChanges + "</div>");
 	changed = true;
@@ -499,17 +501,6 @@ function contenteditableToArray(lineId, overwriteText) { // converts an editable
 		//buildLineList(); // TODO Test more! This breaks deletions (and possibly other things) when executed here. Is it necessary in any scenario?
 	} else
 		contentArray[lineIndex][1] = $("#text_" + lineId).text().replace(/\u200B/g,''); // remove the zero width space!!!
-}
-function getContent() { // "JSON.stringifies" (verbing a noun) contentArray and also strips out content which does not need to be submitted.
-	var lengthMinusOne = contentArray.length - 1;
-	content = '{';
-	for (var cI = 1; cI <= lengthMinusOne; cI++) {// cI = 1 because we skip the "line" which isn't real since it's the top of the page
-		content += '"' + contentArray[cI][0] + '": {"Unicode":"' + contentArray[cI][1] + '","custom":"' + contentArray[cI][4] + '"}';
-		if (cI < lengthMinusOne)
-			content += ',';
-	}
-	content += '}';
-	return content;
 }
 function buildLineList() {
 	var index;
