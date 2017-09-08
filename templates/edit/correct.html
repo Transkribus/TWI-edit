@@ -4,7 +4,7 @@
 {% load staticfiles %}
 
 {% block breadcrumb %}
-    <li><a href="{% url "index" %}">{% trans "My Collections" %}</a></li>
+    <li><a class="navbar-brand" href="/library">{% trans "My Collections" %}</a></li>
     <a class="navbar-brand" href="{% url "library:collection" collId %}">/ {{ collName }} <small>{{ collId }}</small></a></li>
     <a class="navbar-brand"><b>/ {{ title }} <small>{{ docId }}</small></b></a>
 {% endblock %}
