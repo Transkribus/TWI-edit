@@ -112,8 +112,6 @@ def correct(request, collId, docId, page=None, transcriptId=None):# TODO Decide 
 
     t = request.user.tsdata.t
 
-    print(collId, docId, page)
-
     #RM default to page 1
     if page is None :
         page = 1
@@ -193,7 +191,7 @@ def correct(request, collId, docId, page=None, transcriptId=None):# TODO Decide 
                 line['crop'] = line_crop
                 textEquiv = line.get("TextEquiv")
                 if textEquiv:
-                    line['Unicode'] = textEquiv.get("Unicode")
+                    line['Unicode'] = textEquiv.get("Unicode").replace(" ", "\u00A0");
         # Get thumbnails
         # RM Make one document request here...
         # RM need to test whether this has been successful
@@ -227,7 +225,7 @@ def correct(request, collId, docId, page=None, transcriptId=None):# TODO Decide 
                  'title': document.get('md').get('title'),
                  'pageNo': page,
                  'tags': tags,
-                 'view': request.GET.get('view') if request.GET.get('view') else "i",
+                 'view': request.GET.get('view') if request.GET.get('view') else "v",
 		         'metadata' : document.get('md'),
                  #'regionData': regionData,
             }
