@@ -4,10 +4,6 @@ var thumbCountOffset = 0;
 var thumbWidth;
 var toLoadCount;
 
-function gotoPage(page) {
-	page = Math.max(Math.min(page, thumbArray.length), 1);
-	window.location.assign(pathWithoutPage + page + '?tco=' + thumbCountOffset + "&view=" + view);// TODO Consider tco in situations in which the page to which we go isn't visible, set an appropriate value? If tco = NaN or outside...
-}
 function scrollThumbsLeft() {
 	thumbCountOffset += THUMBS_TO_SHOW;
 	thumbCountOffset = Math.min(thumbCountOffset, 0);
@@ -100,46 +96,5 @@ function checkPageNumberInput() { // Tries to parse input to see if it's a valid
 }
 function gotoPage(page) {
 	page = Math.max(Math.min(page, thumbArray.length), 1);
-	window.location.assign(pathWithoutPage + page + '?tco=' + thumbCountOffset + "&view=" + view);// TODO Consider tco in situations in which the page to which we go isn't visible, set an appropriate value? If tco = NaN or outside...
-}
-function scrollThumbsLeft() {
-	thumbCountOffset += THUMBS_TO_SHOW;
-	thumbCountOffset = Math.min(thumbCountOffset, 0);
-	$(".thumbs" ).css("transition", "1s");
-	$(".thumbs" ).css("transform",  "translateX(" + thumbCountOffset * thumbWidth + "px)");
-	updateArrows();
-}
-function scrollThumbsRight() {
-	thumbCountOffset -= THUMBS_TO_SHOW;
-	thumbCountOffset = Math.max(thumbCountOffset, -thumbArray.length + THUMBS_TO_SHOW);
-	$(".thumbs" ).css("transition", "1s");
-	$(".thumbs" ).css("transform",  "translateX(" + thumbCountOffset * thumbWidth + "px)");
-	updateArrows();
-}
-function updateArrows() { // call to show and hide arrows depending on whether they're clickable
-	if (0 == thumbCountOffset)
-		$("#leftArrow").hide();
-	else
-		$("#leftArrow").show();
-	if (thumbCountOffset <= (-thumbArray.length + 11)) // 11 because we're comparing offset and length, not indices
-		$("#rightArrow").hide();
-	else
-		$("#rightArrow").show();
-}
-function loadThumbs() { // Loads all thumbs and shows the ones which are visible as soon as they've been loaded
-	var to = Math.min(THUMBS_TO_SHOW - thumbCountOffset, thumbArray.length);
-	toLoadCount = Math.min(THUMBS_TO_SHOW, to);
-	var tempImg;
-	for (var i = -thumbCountOffset; i < to; i++) {
-		if ( thumbArray[i] === undefined )
-			continue;
-		tempImg = new Image();
-		tempImg.src = thumbArray[i];
-		tempImg.onload = function() {
-			toLoadCount--; //  JavaScript is single-threaded...
-			if (0 == toLoadCount) {
-				generateThumbGrid();
-			}
-		};
-	}
+	window.location.assign(pathWithoutPage + page + '?tco=' + thumbCountOffset + "&i=" + i);// TODO Consider tco in situations in which the page to which we go isn't visible, set an appropriate value? If tco = NaN or outside...
 }
