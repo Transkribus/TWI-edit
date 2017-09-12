@@ -174,7 +174,6 @@ function undoAction() {
 }
 // TODO Add undo to this when undo works.
 function inputAction(text) { // TODO This can and should be sped up now that it's used a lot. And renamed.
-	console.log("calling input action with text = " + text);
 	text = text.replace(" ", "\u00A0");
 	if (!changed)
 		setMessage("<div class='alert alert-warning'>" + transUnsavedChanges + "</div>");

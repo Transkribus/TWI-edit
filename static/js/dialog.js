@@ -33,6 +33,7 @@ function updateDocking(dock) { // docks (true) / undocks (false) the dialog. Whe
     	$("#correctModal").css("top",  dialogY);
     	$("#correctModal").css("width",  dialogWidth);
     	$("#correctModal").css("height",  dialogHeight);
+    	updateDialogSize();
 	}
 	updateDockingStatus(docked);
 }
@@ -68,6 +69,8 @@ function updateDialog(lineId) { // This function can be called without a line ID
 	updateDocking(); // We restore the dialog to a docked state, if it was docked when closed
 }
 function updateDialogSize() {
+	if (docked)
+		return;
 	if (null === dialogAbsoluteMinWidth) { // if we're doing this for the very first time, we calculate the absolute minimum, which means space for all buttons on a single row
 		var buttonSum = 0;
 		// get the delta between a button group and the span containing it when there's another button following it 
