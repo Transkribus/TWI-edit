@@ -225,7 +225,7 @@ def correct(request, collId, docId, page=None, transcriptId=None):# TODO Decide 
                  'title': document.get('md').get('title'),
                  'pageNo': page,
                  'tags': tags,
-                 'view': request.GET.get('view') if request.GET.get('view') else "v",
+                 'i': request.GET.get('i') if request.GET.get('i') else 'i',
 		         'metadata' : document.get('md'),
                  #'regionData': regionData,
             }

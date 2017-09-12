@@ -21,10 +21,10 @@
     	<div class="col-md-2">
 			<div class="input-group input-group-sm">
 				<div class="btn-group btn-toggle">
-			        <a id="toggleView_i" class="btn btn-sm btn-primary active" data-target="#toggleView">{% trans "Image" %}</a>
-			    	<a id="toggleView_lbl" class="btn btn-sm btn-default" data-target="#toggleView">{% trans "Line by line" %}</a>
-			    	<a id="toggleView_sbs" class="btn btn-sm btn-default disabled" data-target="#toggleView">{% trans "Side by side" %}</a>
-			    	<a id="toggleView_t" class="btn btn-sm btn-default disabled" data-target="#toggleView">{% trans "Text" %}</a>
+			        <a id="toggleInterface_i" class="btn btn-sm btn-primary active" data-target="#toggleInterface">{% trans "Image" %}</a>
+			    	<a id="toggleInterface_lbl" class="btn btn-sm btn-default" data-target="#toggleInterface">{% trans "Line by line" %}</a>
+			    	<a id="toggleInterface_sbs" class="btn btn-sm btn-default disabled" data-target="#toggleInterface">{% trans "Side by side" %}</a>
+			    	<a id="toggleInterface_t" class="btn btn-sm btn-default disabled" data-target="#toggleInterface">{% trans "Text" %}</a>
 			    </div>
 			</div>
 		</div>
@@ -149,15 +149,17 @@
 						keyup(e);
 					});
 					$("#line_{{ line|get_item:"@id" }}").on("mouseup", function(e) {
-						if ( currentLineId !== "{{ line|get_item:"@id" }}" ) {
-							var sel = window.getSelection();
-							sel.removeAllRanges();
-							selectionData = [["{{ line|get_item:"@id" }}", 0, 0]];
-							currentLineId = "{{ line|get_item:"@id" }}";
-							updateCanvas();
-							buildLineList();
+						if ( window.location.href.indexOf('edit') >= 0 ) {
+							if ( currentLineId !== "{{ line|get_item:"@id" }}" ) {
+								var sel = window.getSelection();
+								sel.removeAllRanges();
+								selectionData = [["{{ line|get_item:"@id" }}", 0, 0]];
+								currentLineId = "{{ line|get_item:"@id" }}";
+								updateCanvas();
+								buildLineList();
+							}
+							mouseup(e);
 						}
-						mouseup(e);
 					});
 					$("#line_{{ line|get_item:"@id" }}").on("paste", function(e) {
 						paste(e);
@@ -169,7 +171,8 @@
 						cut(e);
 					});
 					$("#line_{{ line|get_item:"@id" }}").on("focus", function() {
-						$("#options_{{ line|get_item:"@id" }}").show();
+						if ( window.location.href.indexOf('edit') >= 0 )
+							$("#options_{{ line|get_item:"@id" }}").show();
 					});
 					$("#line_{{ line|get_item:"@id" }}").on("blur", function() {
 						if ( !$("#options_{{ line|get_item:"@id" }}").is(":hover") )
@@ -270,7 +273,7 @@
 		{% for tag in tags %}"{{tag.name}}": "{{tag.color}}" {% if not forloop.last %}, {% endif %}
 		{% endfor %}
 	}
-	view = "{{ view }}";
+	i = "{{ i }}";
 	$("a[data-target='#saveChanges']").click(function(e) {
 		saveChanges(e);
 	});
@@ -307,16 +310,16 @@
     	$("area").css("cursor", "pointer");
 		updateCanvas();
 	});
-	$("a[data-target='#toggleView']").click(function(e) {
+	$("a[data-target='#toggleInterface']").click(function(e) {
     	e.preventDefault();
     	currentLineId = null;
 
     	$(".transcript-div").toggle();
     	if ( $(".transcript-div").is(":visible") )
-    		view = "i";
+    		i = "i";
     	$(".lines-div").toggle();
     	if ( $(".lines-div").is(":visible") ) {
-    		view = "lbl";
+    		i = "lbl";
     		$("#lineList").html("");
     	}
     	if ( correctModal !== undefined && correctModal.isOpen() )
@@ -570,8 +573,8 @@
     		}
         });
 
-		if ( view == "lbl" )
-			$("#toggleView_lbl").click();
+		if ( i == "lbl" )
+			$("#toggleInterface_lbl").click();
 	});
 	var fixmeTop = $(".fix_scroll_top").offset().top;
 	$(window).scroll(function() {

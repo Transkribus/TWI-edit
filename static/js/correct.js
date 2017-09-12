@@ -6,7 +6,7 @@ var accumExtraY = 0;
 var initialWidth, initialHeight, initialScale, naturalWidth;
 var previousInnerWidth = window.innerWidth;
 var correctModal;
-var view = "";
+var i = "";
 var changed = false;
 
 // i18n vars needed: transUnsavedChanges, transSavingChanges

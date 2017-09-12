@@ -6,7 +6,7 @@ var toLoadCount;
 
 function gotoPage(page) {
 	page = Math.max(Math.min(page, thumbArray.length), 1);
-	window.location.assign(pathWithoutPage + page + '?tco=' + thumbCountOffset + "&view=" + view);// TODO Consider tco in situations in which the page to which we go isn't visible, set an appropriate value? If tco = NaN or outside...
+	window.location.assign(pathWithoutPage + page + '?tco=' + thumbCountOffset + "&i=" + i);// TODO Consider tco in situations in which the page to which we go isn't visible, set an appropriate value? If tco = NaN or outside...
 }
 function scrollThumbsLeft() {
 	thumbCountOffset += THUMBS_TO_SHOW;
@@ -100,7 +100,7 @@ function checkPageNumberInput() { // Tries to parse input to see if it's a valid
 }
 function gotoPage(page) {
 	page = Math.max(Math.min(page, thumbArray.length), 1);
-	window.location.assign(pathWithoutPage + page + '?tco=' + thumbCountOffset + "&view=" + view);// TODO Consider tco in situations in which the page to which we go isn't visible, set an appropriate value? If tco = NaN or outside...
+	window.location.assign(pathWithoutPage + page + '?tco=' + thumbCountOffset + "&i=" + i);// TODO Consider tco in situations in which the page to which we go isn't visible, set an appropriate value? If tco = NaN or outside...
 }
 function scrollThumbsLeft() {
 	thumbCountOffset += THUMBS_TO_SHOW;

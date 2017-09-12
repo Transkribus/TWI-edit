@@ -126,10 +126,10 @@ function editAction(event) {
 	        typewriterNext();
 	        return; // TODO We don't restoreSelection() here as we do below. Which behaviour is preferable?
 	    } else {
-	    	if (event.key == "ArrowUp" && getIndexFromLineId(editedLineId) == (getIndexFromLineId(currentLineId) - surroundingCount) && view === "i") {
+	    	if (event.key == "ArrowUp" && getIndexFromLineId(editedLineId) == (getIndexFromLineId(currentLineId) - surroundingCount) && i === "i") {
     			 typewriterPrevious();
     			 restoreSelection();
-	    	} else if (event.key == "ArrowDown" && getIndexFromLineId(editedLineId) == (getIndexFromLineId(currentLineId) + surroundingCount) && view === "i") {
+	    	} else if (event.key == "ArrowDown" && getIndexFromLineId(editedLineId) == (getIndexFromLineId(currentLineId) + surroundingCount) && i === "i") {
 	    		typewriterNext();
 	    		restoreSelection();
 	    	} else if (event.key == "Home") // In some cases the "parent" is the LI which doesn't yield the right offset in updateSelection
@@ -274,7 +274,7 @@ function updateSelectionData() { // call after user inputs to put selection info
 	var totAnchorOffset = selection.anchorOffset + parseInt(anchorParentNode.getAttribute("spanOffset"));
 	var totFocusOffset = selection.focusOffset + parseInt(focusParentNode.getAttribute("spanOffset"));
 	var startOffset, endOffset;
-	
+
 	if (anchorLineIndex == focusLineIndex) {
 		startOffset = Math.min(totAnchorOffset, totFocusOffset);
 		endOffset = Math.max(totAnchorOffset, totFocusOffset);
@@ -337,7 +337,7 @@ function pixelsToCharOffset(element, pixels) { // returns the character index wi
 		$(hiddenCopy).appendTo(element);
 		width = $(hiddenCopy).outerWidth();
 		$(hiddenCopy).remove();
-	} while (pixels < width); 
+	} while (pixels < width);
 	return testText.length - 1 + (pixels > ((width + previousWidth) / 2)); // also checking whether the click was closer to the left or to the right of the character
 }
 
@@ -539,7 +539,7 @@ function resizeText(delta) {
 function typewriterNext() { // Aka. "press typewriter enter scroll". Changes the selected lines and the modal content.
 	newLineId = getNextLineId(currentLineId);
 	if (newLineId != null && selectionData !== undefined && selectionData[0] !== undefined ) {
-		// move the caret one line down to the closest matching character offset by pixels, when moved repeatedly without other actions inbetween, we use the first offset in pixels		
+		// move the caret one line down to the closest matching character offset by pixels, when moved repeatedly without other actions inbetween, we use the first offset in pixels
 		var caretLineId = getNextLineId(selectionData[0][0]);
 		if (null === caretOffsetInPixels) { // if we don't have a stored offset in pixels, we calculate it, otherwise we use it
 			// get the relative caret offset in pixels...
@@ -556,7 +556,7 @@ function typewriterNext() { // Aka. "press typewriter enter scroll". Changes the
 		saveCaretPixelOffset = true; // set this since if the very first user action after this iis also a "typewriter step" we will use the same offset
 		// get the closest span offset on the new line
 		var span, spanOffset;
-		$("[tagLineId=" + caretLineId + "]").each(function() { 
+		$("[tagLineId=" + caretLineId + "]").each(function() {
 			if (this.offsetLeft < caretOffsetInPixels) {
 				span = this;
 				spanOffset = this.offsetLeft;
