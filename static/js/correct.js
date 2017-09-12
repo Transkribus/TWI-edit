@@ -1,4 +1,4 @@
-var surroundingCount = 1;
+var surroundingCount = 0;
 var currentLineId;
 var zoomFactor = 0;
 var accumExtraX = 0;
