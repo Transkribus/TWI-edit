@@ -74,8 +74,12 @@ function updateCanvas() {
 	var ctx = c.getContext("2d");
 	ctx.canvas.width = $('#transcriptImage').width();
 	ctx.canvas.height = $('#transcriptImage').height();
-	ctx.fillStyle = "rgba(0, 0, 0, 0.15)";
-	ctx.fillRect(0,0,ctx.canvas.width,ctx.canvas.height);
+	if ( window.location.href.indexOf('edit') >= 0 ) {
+		ctx.fillStyle = "rgba(0, 0, 0, 0.15)";
+		ctx.fillRect(0,0,ctx.canvas.width,ctx.canvas.height);
+	}
+	else
+		ctx.clearRect(0,0,ctx.canvas.width,ctx.canvas.height);
 	ctx.save();
 	if (correctModal != null && correctModal.isOpen()) {
 		highlightLineList();
