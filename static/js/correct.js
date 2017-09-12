@@ -1,4 +1,4 @@
-var surroundingCount = 1;
+var surroundingCount = 0;
 var currentLineId;
 var zoomFactor = 0;
 var accumExtraX = 0;
@@ -6,7 +6,7 @@ var accumExtraY = 0;
 var initialWidth, initialHeight, initialScale, naturalWidth;
 var previousInnerWidth = window.innerWidth;
 var correctModal;
-var view = "";
+var i = "";
 var changed = false;
 
 // i18n vars needed: transUnsavedChanges, transSavingChanges
