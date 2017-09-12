@@ -307,7 +307,7 @@
 
     	window.history.pushState(null, document.title, newURL);
     	
-    	pathWithoutPage = newURL
+    	pathWithoutPage = newURL;
     	if(pathWithoutPage.indexOf('?') != -1) {
     		pathWithoutPage = pathWithoutPage.substring(0, pathWithoutPage.indexOf('?'));
     	}
