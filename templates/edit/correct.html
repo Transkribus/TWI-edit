@@ -303,18 +303,15 @@
 
     	if(window.location.href.indexOf("view") != -1) {
     		var newURL = window.location.href.replace('view', 'edit');
+    		pathWithoutPage = pathWithoutPage.replace('view', 'edit');
     		var newButtonText = "{% trans 'View' %}";
     	}else{
     		var newURL = window.location.href.replace('edit', 'view');
+    		pathWithoutPage = pathWithoutPage.replace('edit', 'view');
     		var newButtonText = "{% trans 'Edit' %}";
     	}
 
     	window.history.pushState(null, document.title, newURL);
-    	pathWithoutPage = newURL;
-    	if(pathWithoutPage.indexOf('?') != -1) {
-    		pathWithoutPage = pathWithoutPage.substring(0, pathWithoutPage.indexOf('?'));
-    	}
-
     	if ( correctModal !== undefined && correctModal.isOpen() )
 			correctModal.close();
 
@@ -538,9 +535,9 @@
 		initialWidth = $('#transcriptImage').width();
 		initialHeight = $('#transcriptImage').height();
 		naturalWidth = $('#transcriptImage').get(0).naturalWidth;
-		$(".transcript-div").height(window.innerHeight - 260);
+		$(".transcript-div").height(window.innerHeight - 200);
 		initialScale = initialWidth / naturalWidth;
-		pathWithoutPage = "{% url 'edit:correct' collId docId %}";
+		pathWithoutPage = "{% url 'edit:correct' collId docId %}/";
 		pageNo = {{pageNo}};
 		var search = window.location.search + 'tco=0';// just to avoid NaN below
 		thumbCountOffset = parseInt(search.substring(search.indexOf('tco=') + 4)); // "tco=".length = 4
