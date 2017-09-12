@@ -191,7 +191,11 @@ def correct(request, collId, docId, page=None, transcriptId=None):# TODO Decide 
                 line['crop'] = line_crop
                 textEquiv = line.get("TextEquiv")
                 if textEquiv:
-                    line['Unicode'] = textEquiv.get("Unicode").replace(" ", "\u00A0");
+                    unicode = textEquiv.get("Unicode")
+                    if unicode:
+                        line['Unicode'] = unicode.replace(" ", "\u00A0")
+                    else:
+                        line['Unicode'] = ""
         # Get thumbnails
         # RM Make one document request here...
         # RM need to test whether this has been successful
