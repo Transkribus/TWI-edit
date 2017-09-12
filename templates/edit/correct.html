@@ -312,6 +312,9 @@
     		pathWithoutPage = pathWithoutPage.substring(0, pathWithoutPage.indexOf('?'));
     	}
 
+    	if ( correctModal !== undefined && correctModal.isOpen() )
+			correctModal.close();
+
     	$("#editControls").toggle();
     	$("#editToggle").html(newButtonText);
     	$("area").css("cursor", "pointer");
