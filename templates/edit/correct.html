@@ -41,7 +41,7 @@
 				</span>
 	    	</div>
 		</div>
-		<div class="col-md-3">
+		<div class="col-md-3 text-center">
 			<div class="input-group input-group-sm">
 				<span class="input-group-addon">
 					<a class="first-page btn-sm" href="#" title="{% trans "First page" %}"><span class="glyphicon glyphicon-step-backward"></span></a>
@@ -57,49 +57,37 @@
 				</span>
 			</div>
 		</div>
-		<div>
-			<div class="col-md-1"></div>
-			<div class="col-md-5">
-				<a id="editToggle" class="btn btn-sm btn-primary" data-target="#toggleEdit">{% trans "Edit" %}</a>
-			</div>
-			<div class="col-md-1"></div>
+		<div class="col-md-1">
+			<a id="editToggle" class="btn btn-sm btn-primary" data-target="#toggleEdit">{% trans "Edit" %}</a>
 		</div>
 		{% if lines %}
-			{% if "view" in request.path %}
-				<div id="editControls" style="display: none;">
-			{% endif %}
-				<div class="col-md-1">
-			    	<div class="input-group input-group-sm">
-			    		<div class="btn-group">
-			    			<button class="btn btn-default btn-sm dropdown-toggle" type="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-			    				{% trans "Page status" %}
-			    				<span class="caret"></span>
-			    			</button>
-			    			<ul id="page_status" class="dropdown-menu">
-								<li {% if pageStatus == "NEW" %}class="active"{% endif %}><a href="#" name="NEW">{% trans "New" %}</a></li>
-								<li {% if pageStatus == "IN_PROGRESS" %}class="active"{% endif %}><a href="#" name="IN_PROGRESS">{% trans "In Progress" %}</a></li>
-								<li {% if pageStatus == "DONE" %}class="active"{% endif %}><a href="#" name="DONE">{% trans "Done" %}</a></li>
-								<li {% if pageStatus == "FINAL" %}class="active"{% endif %}><a href="#" name="FINAL">{% trans "Final" %}</a></li>
-								<li {% if pageStatus == "GT" %}class="active"{% endif %}><a href="#" name="GT">{% trans "Ground Truth" %}</a></li>
-							</ul>
-						</div>
-			    	</div>
-				</div>
-				<div class="col-md-1">
-					<a href="#" class="btn btn-sm btn-primary" data-target="#saveChanges">{% trans "Save changes" %}</a>
-				</div>
-			    <div class="col-md-3">
-					<div id="message"></div>
-				</div>
-			{% if "view" in request.path %}
-				</div>
-			{% endif %}
+			<div class="col-md-1 editControls" {% if "view" in request.path %}style="display: none;"{% endif %}>
+		    	<div class="input-group input-group-sm">
+		    		<div class="btn-group">
+		    			<button class="btn btn-default btn-sm dropdown-toggle" type="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+		    				{% trans "Page status" %}
+		    				<span class="caret"></span>
+		    			</button>
+		    			<ul id="page_status" class="dropdown-menu">
+							<li {% if pageStatus == "NEW" %}class="active"{% endif %}><a href="#" name="NEW">{% trans "New" %}</a></li>
+							<li {% if pageStatus == "IN_PROGRESS" %}class="active"{% endif %}><a href="#" name="IN_PROGRESS">{% trans "In Progress" %}</a></li>
+							<li {% if pageStatus == "DONE" %}class="active"{% endif %}><a href="#" name="DONE">{% trans "Done" %}</a></li>
+							<li {% if pageStatus == "FINAL" %}class="active"{% endif %}><a href="#" name="FINAL">{% trans "Final" %}</a></li>
+							<li {% if pageStatus == "GT" %}class="active"{% endif %}><a href="#" name="GT">{% trans "Ground Truth" %}</a></li>
+						</ul>
+					</div>
+		    	</div>
+			</div>
+			<div class="col-md-1 editControls" {% if "view" in request.path %}style="display: none;"{% endif %}>
+				<a href="#" class="btn btn-sm btn-primary" data-target="#saveChanges">{% trans "Save changes" %}</a>
+			</div>
+		    <div class="col-md-2">
+				<div id="message"></div>
+			</div>
 		{% else %}
-			<div class="col-md-1"></div>
-			<div class="col-md-5">
+			<div class="col-md-4">
 				{% trans "This page lacks segmentation and cannot be edited. Please use the expert client to create a segmentation first." %}
 			</div>
-			<div class="col-md-1"></div>
 		{% endif %}
 	</div>
 	<div class="collapse" id="thumbDiv" style="background-color: black;">
@@ -218,7 +206,7 @@
         </div>
       </div>
     </div>
-  </div> 
+  </div>
 </div>
 
 
@@ -273,7 +261,7 @@
 	var ignoreLeave = false;
 	var isDragged = false;
 	var resizeTimeout;
-	
+
 	tagItems = {
 		{% for tag in tags %}"{{tag.name}}": {name: "<span href=\"#\" style=\"color: #{{tag.color}};\">{{tag.name}}</span>", type: "checkbox", isHtmlName: true} {% if not forloop.last %}, {% endif %}
 		{% endfor %}
@@ -306,7 +294,6 @@
     	}
 
     	window.history.pushState(null, document.title, newURL);
-    	
     	pathWithoutPage = newURL;
     	if(pathWithoutPage.indexOf('?') != -1) {
     		pathWithoutPage = pathWithoutPage.substring(0, pathWithoutPage.indexOf('?'));
@@ -315,7 +302,7 @@
     	if ( correctModal !== undefined && correctModal.isOpen() )
 			correctModal.close();
 
-    	$("#editControls").toggle();
+    	$(".editControls").toggle();
     	$("#editToggle").html(newButtonText);
     	$("area").css("cursor", "pointer");
 		updateCanvas();
