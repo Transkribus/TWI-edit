@@ -56,7 +56,7 @@
 			</div>
 		</div>
 		<div class="col-md-1">
-			<a id="editToggle" class="btn btn-sm btn-primary" data-target="#toggleEdit">{% trans "Edit" %}</a>
+			<a id="editToggle" class="btn btn-sm btn-primary" data-target="#toggleEdit">{% if "view" in request.path %}{% trans "Edit" %}{% else %}{% trans "View" %}{% endif %}</a>
 		</div>
 		{% if lines %}
 			<div class="col-md-1 editControls" {% if "view" in request.path %}style="display: none;"{% endif %}>
@@ -141,10 +141,16 @@
 				    	drawLineImage("{{ line|get_item:"@id" }}", "{{ line|get_item:"crop"|coords_for_imagemap }}");
 				    });
 				    $("#line_{{ line|get_item:"@id" }}").on("keydown", function(e) {
-						keydown(e);
+				    	if ( window.location.href.indexOf('edit') >= 0 )
+							keydown(e);
+						else
+							e.preventDefault();
 					});
 					$("#line_{{ line|get_item:"@id" }}").on("keyup", function(e) {
-						keyup(e);
+						if ( window.location.href.indexOf('edit') >= 0 )
+							keyup(e);
+						else
+							e.preventDefault();
 					});
 					$("#line_{{ line|get_item:"@id" }}").on("mouseup", function(e) {
 						if ( window.location.href.indexOf('edit') >= 0 ) {
@@ -160,13 +166,22 @@
 						}
 					});
 					$("#line_{{ line|get_item:"@id" }}").on("paste", function(e) {
-						paste(e);
+						if ( window.location.href.indexOf('edit') >= 0 )
+							paste(e);
+						else
+							e.preventDefault();
 					});
 					$("#line_{{ line|get_item:"@id" }}").on("drop", function(e) {
-						drop(e);
+						if ( window.location.href.indexOf('edit') >= 0 )
+							drop(e);
+						else
+							e.preventDefault();
 					});
 					$("#line_{{ line|get_item:"@id" }}").on("cut", function(e) {
-						cut(e);
+						if ( window.location.href.indexOf('edit') >= 0 )
+							cut(e);
+						else
+							e.preventDefault();
 					});
 					$("#line_{{ line|get_item:"@id" }}").on("focus", function() {
 						if ( window.location.href.indexOf('edit') >= 0 )
