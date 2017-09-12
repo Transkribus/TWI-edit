@@ -605,6 +605,14 @@
 		if (changed)
 			return '{% trans "You have unsaved changes. Are you sure you want to leave?" %}'; // custom messages aren't supported by all browsers now, this is for those that do show them
 	});
+    $(window).bind("keydown", function(e) {
+        if (e.ctrlKey || e.metaKey) {
+            if ( String.fromCharCode(e.which).toLowerCase() === "s" ) {
+                e.preventDefault();
+                saveChanges(e);
+            }
+        }
+    });
 </script>
 
 <script src="{% static "js/gijgo.min.js" %}"></script>
