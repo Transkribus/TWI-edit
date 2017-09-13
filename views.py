@@ -116,6 +116,9 @@ def correct(request, collId, docId, page=None, transcriptId=None):# TODO Decide 
     if page is None :
         page = 1
 
+    #Use this to get the role of the current user untils such time as it is available from t.collection
+    role = apps.utils.utils.get_role(request,collId)
+
     current_transcript = t.current_transcript(request, collId, docId, page)
     if isinstance(current_transcript,HttpResponse):
         return apps.utils.views.error_view(request,current_transcript)
