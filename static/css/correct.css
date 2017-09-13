@@ -1,3 +1,11 @@
+.btn-toolbar-centered {
+    text-align: center;
+}
+
+.btn-toolbar-centered > .btn-group {
+    float: none !important;
+}
+
 /* We crop the image like this... */
 .transcript-div {
 	background-color: gray;

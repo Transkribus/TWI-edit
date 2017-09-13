@@ -600,7 +600,10 @@ function typewriterStep(newLineId, delta) {
 	if ( prev )
 		$("#options_" + prev).hide();
 }
-function setMessage(message) {
+function setMessage(message, type) {
+	type = type || "warning";
+	$("#message").removeClass("btn-muted btn-primary btn-success btn-info btn-warning btn-danger");
 	$("#message").html(message);
+	$("#message").addClass("btn-" + type);
 	$("#message").show();
 }
