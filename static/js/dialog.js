@@ -64,7 +64,15 @@ function updateDialog(lineId) { // This function can be called without a line ID
 	var lowest;
 	for (lowest = lineIdx; lowest < lastShown && contentArray[lowest][2][7] < contentArray[lowest + 1][2][7]; lowest++);
 	dialogY = initialScale * (1 + zoomFactor) * (2 * contentArray[lowest][2][7] - contentArray[lowest][2][1]) + $(".transcript-div" ).offset().top - accumExtraY; 
-	$("#correctModal").css("left",  dialogX + "px");
+	if (dialogX <= 0)
+		dialogX = 0;
+	else if ((dialogX + dialogWidth) >= window.innerWidth)
+		dialogX = window.innerWidth - dialogWidth;
+	if (dialogY <= 0)
+		dialogY = 0;
+	else if ((dialogY + dialogHeight) > document.body.clientHeight)
+		dialogY = window.innerHeight - dialogHeight;
+	$("#correctModal").css("left",  dialogX + "px");		
 	$("#correctModal").css("top",  dialogY + "px");
 	updateDocking(); // We restore the dialog to a docked state, if it was docked when closed
 }
