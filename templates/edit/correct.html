@@ -283,7 +283,9 @@
     	$(".editControls").toggle();
     	$("#editToggle").html(newButtonText);
     	$("area").css("cursor", "pointer");
-		updateCanvas();
+        if ( window.location.href.indexOf("view") == -1 && i === "i" )
+            updateDialog("{{ lines|index:0|get_item:"@id" }}");
+        updateCanvas();
 	});
 	$("a[data-target='#toggleInterface']").click(function(e) {
     	e.preventDefault();
