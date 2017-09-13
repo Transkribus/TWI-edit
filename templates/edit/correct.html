@@ -350,42 +350,7 @@
         if ( e.target.id.substring(16) == i )
             return;
 
-        currentLineId = null;
-    	$(".transcript-div").toggle();
-    	if ( $(".transcript-div").is(":visible") )
-    		i = "i";
-    	$(".lines-div").toggle();
-    	if ( $(".lines-div").is(":visible") ) {
-    		i = "lbl";
-    		$("#lineList").html("");
-    	}
-    	if ( correctModal !== undefined && correctModal.isOpen() )
-			correctModal.close();
-
-		contentArray.forEach(function(obj, i) {
-			var c = document.getElementById("canvas_" + obj[0]);
-			if ( c !== null && c !== undefined ) {
-				var ctx = c.getContext("2d");
-				ctx.canvas.width = $("#canvas_" + obj[0]).width();
-				ctx.canvas.height = $("#canvas_" + obj[0]).height();
-				ctx.fillStyle = "rgb(255, 255, 255)";
-				ctx.fillRect(0 ,0, ctx.canvas.width, ctx.canvas.height);
-				ctx.save();
-
-				drawLineImage(obj[0], obj[2]);
-				if ( $(".transcript-div").is(":visible") )
-					$("line_" + obj[0]).html("");
-				if ( $(".lines-div").is(":visible") ) {
-					currentLineId = obj[0];
-					buildLineList();
-				}
-			}
-		});
-		updateCanvas();
-		currentLineId = null;
-		buildLineList();
-
-    	{# TODO Handle failures here or are we happy with the current solution? #}
+        changeInterface();
 	});
 	$('.transcript-map-div').draggable({
 		start: function() {
@@ -532,6 +497,43 @@
 	$("#pageNumber").change(function() {
    		checkPageNumberInput();
 	});
+    function changeInterface() {
+        currentLineId = null;
+        $(".transcript-div").toggle();
+        if ( $(".transcript-div").is(":visible") )
+            i = "i";
+        $(".lines-div").toggle();
+        if ( $(".lines-div").is(":visible") ) {
+            i = "lbl";
+            $("#lineList").html("");
+        }
+        if ( correctModal !== undefined && correctModal.isOpen() )
+            correctModal.close();
+
+        contentArray.forEach(function(obj, i) {
+            var c = document.getElementById("canvas_" + obj[0]);
+            if ( c !== null && c !== undefined ) {
+                var ctx = c.getContext("2d");
+                ctx.canvas.width = $("#canvas_" + obj[0]).width();
+                ctx.canvas.height = $("#canvas_" + obj[0]).height();
+                ctx.fillStyle = "rgb(255, 255, 255)";
+                ctx.fillRect(0 ,0, ctx.canvas.width, ctx.canvas.height);
+                ctx.save();
+
+                drawLineImage(obj[0], obj[2]);
+                if ( $(".transcript-div").is(":visible") )
+                    $("line_" + obj[0]).html("");
+                if ( $(".lines-div").is(":visible") ) {
+                    currentLineId = obj[0];
+                    buildLineList();
+                }
+            }
+        });
+        updateCanvas();
+        currentLineId = null;
+        buildLineList();
+        {# TODO Handle failures here or are we happy with the current solution? #}
+    }
 	$(function() { {# TODO Solution for people using broken computers that don't have more than one mouse button. Issues: z-index (or overflow?) and selections getting deselected... #}
         $.contextMenu({
             selector: '.tag-menu',
@@ -629,11 +631,12 @@
     		}
         });
 
-		if ( i == "lbl" )
-			$("#toggleInterface_lbl").click();
-
         $("#toggleInterface_i").removeClass("disabled");
         $("#toggleInterface_lbl").removeClass("disabled");
+		if ( i == "lbl" ) {
+            $("#toggleInterface_lbl").click();// Change buttons
+			changeInterface();
+        }
 	});
 	var fixmeTop = $(".fix_scroll_top").offset().top;
 	$(window).scroll(function() {
