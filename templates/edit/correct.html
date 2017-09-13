@@ -352,8 +352,7 @@
 		updateCanvas();
 	});
 	$('area').mouseenter(function(e) {
-		if ( window.location.href.indexOf('edit') >= 0 )
-			highlightLine(e.target.id);
+		highlightLine(e.target.id);
 	});
 	$('area').mouseleave(function(e) {
 		updateCanvas();
