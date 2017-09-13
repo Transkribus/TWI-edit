@@ -59,7 +59,7 @@ function getContent() { // "JSON.stringifies" (verbing a noun) contentArray and 
 function saveChanges(e) {
 	if (arguments.length == 1)
 		e.preventDefault();
-	setMessage('<div class="alert alert-warning">' + transSavingChanges + '</div>');
+	setMessage(transSavingChanges);
 	$.post(window.location.href, {content: getContent(), csrfmiddlewaretoken: csrf_token}, function( data ) {
 		setMessage(data);
 		changed = false;
