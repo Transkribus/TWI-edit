@@ -46,7 +46,8 @@
 	overflow: auto;
 }
 .line-list {
-	font-size: 17px;
+	font-size: 25px;
+	letter-spacing: 5px;
 }
 ol {
 
