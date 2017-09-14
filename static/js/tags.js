@@ -53,7 +53,7 @@ function toggleTag(toggleTag) { // sets/removes the tag depending on whether the
 	if (!removeTag(toggleTag)) // if the tag can be removed, we do that...
 		applyTag(toggleTag);// ...but otherwise we apply it
 	if (!changed)
-		setMessage("<div class='alert alert-warning'>" + transUnsavedChanges + "</div>");
+		setMessage(transUnsavedChanges);
 	changed = true;
 }
 function removeTag(removeTag) { // removes the given tag from the selection, returns true if removals were made, otherwise false
@@ -229,7 +229,7 @@ function contextMenuOpenable(contextMenuEvent) { // ensures that the caret is al
 	if (line) { // if we have a line, find the correct span, if any
 		var span, spanOffset, toTheLeft = false;
 		var lineId = line.getAttribute("id").substr(5); // "text_".length is 5...
-		$("[tagLineId=" + lineId + "]").each(function() { 
+		$("[tagLineId=" + lineId + "]").each(function() {
 			var x = 0, testElement = this;
 			do {
 				x += testElement.offsetLeft;

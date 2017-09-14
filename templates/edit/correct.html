@@ -16,78 +16,76 @@
 
 <div class="top-div col-md-12">
     <div class="row row-centered fix_scroll_top">
-    	<div class="col-md-2">
-			<div class="input-group input-group-sm">
-				<div class="btn-group btn-toggle">
+        <div class="col-md-12">
+            <div class="btn-toolbar btn-toolbar-centered" role="toolbar">
+                <div class="btn-group btn-toggle">
                     <a id="toggleInterface_i" class="btn btn-sm btn-primary active disabled" data-target="#toggleInterface">{% trans "Image" %}</a>
                     <a id="toggleInterface_lbl" class="btn btn-sm btn-default disabled" data-target="#toggleInterface">{% trans "Line by line" %}</a>
                     <a id="toggleInterface_sbs" class="btn btn-sm btn-default disabled" data-target="#toggleInterface">{% trans "Side by side" %}</a>
                     <a id="toggleInterface_t" class="btn btn-sm btn-default disabled" data-target="#toggleInterface">{% trans "Text" %}</a>
-			    </div>
-			</div>
-		</div>
-	    <div class="col-md-2">
-	    	<div class="input-group input-group-sm">
-	    		<span class="input-group-addon" title="{% trans "Zoom in" %}">
-	    			<a class="zoom-in btn-sm" href="#"><span class="glyphicon glyphicon-zoom-in"></span></a>
-	    		</span>
-	    		<span class="input-group-addon" title="{% trans "Zoom out" %}">
-	    			<a class="zoom-out btn-sm" href="#"><span class="glyphicon glyphicon-zoom-out"></span></a>
-	    		</span>
-	    		<span class="input-group-addon" title="{% trans "Reset image" %}">
-					<a class="reset-image btn-sm" href="#"><span class="glyphicon glyphicon-screenshot"></span></a>
-				</span>
-	    	</div>
-		</div>
-		<div class="col-md-3 text-center">
-			<div class="input-group input-group-sm">
-				<span class="input-group-addon">
-					<a class="first-page btn-sm" href="#" title="{% trans "First page" %}"><span class="glyphicon glyphicon-step-backward"></span></a>
-					<a class="previous-page btn-sm" href="#" title="{% trans "Previous page" %}"><span class="glyphicon glyphicon-triangle-left"></span></a>
-				</span>
-				<input type="text" class="form-control" id="pageNumber">
-				<span class="input-group-addon">
-					<a class="next-page btn-sm" href="#" title="{% trans "Next page" %}"><span class="glyphicon glyphicon-triangle-right"></span></a>
-					<a class="last-page btn-sm" href="#" title="{% trans "Last page" %}"><span class="glyphicon glyphicon-step-forward"></span></a>
-				</span>
-				<span class="input-group-addon" title="{% trans "Thumb overview" %}">
-					<a class="btn-sm" data-toggle="collapse" href="#thumbDiv" aria-expanded="false" aria-controls="thumbDiv"><span class="glyphicon glyphicon-th-large"></span></a>
-				</span>
-			</div>
-		</div>
-		<div class="col-md-1">
-			<a id="editToggle" class="btn btn-sm btn-primary" data-target="#toggleEdit">{% if "view" in request.path %}{% trans "Edit" %}{% else %}{% trans "View" %}{% endif %}</a>
-		</div>
-		{% if lines %}
-			<div class="col-md-1 editControls" {% if "view" in request.path %}style="display: none;"{% endif %}>
-		    	<div class="input-group input-group-sm">
-		    		<div class="btn-group">
-		    			<button class="btn btn-default btn-sm dropdown-toggle" type="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-		    				{% trans "Page status" %}
-		    				<span class="caret"></span>
-		    			</button>
-		    			<ul id="page_status" class="dropdown-menu">
-							<li {% if pageStatus == "NEW" %}class="active"{% endif %}><a href="#" name="NEW">{% trans "New" %}</a></li>
-							<li {% if pageStatus == "IN_PROGRESS" %}class="active"{% endif %}><a href="#" name="IN_PROGRESS">{% trans "In Progress" %}</a></li>
-							<li {% if pageStatus == "DONE" %}class="active"{% endif %}><a href="#" name="DONE">{% trans "Done" %}</a></li>
-							<li {% if pageStatus == "FINAL" %}class="active"{% endif %}><a href="#" name="FINAL">{% trans "Final" %}</a></li>
-							<li {% if pageStatus == "GT" %}class="active"{% endif %}><a href="#" name="GT">{% trans "Ground Truth" %}</a></li>
-						</ul>
-					</div>
-		    	</div>
-			</div>
-			<div class="col-md-1 editControls" {% if "view" in request.path %}style="display: none;"{% endif %}>
-				<a href="#" class="btn btn-sm btn-primary" data-target="#saveChanges">{% trans "Save changes" %}</a>
-			</div>
-		    <div class="col-md-2">
-				<div id="message"></div>
-			</div>
-		{% else %}
-			<div class="col-md-4">
-				{% trans "This page lacks segmentation and cannot be edited. Please use the expert client to create a segmentation first." %}
-			</div>
-		{% endif %}
-	</div>
+                </div>
+                <div class="btn-group">
+                    <a class="zoom-in btn btn-sm btn-default" href="#" title="{% trans "Zoom in" %}"><span class="glyphicon glyphicon-zoom-in"></span></a>
+                    <a class="zoom-out btn btn-sm btn-default" href="#" title="{% trans "Zoom out" %}"><span class="glyphicon glyphicon-zoom-out"></span></a>
+                    <a class="reset-image btn btn-sm btn-default" href="#" title="{% trans "Reset image" %}"><span class="glyphicon glyphicon-screenshot"></span></a>
+                </div>
+                <div class="btn-group">
+                    <a class="first-page btn btn-sm btn-default" href="#" title="{% trans "First page" %}"><span class="glyphicon glyphicon-step-backward"></span></a>
+                    <a class="previous-page btn btn-sm btn-default" href="#" title="{% trans "Previous page" %}"><span class="glyphicon glyphicon-triangle-left"></span></a>
+                    <input type="text" class="btn btn-sm btn-default" id="pageNumber">
+                    <a class="next-page btn btn-sm btn-default" href="#" title="{% trans "Next page" %}"><span class="glyphicon glyphicon-triangle-right"></span></a>
+                    <a class="last-page btn btn-sm btn-default" href="#" title="{% trans "Last page" %}"><span class="glyphicon glyphicon-step-forward"></span></a>
+                    <a class="btn btn-sm btn-default" data-toggle="collapse" href="#thumbDiv" aria-expanded="false" aria-controls="thumbDiv"><span class="glyphicon glyphicon-th-large" title="{% trans "Thumb overview" %}"></span></a>
+                </div>
+                <div class="btn-group">
+                    <a id="editToggle" class="btn btn-sm btn-primary" data-target="#toggleEdit">{% if "view" in request.path %}{% trans "Edit" %}{% else %}{% trans "View" %}{% endif %}</a>
+                </div>
+                {% if lines %}
+                    <div class="btn-group">
+                        {% if role == "Owner" %}
+                            <div class="btn-group btn-group-sm editControls" {% if "view" in request.path %}style="display: none;"{% endif %}>
+                                <a id="page_status" type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown">
+                                    {% if pageStatus == "NEW" or pageStatus == "IN_PROGRESS" %}
+                                        {% trans "Page status: in progress" %}
+                                    {% elif pageStatus == "DONE" %}
+                                        {% trans "Page status: done" %}
+                                    {% elif pageStatus == "FINAL" %}
+                                        {% trans "Page status: final" %}
+                                    {% elif pageStatus == "GT" %}
+                                        {% trans "Page status: ground truth" %}
+                                    {% endif %}
+                                    <span class="caret"></span>
+                                </a>
+                                <ul class="dropdown-menu" role="menu">
+                                    <li><a href="#" name="IN_PROGRESS" data-target="#page_status">{% trans "In Progress" %}</a></li>
+                                    <li><a href="#" name="DONE" data-target="#page_status">{% trans "Done" %}</a></li>
+                                    <li><a href="#" name="FINAL" data-target="#page_status">{% trans "Final" %}</a></li>
+                                </ul>
+                            </div>
+                        {% else %}
+                            <a id="page_status" class="btn btn-sm btn-default {% if pageStatus == "GT" %}disabled{% endif %} editControls" {% if "view" in request.path %}style="display: none;"{% endif %} data-target="#page_status">
+                                {% if pageStatus == "NEW" or pageStatus == "IN_PROGRESS" %}
+                                    {% trans "Page status: in progress" %}
+                                {% elif pageStatus == "DONE" %}
+                                    {% trans "Page status: done" %}
+                                {% elif pageStatus == "FINAL" %}
+                                    {% trans "Page status: final" %}
+                                {% elif pageStatus == "GT" %}
+                                    {% trans "Page status: ground truth" %}
+                                {% endif %}
+                            </a>
+                        {% endif %}
+                        <a href="#" class="btn btn-sm btn-primary editControls" data-target="#saveChanges" {% if "view" in request.path %}style="display: none;"{% endif %}>{% trans "Save changes" %}</a>
+                        <span id="message" class="btn btn-sm"></span>
+                    </div>
+                {% else %}
+                    <div class="btn-group">
+                        <span class="btn btn-sm btn-default">{% trans "This page lacks segmentation and cannot be edited. Please use the expert client to create a segmentation first." %}</span>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
 	<div class="collapse" id="thumbDiv" style="background-color: black;">
 		<div>
 			<table>
@@ -277,6 +275,7 @@
 	var ignoreLeave = false;
 	var isDragged = false;
 	var resizeTimeout;
+    var pageStatus = "{{ pageStatus }}";
 
 	tagItems = {
 		{% for tag in tags %}"{{tag.name}}": {name: "<span href=\"#\" style=\"color: #{{tag.color}};\">{{tag.name}}</span>", type: "checkbox", isHtmlName: true} {% if not forloop.last %}, {% endif %}
@@ -290,13 +289,37 @@
 	$("a[data-target='#saveChanges']").click(function(e) {
 		saveChanges(e);
 	});
-	$("#page_status a").click(function(e) {
-		$("#page_status li.active").toggleClass("active");
-		$("#page_status a[name='" + e.currentTarget.name + "']").parent().toggleClass("active");
-		$.post(window.location.href, {status: e.currentTarget.name, csrfmiddlewaretoken: "{{ csrf_token }}"}, function( data ) {
-			setMessage(data);
-		});
-    	{# TODO Handle failures here or are we happy with the current solution? #}
+    $("a[data-target='#page_status']").click(function(e) {
+        {# TODO Handle failures here or are we happy with the current solution? #}
+        if ( "{{ role }}" === "Editor" ) {
+            if ( pageStatus === "NEW" || pageStatus === "IN_PROGRESS" )
+                $.post(window.location.href, {status: "DONE", csrfmiddlewaretoken: "{{ csrf_token }}"}, function( data ) {
+                    setMessage(data, "success");
+                    $("#page_status").html("{% trans "Page status: done" %}");
+                    pageStatus = "DONE";
+                });
+            else if ( pageStatus === "DONE" )
+                $.post(window.location.href, {status: "IN_PROGRESS", csrfmiddlewaretoken: "{{ csrf_token }}"}, function( data ) {
+                    setMessage(data, "success");
+                    $("#page_status").html("{% trans "Page status: in progress" %}");
+                    pageStatus = "IN_PROGRESS";
+                });
+            else
+                setMessage("{% trans "You can not change the page status." %}", "danger");
+        }
+        else if ( "{{ role }}" === "Owner" )
+            $.post(window.location.href, {status: e.currentTarget.name, csrfmiddlewaretoken: "{{ csrf_token }}"}, function( data ) {
+                setMessage(data, "success");
+                if ( e.currentTarget.name === "IN_PROGRESS" )
+                    $("#page_status").html("{% trans "Page status: in progress" %}<span class=\"caret\"></span>");
+                else if ( e.currentTarget.name === "DONE" )
+                    $("#page_status").html("{% trans "Page status: done" %}<span class=\"caret\"></span>");
+                else if ( e.currentTarget.name === "FINAL" )
+                    $("#page_status").html("{% trans "Page status: final" %}<span class=\"caret\"></span>");
+                pageStatus = e.currentTarget.name;
+            });
+        else
+            setMessage("{% trans "You can not change the page status." %}", "danger");
 	});
 	$("a[data-target='#toggleEdit']").click(function(e) {
     	e.preventDefault();
@@ -318,47 +341,16 @@
     	$(".editControls").toggle();
     	$("#editToggle").html(newButtonText);
     	$("area").css("cursor", "pointer");
-		updateCanvas();
+        if ( window.location.href.indexOf("view") == -1 && i === "i" )
+            updateDialog("{{ lines|index:0|get_item:"@id" }}");
+        updateCanvas();
 	});
 	$("a[data-target='#toggleInterface']").click(function(e) {
     	e.preventDefault();
-    	currentLineId = null;
+        if ( e.target.id.substring(16) == i )
+            return;
 
-    	$(".transcript-div").toggle();
-    	if ( $(".transcript-div").is(":visible") )
-    		i = "i";
-    	$(".lines-div").toggle();
-    	if ( $(".lines-div").is(":visible") ) {
-    		i = "lbl";
-    		$("#lineList").html("");
-    	}
-    	if ( correctModal !== undefined && correctModal.isOpen() )
-			correctModal.close();
-
-		contentArray.forEach(function(obj, i) {
-			var c = document.getElementById("canvas_" + obj[0]);
-			if ( c !== null && c !== undefined ) {
-				var ctx = c.getContext("2d");
-				ctx.canvas.width = $("#canvas_" + obj[0]).width();
-				ctx.canvas.height = $("#canvas_" + obj[0]).height();
-				ctx.fillStyle = "rgb(255, 255, 255)";
-				ctx.fillRect(0 ,0, ctx.canvas.width, ctx.canvas.height);
-				ctx.save();
-
-				drawLineImage(obj[0], obj[2]);
-				if ( $(".transcript-div").is(":visible") )
-					$("line_" + obj[0]).html("");
-				if ( $(".lines-div").is(":visible") ) {
-					currentLineId = obj[0];
-					buildLineList();
-				}
-			}
-		});
-		updateCanvas();
-		currentLineId = null;
-		buildLineList();
-
-    	{# TODO Handle failures here or are we happy with the current solution? #}
+        changeInterface();
 	});
 	$('.transcript-map-div').draggable({
 		start: function() {
@@ -385,8 +377,7 @@
 		updateCanvas();
 	});
 	$('area').mouseenter(function(e) {
-		if ( window.location.href.indexOf('edit') >= 0 )
-			highlightLine(e.target.id);
+		highlightLine(e.target.id);
 	});
 	$('area').mouseleave(function(e) {
 		updateCanvas();
@@ -506,6 +497,43 @@
 	$("#pageNumber").change(function() {
    		checkPageNumberInput();
 	});
+    function changeInterface() {
+        currentLineId = null;
+        $(".transcript-div").toggle();
+        if ( $(".transcript-div").is(":visible") )
+            i = "i";
+        $(".lines-div").toggle();
+        if ( $(".lines-div").is(":visible") ) {
+            i = "lbl";
+            $("#lineList").html("");
+        }
+        if ( correctModal !== undefined && correctModal.isOpen() )
+            correctModal.close();
+
+        contentArray.forEach(function(obj, i) {
+            var c = document.getElementById("canvas_" + obj[0]);
+            if ( c !== null && c !== undefined ) {
+                var ctx = c.getContext("2d");
+                ctx.canvas.width = $("#canvas_" + obj[0]).width();
+                ctx.canvas.height = $("#canvas_" + obj[0]).height();
+                ctx.fillStyle = "rgb(255, 255, 255)";
+                ctx.fillRect(0 ,0, ctx.canvas.width, ctx.canvas.height);
+                ctx.save();
+
+                drawLineImage(obj[0], obj[2]);
+                if ( $(".transcript-div").is(":visible") )
+                    $("line_" + obj[0]).html("");
+                if ( $(".lines-div").is(":visible") ) {
+                    currentLineId = obj[0];
+                    buildLineList();
+                }
+            }
+        });
+        updateCanvas();
+        currentLineId = null;
+        buildLineList();
+        {# TODO Handle failures here or are we happy with the current solution? #}
+    }
 	$(function() { {# TODO Solution for people using broken computers that don't have more than one mouse button. Issues: z-index (or overflow?) and selections getting deselected... #}
         $.contextMenu({
             selector: '.tag-menu',
@@ -603,11 +631,12 @@
     		}
         });
 
-		if ( i == "lbl" )
-			$("#toggleInterface_lbl").click();
-
         $("#toggleInterface_i").removeClass("disabled");
         $("#toggleInterface_lbl").removeClass("disabled");
+		if ( i == "lbl" ) {
+            $("#toggleInterface_lbl").click();// Change buttons
+			changeInterface();
+        }
 	});
 	var fixmeTop = $(".fix_scroll_top").offset().top;
 	$(window).scroll(function() {

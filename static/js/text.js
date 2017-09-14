@@ -176,7 +176,7 @@ function undoAction() {
 function inputAction(text) { // TODO This can and should be sped up now that it's used a lot. And renamed.
 	text = text.replace(" ", "\u00A0");
 	if (!changed)
-		setMessage("<div class='alert alert-warning'>" + transUnsavedChanges + "</div>");
+		setMessage(transUnsavedChanges);
 	changed = true;
 	var lines = text.split("\n");
 	if ( selectionData === undefined || selectionData[0] === undefined )
@@ -600,6 +600,10 @@ function typewriterStep(newLineId, delta) {
 	if ( prev )
 		$("#options_" + prev).hide();
 }
-function setMessage(message) {
+function setMessage(message, type) {
+	type = type || "warning";
+	$("#message").removeClass("btn-muted btn-primary btn-success btn-info btn-warning btn-danger");
 	$("#message").html(message);
+	$("#message").addClass("btn-" + type);
+	$("#message").show();
 }

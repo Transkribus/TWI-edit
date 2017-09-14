@@ -116,6 +116,9 @@ def correct(request, collId, docId, page=None, transcriptId=None):# TODO Decide 
     if page is None :
         page = 1
 
+    #Use this to get the role of the current user untils such time as it is available from t.collection
+    role = apps.utils.utils.get_role(request,collId)
+
     current_transcript = t.current_transcript(request, collId, docId, page)
     if isinstance(current_transcript,HttpResponse):
         return apps.utils.views.error_view(request,current_transcript)
@@ -156,11 +159,11 @@ def correct(request, collId, docId, page=None, transcriptId=None):# TODO Decide 
                 return apps.utils.views.error_view(request, current_transcript)
 
             success_message = str(_("Transcript saved!"))
-            return HttpResponse("<div class='alert alert-success'>" + success_message + "</div>", content_type="text/plain")
+            return HttpResponse(success_message, content_type="text/plain")
         elif 'status' in request.POST:
             t.save_page_status(request, request.POST.get('status'), collId, docId, page, transcriptId)
             success_message = str(_("Page status changed!"))
-            return HttpResponse("<div class='alert alert-success'>" + success_message + "</div>", content_type="text/plain")
+            return HttpResponse(success_message, content_type="text/plain")
     else:
         regions = transcript.get("PcGts").get("Page").get("TextRegion");
         if isinstance(regions, dict):
@@ -230,6 +233,7 @@ def correct(request, collId, docId, page=None, transcriptId=None):# TODO Decide 
                  'pageNo': page,
                  'tags': tags,
                  'i': request.GET.get('i') if request.GET.get('i') else 'i',
+                 'role': role,
 		         'metadata' : document.get('md'),
                  #'regionData': regionData,
             }
