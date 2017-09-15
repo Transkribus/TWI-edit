@@ -1,5 +1,4 @@
 var readyToZoom = false;// Zooming too soon breaks the page
-var savedZoom = 0;
 
 // these vars must be initialized when importing this JavaScript
 // initialWidth, initialHeight, initialScale
@@ -11,12 +10,17 @@ var savedZoom = 0;
 // these JavaScripts must also be imported
 // TODO List
 
-function resetImage() {
-	savedZoom = 0;
+function fitWidth() { 
 	zoomFactor = 1;
 	accumExtraX = 0;
-	accumExtraY = 0;
+	accumExtraY = 0;// or should we leave this as left by the user?
 	$(".transcript-map-div").css("transform",  "translate(0px, 0px) scale(1)"); // Note, the CSS is set to "transform-origin: 0px 0px"
+}
+function fitHeight() {
+	zoomFactor = $( ".transcript-div" ).innerHeight() / initialHeight;
+	accumExtraY = 0;
+	accumExtraX = -$( ".transcript-div" ).innerWidth() / 2 + zoomFactor * initialWidth / 2;
+	$( ".transcript-map-div" ).css("transform",  "translate(" + -accumExtraX +"px, " + -accumExtraY+ "px) scale(" + (zoomFactor) + ")");// Note, the CSS is set to "transform-origin: 0px 0px"
 }
 function setZoom(zoom, x, y) {
 	if (!readyToZoom)
@@ -25,7 +29,7 @@ function setZoom(zoom, x, y) {
 	if (zoom > 0 || $( ".transcript-div" ).innerHeight() < initialHeight * zoomFactor) { // is the image still larger than the viewport? We allow one "step" of zooming out below that size, hence using the old zoomFactor
 		if (1 == arguments.length) { // If no cursor position has been given, we use the center
 			x = initialWidth / 2 + accumExtraX;
-			y = initialHeight / 2 + accumExtraY;
+			y = $( ".transcript-div" ).innerHeight() / 2 + accumExtraY;
 		}
 		// Calculate the pixel delta and get the total offset to move in order to preserve the cursor position...
 		accumExtraX += (newZoomFactor - zoomFactor) * x / zoomFactor;

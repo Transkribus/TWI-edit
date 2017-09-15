@@ -25,9 +25,10 @@
                     <a id="toggleInterface_t" class="btn btn-sm btn-default disabled" data-target="#toggleInterface">{% trans "Text" %}</a>
                 </div>
                 <div class="btn-group">
-                    <a class="zoom-in btn btn-sm btn-default" href="#" title="{% trans "Zoom in" %}"><span class="glyphicon glyphicon-zoom-in"></span></a>
-                    <a class="zoom-out btn btn-sm btn-default" href="#" title="{% trans "Zoom out" %}"><span class="glyphicon glyphicon-zoom-out"></span></a>
-                    <a class="reset-image btn btn-sm btn-default" href="#" title="{% trans "Reset image" %}"><span class="glyphicon glyphicon-screenshot"></span></a>
+                    <a class="zoom-in btn btn-sm btn-default" href="#" title="{% trans "Zoom In" %}"><span class="glyphicon glyphicon-zoom-in"></span></a>
+                    <a class="zoom-out btn btn-sm btn-default" href="#" title="{% trans "Zoom Out" %}"><span class="glyphicon glyphicon-zoom-out"></span></a>
+                    <a class="fit-width btn btn-sm btn-default" href="#" title="{% trans "Fit Width" %}"><span class="glyphicon glyphicon-resize-horizontal"></span></a>
+					<a class="fit-height btn btn-sm btn-default" href="#" title="{% trans "Fit Height" %}"><span class="glyphicon glyphicon-resize-vertical"></span></a>                
                 </div>
                 <div class="btn-group">
                     <a class="first-page btn btn-sm btn-default" href="#" title="{% trans "First page" %}"><span class="glyphicon glyphicon-step-backward"></span></a>
@@ -425,14 +426,17 @@
 	$( ".typewriter-next" ).on('click', function(e) {
 		typewriterNext();
 	});
-	$( ".reset-image" ).on('click', function(e) {
-		resetImage();
-	});
 	$( ".zoom-in" ).on('click', function(e) {
-		setZoom(1);
+		setZoom(20);
 	});
 	$( ".zoom-out" ).on('click', function(e) {
-		setZoom(-1);
+		setZoom(-20);
+	});
+	$( ".fit-width" ).on('click', function(e) {
+		fitWidth();
+	});
+	$( ".fit-height" ).on('click', function(e) {
+		fitHeight();
 	});
 	$( ".add-line" ).on('click', function(e) {
 		surroundingCount++;
