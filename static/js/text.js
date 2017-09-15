@@ -588,8 +588,8 @@ function typewriterPrevious() {
 		typewriterStep(newLineId, Math.round(contentArray[Math.min(getIndexFromLineId(newLineId), contentArray.length - 1)][2][5]) - Math.round(contentArray[Math.min(getIndexFromLineId(currentLineId), contentArray.length - 1)][2][5]));
 }
 function typewriterStep(newLineId, delta) {
-	accumExtraY += delta * initialScale * (1 + zoomFactor);
-	$( ".transcript-map-div" ).css("transform",  "translate(" + -accumExtraX +"px, " + -accumExtraY+ "px) scale(" + (1 + zoomFactor) + ")");// Note, the CSS is set to "transform-origin: 0px 0px"
+	accumExtraY += delta * initialScale * zoomFactor;
+	$( ".transcript-map-div" ).css("transform",  "translate(" + -accumExtraX +"px, " + -accumExtraY+ "px) scale(" + zoomFactor + ")");// Note, the CSS is set to "transform-origin: 0px 0px"
 	currentLineId = newLineId;
 	updateCanvas();
 	buildLineList();

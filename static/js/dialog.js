@@ -59,13 +59,13 @@ function updateDialog(lineId) { // This function can be called without a line ID
 		var lineIdx = getIndexFromLineId(currentLineId);
 		correctModal.open();
 		buildLineList();
-		dialogX =  Math.max(Math.min(initialScale * (1 + zoomFactor) * contentArray[lineIdx][2][0] + $(".transcript-div").offset().left - accumExtraX, window.innerWidth - dialogWidth - 20), $(".transcript-div").offset().left);
+		dialogX =  Math.max(Math.min(initialScale * zoomFactor * contentArray[lineIdx][2][0] + $(".transcript-div").offset().left - accumExtraX, window.innerWidth - dialogWidth - 20), $(".transcript-div").offset().left);
 		// get the last shown line index
 		var lastShown = Math.min(lineIdx + surroundingCount, contentArray.length - 1);
 		// place the dialog one "last line height" below the last shown BELOW the clicked line (a higher index does not guarantee a lower position)
 		var lowest;
 		for (lowest = lineIdx; lowest < lastShown && contentArray[lowest][2][7] < contentArray[lowest + 1][2][7]; lowest++);
-		dialogY = initialScale * (1 + zoomFactor) * (2 * contentArray[lowest][2][7] - contentArray[lowest][2][1]) + $(".transcript-div" ).offset().top - accumExtraY; 
+		dialogY = initialScale * zoomFactor * (2 * contentArray[lowest][2][7] - contentArray[lowest][2][1]) + $(".transcript-div" ).offset().top - accumExtraY; 
 		if (dialogX <= 0)
 			dialogX = 0;
 		else if ((dialogX + dialogWidth) >= window.innerWidth)
@@ -78,14 +78,14 @@ function updateDialog(lineId) { // This function can be called without a line ID
 		$("#correctModal").css("top",  dialogY + "px");
 		updateDocking(); // We restore the dialog to a docked state, if it was docked when closed
 	} else {
-		var oldDeltaX = contentArray[getIndexFromLineId(currentLineId)][2][0] * initialScale * (1 + zoomFactor) - accumExtraX - $("#correctModal").offset().left;
-		var oldDeltaY = contentArray[getIndexFromLineId(currentLineId)][2][1] * initialScale * (1 + zoomFactor) - accumExtraY - $("#correctModal").offset().top;
+		var oldDeltaX = contentArray[getIndexFromLineId(currentLineId)][2][0] * initialScale * zoomFactor - accumExtraX - $("#correctModal").offset().left;
+		var oldDeltaY = contentArray[getIndexFromLineId(currentLineId)][2][1] * initialScale * zoomFactor - accumExtraY - $("#correctModal").offset().top;
 		if (1 == arguments.length) 
 			currentLineId = lineId;
 		var lineIdx = getIndexFromLineId(currentLineId);
-		accumExtraX = contentArray[getIndexFromLineId(currentLineId)][2][0] * initialScale * (1 + zoomFactor) - $("#correctModal").offset().left - oldDeltaX;
-		accumExtraY = contentArray[getIndexFromLineId(currentLineId)][2][1] * initialScale * (1 + zoomFactor) - $("#correctModal").offset().top - oldDeltaY;
-		$( ".transcript-map-div" ).css("transform",  "translate(" + -accumExtraX +"px, " + -accumExtraY+ "px) scale(" + (1 + zoomFactor) + ")");// Note, the CSS is set to "transform-origin: 0px 0px"
+		accumExtraX = contentArray[getIndexFromLineId(currentLineId)][2][0] * initialScale * zoomFactor - $("#correctModal").offset().left - oldDeltaX;
+		accumExtraY = contentArray[getIndexFromLineId(currentLineId)][2][1] * initialScale * zoomFactor - $("#correctModal").offset().top - oldDeltaY;
+		$( ".transcript-map-div" ).css("transform",  "translate(" + -accumExtraX +"px, " + -accumExtraY+ "px) scale(" + zoomFactor + ")");// Note, the CSS is set to "transform-origin: 0px 0px"
 		buildLineList();
 	}
 }

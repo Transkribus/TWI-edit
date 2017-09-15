@@ -276,6 +276,7 @@
 	var isDragged = false;
 	var resizeTimeout;
     var pageStatus = "{{ pageStatus }}";
+	var zoomFactor = 1;
 
 	tagItems = {
 		{% for tag in tags %}"{{tag.name}}": {name: "<span href=\"#\" style=\"color: #{{tag.color}};\">{{tag.name}}</span>", type: "checkbox", isHtmlName: true} {% if not forloop.last %}, {% endif %}
@@ -365,7 +366,7 @@
 			accumExtraX -= Math.round(parseInt($( ".transcript-map-div" ).css("left"), 10));
 			$(".transcript-map-div" ).css("top", "0px");
 			$(".transcript-map-div" ).css("left", "0px");
-			$(".transcript-map-div" ).css("transform",  "translate(" + -accumExtraX +"px, " + -accumExtraY+ "px) scale(" + (1 + zoomFactor) + ")");// Note, the CSS is set to "transform-origin: 0px 0px"
+			$(".transcript-map-div" ).css("transform",  "translate(" + -accumExtraX +"px, " + -accumExtraY+ "px) scale(" + zoomFactor + ")");// Note, the CSS is set to "transform-origin: 0px 0px"
 		}
 	});
 	$( "#transcriptMap area" ).on('click', function(e) {
@@ -428,10 +429,10 @@
 		resetImage();
 	});
 	$( ".zoom-in" ).on('click', function(e) {
-		setZoom(10);
+		setZoom(1);
 	});
 	$( ".zoom-out" ).on('click', function(e) {
-		setZoom(-10);
+		setZoom(-1);
 	});
 	$( ".add-line" ).on('click', function(e) {
 		surroundingCount++;

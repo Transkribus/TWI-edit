@@ -34,7 +34,7 @@ function resizeContents() { // Call to perform necessary updates of contents and
 	// We have to update these too in case the image has gotten resized by the browser along with the window:
 	accumExtraX = initialWidth * accumExtraX / oldWidth;
 	accumExtraY = initialWidth * accumExtraY / oldWidth;
-	$(".transcript-map-div").css("transform",  "translate(" + -accumExtraX +"px, " + -accumExtraY+ "px) scale(" + (1 + zoomFactor) + ")");// Note, the CSS is set to "transform-origin: 0px 0px"
+	$(".transcript-map-div").css("transform",  "translate(" + -accumExtraX +"px, " + -accumExtraY+ "px) scale(" + zoomFactor + ")");// Note, the CSS is set to "transform-origin: 0px 0px"
 	calculateAreas();
 	generateThumbGrid();
 	updateCanvas();
