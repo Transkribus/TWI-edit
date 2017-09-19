@@ -667,13 +667,15 @@
         $(".next-page").removeClass("disabled");
         $(".last-page").removeClass("disabled");
         $("a[aria-controls='thumbDiv']").removeClass("disabled");
-        $("#editToggle").removeClass("disabled");
-        $("a[data-target='#saveChanges']").removeClass("disabled");
-        if ( "{{ pageStatus }}" !== "GT" )
-            $("#page_status").removeClass("disabled");
-		if ( i == "lbl" ) {
+        if ( "{{ role }}" === "Editor" && "{{ role }}" === "Owner" ) {
+            $("#editToggle").removeClass("disabled");
+            $("a[data-target='#saveChanges']").removeClass("disabled");
+            if ( "{{ pageStatus }}" !== "GT" )
+                $("#page_status").removeClass("disabled");
+        }
+        if ( i == "lbl" ) {
             $("#toggleInterface_lbl").click();// Change buttons
-			changeInterface();
+            changeInterface();
         }
 	});
 	var fixmeTop = $(".fix_scroll_top").offset().top;
