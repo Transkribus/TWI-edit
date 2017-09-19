@@ -1,5 +1,3 @@
-var savedZoom = 0;
-
 // these vars must be initialized when importing this JavaScript
 // initialWidth, initialHeight, initialScale
 // previousInnerWidth
@@ -10,66 +8,65 @@ var savedZoom = 0;
 // these JavaScripts must also be imported
 // TODO List
 
-function resetImage() {
-	savedZoom = 0;
-	zoomFactor = 0;
-	accumExtraX = 0;
-	accumExtraY = 0;
-    $(".transcript-map-div").css("transform", "translate(0px, 0px) scale(1)");// Note, the CSS is set to "transform-origin: 0px 0px"
+function fitWidth() {
+	zoomFactor = 1;
+	accumExtraX = 0
+	accumExtraY = 0;// or should we leave this as left by the user?
+	$(".transcript-map-div").css("transform",  "translate(0px, 0px) scale(1)"); // Note, the CSS is set to "transform-origin: 0px 0px"
     contentArray.forEach(function(obj, i) {
-        accumExtra[obj[0]] = {"x": 0, "y": 0};
+        accumExtra[obj[0]] = {"x": 0, "y": 0, "factor": 1};
         $("#canvas_" + obj[0]).css("transform", "translate(0px, 0px) scale(1)");
     });
     updateCanvas();
 }
+function fitHeight() {
+	zoomFactor = $( ".transcript-div" ).innerHeight() / initialHeight;
+	accumExtraY = 0;
+	accumExtraX = -$( ".transcript-div" ).innerWidth() / 2 + zoomFactor * initialWidth / 2;
+	$( ".transcript-map-div" ).css("transform", "translate(" + -accumExtraX +"px, " + -accumExtraY+ "px) scale(" + zoomFactor + ")");// Note, the CSS is set to "transform-origin: 0px 0px"
+    contentArray.forEach(function(obj, i) {
+        var width = obj[2][2] - obj[2][0];
+        var height = obj[2][5] - obj[2][1];
+        var factor = $("#canvas_wrapper_" + obj[0]).innerHeight() / height;
+        accumExtra[obj[0]] = {"x": -$("#canvas_wrapper_" + obj[0]).innerWidth() / 2 + factor * width / 2, "y": 0, "factor": factor};
+        $("#canvas_" + obj[0]).css("transform", "translate(" + -accumExtra[obj[0]]["x"] +"px, " + -accumExtra[obj[0]]["y"]+ "px) scale(" + accumExtra[obj[0]]["factor"] + ")");// Note, the CSS is set to "transform-origin: 0px 0px"
+    });
+    updateCanvas();
+}
 function setZoom(zoom, x, y) {
-	var newZoom = savedZoom + zoom;
-	if (newZoom >= -60)
-		savedZoom = newZoom;
-	else
-		return; // We have a limit on zooming
-
-    if ( i === "i" ) {
+    if ( i === "i" && (zoom > 0 || $( ".transcript-div" ).innerHeight() < initialHeight * zoomFactor) ) {// is the image still larger than the viewport? We allow one "step" of zooming out below that size, hence using the old zoomFactor
+        var newZoomFactor = zoomFactor * (zoom/50 +1);
         if (1 == arguments.length) { // If no cursor position has been given, we use the center
-            x = initialWidth/2 + accumExtraX;
-            y = initialHeight/2 + accumExtraY;
+            x = initialWidth / 2 + accumExtraX;
+            y = $( ".transcript-div" ).innerHeight() / 2 + accumExtraY;
         }
-        // x and y are in relation to the current (scaled) image size. We wish to obtain the relative position of the pointer:
-        var xRatio = x / ((1 + zoomFactor) * Math.max(1, $(".transcript-map-div").width()));
-        var yRatio = y / ((1 + zoomFactor) * Math.max(1, $(".transcript-map-div").height()));
-        // Calculate the absolute no. of pixels added and get the total offset to move in order to preserve the cursor position...
-        var oldZoomFactor = zoomFactor;
-        zoomFactor = savedZoom / 100;
-        accumExtraX += initialWidth * (zoomFactor - oldZoomFactor) * xRatio;
-        accumExtraY += initialHeight * (zoomFactor - oldZoomFactor) * yRatio;
-
+        // Calculate the pixel delta and get the total offset to move in order to preserve the cursor position...
+        accumExtraX += (newZoomFactor - zoomFactor) * x / zoomFactor;
+        accumExtraY += (newZoomFactor - zoomFactor) * y / zoomFactor;
         // ...and move the image accordingly before scaling:
-        $(".transcript-map-div").css("transform", "translate(" + -accumExtraX +"px, " + -accumExtraY+ "px) scale(" + (1 + zoomFactor) + ")");// Note, the CSS is set to "transform-origin: 0px 0px"
+        $( ".transcript-map-div" ).css("transform",  "translate(" + -accumExtraX +"px, " + -accumExtraY+ "px) scale(" + newZoomFactor + ")");// Note, the CSS is set to "transform-origin: 0px 0px"
+        zoomFactor = newZoomFactor;// update this
     }
     else if ( i === "lbl" ) {
-        var oldZoomFactor = zoomFactor;
         contentArray.forEach(function(obj, i) {
             var width = obj[2][2] - obj[2][0];
             var height = obj[2][5] - obj[2][1];
-
+            var newZoomFactor = accumExtra[obj[0]]["factor"] * (zoom / 50 + 1);
             if ( x === undefined && y === undefined ) {
                 x = width / 2 + accumExtra[obj[0]]["x"];
-                y = height / 2 + accumExtra[obj[0]]["y"];
+                y = $("#canvas_wrapper_" + obj[0]).innerHeight() / 2 + accumExtra[obj[0]]["y"];
             }
 
-            var xRatio = x / ((1 + zoomFactor) * Math.max(1, $("#canvas_wrapper_" + obj[0]).width()));
-            var yRatio = y / ((1 + zoomFactor) * Math.max(1, $("#canvas_wrapper_" + obj[0]).height()));
-            zoomFactor = savedZoom / 100;
-            accumExtra[obj[0]]["x"] += width * (zoomFactor - oldZoomFactor) * xRatio;
-            accumExtra[obj[0]]["y"] += height * (zoomFactor - oldZoomFactor) * yRatio;
-
-            $("#canvas_" + obj[0]).css("transform", "translate(" + -accumExtra[obj[0]]["x"] +"px, " + -accumExtra[obj[0]]["y"]+ "px) scale(" + (1 + zoomFactor) + ")");
+            accumExtra[obj[0]]["x"] += (newZoomFactor - accumExtra[obj[0]]["factor"]) * x / accumExtra[obj[0]]["factor"];
+            accumExtra[obj[0]]["y"] += (newZoomFactor - accumExtra[obj[0]]["factor"]) * y / accumExtra[obj[0]]["factor"];
+            $("#canvas_" + obj[0]).css("transform", "translate(" + -accumExtra[obj[0]]["x"] +"px, " + -accumExtra[obj[0]]["y"]+ "px) scale(" + newZoomFactor + ")");
+            accumExtra[obj[0]]["factor"] = newZoomFactor;
         });
     }
     updateCanvas();
 }
 function scrollToNextTop() { // This function scrolls the image up as if it were dragged with the mouse.
-	var currentTop = accumExtraY / (initialScale * (1 + zoomFactor)) + 1;// +1 to ensure that a new top is obtained for every click
+	var currentTop = accumExtraY / (initialScale * (zoomFactor)) + 1;// +1 to ensure that a new top is obtained for every click
 	if (contentArray[contentArray.length - 1][2][1] < currentTop)
 		return; // If the page has been moved so that the last line is above the top, we don't do anything.
 	var newTop;
@@ -78,11 +75,11 @@ function scrollToNextTop() { // This function scrolls the image up as if it were
 		if (newTop > currentTop)
 			break;
 	}
-	accumExtraY = newTop * initialScale * (1 + zoomFactor);
-	$( ".transcript-map-div" ).css("transform",  "translate(" + -accumExtraX +"px, " + -accumExtraY+ "px) scale(" + (1 + zoomFactor) + ")");// Note, the CSS is set to "transform-origin: 0px 0px"
+	accumExtraY = newTop * initialScale * (zoomFactor);
+	$( ".transcript-map-div" ).css("transform",  "translate(" + -accumExtraX +"px, " + -accumExtraY+ "px) scale(" + (zoomFactor) + ")");// Note, the CSS is set to "transform-origin: 0px 0px"
 }
 function scrollToPreviousTop() {
-	var currentTop = accumExtraY / (initialScale * (1 + zoomFactor)) - 1; // -1 to ensure that a new top is obtained for every click
+	var currentTop = accumExtraY / (initialScale * (zoomFactor)) - 1; // -1 to ensure that a new top is obtained for every click
 	if (contentArray[0][2][1] > currentTop)
 		return; // If the page has been moved so that the first line is below the top, we don't do anything.
 	var newTop;
@@ -92,8 +89,8 @@ function scrollToPreviousTop() {
 			break;
 		}
 	}
-	accumExtraY = newTop * initialScale * (1 + zoomFactor);
-	$( ".transcript-map-div" ).css("transform",  "translate(" + -accumExtraX +"px, " + -accumExtraY+ "px) scale(" + (1 + zoomFactor) + ")"); // Note, the CSS is set to "transform-origin: 0px 0px"
+	accumExtraY = newTop * initialScale * (zoomFactor);
+	$( ".transcript-map-div" ).css("transform",  "translate(" + -accumExtraX +"px, " + -accumExtraY+ "px) scale(" + (zoomFactor) + ")"); // Note, the CSS is set to "transform-origin: 0px 0px"
 }
 function updateCanvas() {
     if ( $(".transcript-div").is(":visible") ) {

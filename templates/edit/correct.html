@@ -25,9 +25,10 @@
                     <a id="toggleInterface_t" class="btn btn-sm btn-default disabled" data-target="#toggleInterface">{% trans "Text" %}</a>
                 </div>
                 <div class="btn-group">
-                    <a class="zoom-in btn btn-sm btn-default disabled" href="#" title="{% trans "Zoom in" %}"><span class="glyphicon glyphicon-zoom-in"></span></a>
-                    <a class="zoom-out btn btn-sm btn-default disabled" href="#" title="{% trans "Zoom out" %}"><span class="glyphicon glyphicon-zoom-out"></span></a>
-                    <a class="reset-image btn btn-sm btn-default disabled" href="#" title="{% trans "Reset image" %}"><span class="glyphicon glyphicon-screenshot"></span></a>
+                    <a class="zoom-in btn btn-sm btn-default disabled" href="#" title="{% trans "Zoom In" %}"><span class="glyphicon glyphicon-zoom-in"></span></a>
+                    <a class="zoom-out btn btn-sm btn-default disabled" href="#" title="{% trans "Zoom Out" %}"><span class="glyphicon glyphicon-zoom-out"></span></a>
+                    <a class="fit-width btn btn-sm btn-default disabled" href="#" title="{% trans "Fit Width" %}"><span class="glyphicon glyphicon-resize-horizontal"></span></a>
+                    <a class="fit-height btn btn-sm btn-default disabled" href="#" title="{% trans "Fit Height" %}"><span class="glyphicon glyphicon-resize-vertical"></span></a>
                 </div>
                 <div class="btn-group">
                     <a class="first-page btn btn-sm btn-default disabled" href="#" title="{% trans "First page" %}"><span class="glyphicon glyphicon-step-backward"></span></a>
@@ -202,7 +203,7 @@
                             accumExtra["{{ line|get_item:"@id" }}"]["y"] -= ui.position.top;
                             $("#canvas_{{ line|get_item:"@id" }}").css("top", "0px");
                             $("#canvas_{{ line|get_item:"@id" }}").css("left", "0px");
-                            $("#canvas_{{ line|get_item:"@id" }}").css("transform",  "translate(" + -accumExtra["{{ line|get_item:"@id" }}"]["x"] +"px, " + -accumExtra["{{ line|get_item:"@id" }}"]["y"]+ "px) scale(" + (1 + zoomFactor) + ")");// Note, the CSS is set to "transform-origin: 0px 0px"
+                            $("#canvas_{{ line|get_item:"@id" }}").css("transform", "translate(" + -accumExtra["{{ line|get_item:"@id" }}"]["x"] +"px, " + -accumExtra["{{ line|get_item:"@id" }}"]["y"]+ "px) scale(" + accumExtra["{{ line|get_item:"@id" }}"]["factor"] + ")");// Note, the CSS is set to "transform-origin: 0px 0px"
                         }
                     });
                     $("#canvas_wrapper_{{ line|get_item:"@id" }}").on("mousewheel DOMMouseScroll", function(e) {
@@ -301,6 +302,7 @@
 	var isDragged = false;
 	var resizeTimeout;
     var pageStatus = "{{ pageStatus }}";
+	var zoomFactor = 1;
 
 	tagItems = {
 		{% for tag in tags %}"{{tag.name}}": {name: "<span href=\"#\" style=\"color: #{{tag.color}};\">{{tag.name}}</span>", type: "checkbox", isHtmlName: true} {% if not forloop.last %}, {% endif %}
@@ -311,7 +313,7 @@
 		{% endfor %}
 	};
     accumExtra = {
-        {% for line in lines %}"{{ line|get_item:"@id" }}": {"x": 0, "y": 0}, {% endfor %}
+        {% for line in lines %}"{{ line|get_item:"@id" }}": {"x": 0, "y": 0, "factor": 1}, {% endfor %}
     };
 	i = "{{ i }}";
 
@@ -394,7 +396,7 @@
 			accumExtraX -= Math.round(parseInt($( ".transcript-map-div" ).css("left"), 10));
 			$(".transcript-map-div" ).css("top", "0px");
 			$(".transcript-map-div" ).css("left", "0px");
-			$(".transcript-map-div" ).css("transform",  "translate(" + -accumExtraX +"px, " + -accumExtraY+ "px) scale(" + (1 + zoomFactor) + ")");// Note, the CSS is set to "transform-origin: 0px 0px"
+			$(".transcript-map-div" ).css("transform", "translate(" + -accumExtraX +"px, " + -accumExtraY+ "px) scale(" + zoomFactor + ")");// Note, the CSS is set to "transform-origin: 0px 0px"
 		}
 	});
 	$( "#transcriptMap area" ).on('click', function(e) {
@@ -453,14 +455,17 @@
 	$( ".typewriter-next" ).on('click', function(e) {
 		typewriterNext();
 	});
-	$( ".reset-image" ).on('click', function(e) {
-		resetImage();
-	});
 	$( ".zoom-in" ).on('click', function(e) {
-		setZoom(10);
+		setZoom(20);
 	});
 	$( ".zoom-out" ).on('click', function(e) {
-		setZoom(-10);
+		setZoom(-20);
+	});
+	$( ".fit-width" ).on('click', function(e) {
+		fitWidth();
+	});
+	$( ".fit-height" ).on('click', function(e) {
+		fitHeight();
 	});
 	$( ".add-line" ).on('click', function(e) {
 		surroundingCount++;
@@ -539,7 +544,7 @@
         if ( correctModal !== undefined && correctModal.isOpen() )
             correctModal.close();
 
-        resetImage();
+        fitWidth();
         contentArray.forEach(function(obj, i) {
             drawLineImage(obj[0], obj[2]);
             if ( $(".transcript-div").is(":visible") )
@@ -654,7 +659,8 @@
         $("#toggleInterface_lbl").removeClass("disabled");
         $(".zoom-in").removeClass("disabled");
         $(".zoom-out").removeClass("disabled");
-        $(".reset-image").removeClass("disabled");
+        $(".fit-width").removeClass("disabled");
+        $(".fit-height").removeClass("disabled");
         $(".first-page").removeClass("disabled");
         $(".previous-page").removeClass("disabled");
         $("#pageNumber").removeClass("disabled");
