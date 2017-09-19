@@ -1,4 +1,3 @@
-var readyToZoom = false;// Zooming too soon breaks the page
 var savedZoom = 0;
 
 // these vars must be initialized when importing this JavaScript
@@ -16,31 +15,58 @@ function resetImage() {
 	zoomFactor = 0;
 	accumExtraX = 0;
 	accumExtraY = 0;
-	$(".transcript-map-div").css("transform",  "translate(0px, 0px) scale(1)"); // Note, the CSS is set to "transform-origin: 0px 0px"
+    $(".transcript-map-div").css("transform", "translate(0px, 0px) scale(1)");// Note, the CSS is set to "transform-origin: 0px 0px"
+    contentArray.forEach(function(obj, i) {
+        accumExtra[obj[0]] = {"x": 0, "y": 0};
+        $("#canvas_" + obj[0]).css("transform", "translate(0px, 0px) scale(1)");
+    });
+    updateCanvas();
 }
 function setZoom(zoom, x, y) {
-	if (!readyToZoom)
-		return; // Zooming before the page has fully loaded breaks it.
 	var newZoom = savedZoom + zoom;
 	if (newZoom >= -60)
 		savedZoom = newZoom;
 	else
 		return; // We have a limit on zooming
-	if (1 == arguments.length) { // If no cursor position has been given, we use the center
-		x = initialWidth/2 + accumExtraX;
-		y = initialHeight/2 + accumExtraY;
-	}
-	// x and y are in relation to the current (scaled) image size. We wish to obtain the relative position of the pointer:
-	var xRatio = x / ((1 + zoomFactor) * parseInt($( ".transcript-map-div" ).css("width"), 10));
-	var yRatio = y / ((1 + zoomFactor) * parseInt($( ".transcript-map-div" ).css("height"), 10));
-	// Calculate the absolute no. of pixels added and get the total offset to move in order to preserve the cursor position...
-	var oldZoomFactor = zoomFactor;
-	zoomFactor = savedZoom / 100;
-	accumExtraX += initialWidth * (zoomFactor - oldZoomFactor) * xRatio;
-	accumExtraY += initialHeight * (zoomFactor - oldZoomFactor) * yRatio;
-	// ...and move the image accordingly before scaling:
-	$( ".transcript-map-div" ).css("transform",  "translate(" + -accumExtraX +"px, " + -accumExtraY+ "px) scale(" + (1 + zoomFactor) + ")");// Note, the CSS is set to "transform-origin: 0px 0px"
-	updateCanvas();
+
+    if ( i === "i" ) {
+        if (1 == arguments.length) { // If no cursor position has been given, we use the center
+            x = initialWidth/2 + accumExtraX;
+            y = initialHeight/2 + accumExtraY;
+        }
+        // x and y are in relation to the current (scaled) image size. We wish to obtain the relative position of the pointer:
+        var xRatio = x / ((1 + zoomFactor) * Math.max(1, $(".transcript-map-div").width()));
+        var yRatio = y / ((1 + zoomFactor) * Math.max(1, $(".transcript-map-div").height()));
+        // Calculate the absolute no. of pixels added and get the total offset to move in order to preserve the cursor position...
+        var oldZoomFactor = zoomFactor;
+        zoomFactor = savedZoom / 100;
+        accumExtraX += initialWidth * (zoomFactor - oldZoomFactor) * xRatio;
+        accumExtraY += initialHeight * (zoomFactor - oldZoomFactor) * yRatio;
+
+        // ...and move the image accordingly before scaling:
+        $(".transcript-map-div").css("transform", "translate(" + -accumExtraX +"px, " + -accumExtraY+ "px) scale(" + (1 + zoomFactor) + ")");// Note, the CSS is set to "transform-origin: 0px 0px"
+    }
+    else if ( i === "lbl" ) {
+        var oldZoomFactor = zoomFactor;
+        contentArray.forEach(function(obj, i) {
+            var width = obj[2][2] - obj[2][0];
+            var height = obj[2][5] - obj[2][1];
+
+            if ( x === undefined && y === undefined ) {
+                x = width / 2 + accumExtra[obj[0]]["x"];
+                y = height / 2 + accumExtra[obj[0]]["y"];
+            }
+
+            var xRatio = x / ((1 + zoomFactor) * Math.max(1, $("#canvas_wrapper_" + obj[0]).width()));
+            var yRatio = y / ((1 + zoomFactor) * Math.max(1, $("#canvas_wrapper_" + obj[0]).height()));
+            zoomFactor = savedZoom / 100;
+            accumExtra[obj[0]]["x"] += width * (zoomFactor - oldZoomFactor) * xRatio;
+            accumExtra[obj[0]]["y"] += height * (zoomFactor - oldZoomFactor) * yRatio;
+
+            $("#canvas_" + obj[0]).css("transform", "translate(" + -accumExtra[obj[0]]["x"] +"px, " + -accumExtra[obj[0]]["y"]+ "px) scale(" + (1 + zoomFactor) + ")");
+        });
+    }
+    updateCanvas();
 }
 function scrollToNextTop() { // This function scrolls the image up as if it were dragged with the mouse.
 	var currentTop = accumExtraY / (initialScale * (1 + zoomFactor)) + 1;// +1 to ensure that a new top is obtained for every click
@@ -70,16 +96,32 @@ function scrollToPreviousTop() {
 	$( ".transcript-map-div" ).css("transform",  "translate(" + -accumExtraX +"px, " + -accumExtraY+ "px) scale(" + (1 + zoomFactor) + ")"); // Note, the CSS is set to "transform-origin: 0px 0px"
 }
 function updateCanvas() {
-	var c = document.getElementById("transcriptCanvas");
-	var ctx = c.getContext("2d");
-	ctx.canvas.width = $('#transcriptImage').width();
-	ctx.canvas.height = $('#transcriptImage').height();
-	ctx.fillStyle = "rgba(0, 0, 0, 0.15)";
-	ctx.fillRect(0,0,ctx.canvas.width,ctx.canvas.height);
-	ctx.save();
-	if (correctModal != null && correctModal.isOpen()) {
-		highlightLineList();
-	}
+    if ( $(".transcript-div").is(":visible") ) {
+    	var c = document.getElementById("transcriptCanvas");
+    	var ctx = c.getContext("2d");
+    	ctx.canvas.width = $('#transcriptImage').width();
+    	ctx.canvas.height = $('#transcriptImage').height();
+    	ctx.fillStyle = "rgba(0, 0, 0, 0.15)";
+    	ctx.fillRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+    	ctx.save();
+    	if (correctModal != null && correctModal.isOpen()) {
+    		highlightLineList();
+    	}
+    }
+    else if ( $(".lines-div").is(":visible") ) {
+        contentArray.forEach(function(obj, i) {
+            var c = document.getElementById("canvas_" + obj[0]);
+            if ( c !== null && c !== undefined ) {
+                var ctx = c.getContext("2d");
+                ctx.canvas.width = $("#canvas_" + obj[0]).width();
+                ctx.canvas.height = $("#canvas_" + obj[0]).height();
+                ctx.fillStyle = "rgba(0, 0, 0, 0.15)";
+                ctx.fillRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+                ctx.save();
+                drawLineImage(obj[0], obj[2]);
+            }
+        });
+    }
 	// uncomment this for debugging, it highlights all:
 	//for (var i = 1; i < contentArray.length; i++)
 		//highlightLine(contentArray[i][0]);
