@@ -221,6 +221,63 @@
 			<p>{% trans "The page contains no lines." %}</p>
 		{% endfor %}
 	</div>
+    <div class="interface-t" style="padding-left: 15px; display: none;">
+        <ol id="text" class="line-list" contenteditable="true" style="margin-top: 3px; margin-bottom: 0;">
+        </ol>
+        <script type="text/javascript">
+            $("#text").on("keydown", function(e) {
+                if ( window.location.href.indexOf('edit') >= 0 )
+                    keydown(e);
+                else
+                    e.preventDefault();
+            });
+            $("#text").on("keyup", function(e) {
+                if ( window.location.href.indexOf('edit') >= 0 )
+                    keyup(e);
+                else
+                    e.preventDefault();
+            });
+            $("#text").on("mouseup", function(e) {
+                if ( window.location.href.indexOf('edit') >= 0 ) {
+                    /*if ( currentLineId !== "{#{ line|get_item:"@id" }#}" ) {
+                        var sel = window.getSelection();
+                        sel.removeAllRanges();
+                        selectionData = [["{#{ line|get_item:"@id" }#}", 0, 0]];
+                        currentLineId = "{#{ line|get_item:"@id" }#}";
+                        updateCanvas();
+                        buildLineList();
+                    }*/
+                    mouseup(e);
+                }
+            });
+            $("#text").on("paste", function(e) {
+                if ( window.location.href.indexOf('edit') >= 0 )
+                    paste(e);
+                else
+                    e.preventDefault();
+            });
+            $("#text").on("drop", function(e) {
+                if ( window.location.href.indexOf('edit') >= 0 )
+                    drop(e);
+                else
+                    e.preventDefault();
+            });
+            $("#text").on("cut", function(e) {
+                if ( window.location.href.indexOf('edit') >= 0 )
+                    cut(e);
+                else
+                    e.preventDefault();
+            });
+            /*$("#line_{#{ line|get_item:"@id" }#}").on("focus", function() {
+                if ( window.location.href.indexOf('edit') >= 0 )
+                    $("#options_{#{ line|get_item:"@id" }#}").show();
+            });
+            $("#line_{#{ line|get_item:"@id" }#}").on("blur", function() {
+                if ( !$("#options_{#{ line|get_item:"@id" }#}").is(":hover") )
+                    $("#options_{#{ line|get_item:"@id" }#}").hide();
+            });*/
+        </script>
+    </div>
 </div>
 {% include "edit/correct_modal.html" %}
 
@@ -381,7 +438,7 @@
         if ( e.target.id.substring(16) == i )
             return;
 
-        changeInterface();
+        changeInterface(e.target.id.substring(16));
 	});
 	$('.transcript-map-div').draggable({
 		start: function() {
@@ -531,27 +588,89 @@
 	$("#pageNumber").change(function() {
    		checkPageNumberInput();
 	});
-    function changeInterface() {
+    function changeInterface(target) {
         currentLineId = null;
-        $(".transcript-div").toggle();
-        if ( $(".transcript-div").is(":visible") )
+        if ( target === "i" ) {
             i = "i";
-        $(".interface-lbl").toggle();
-        if ( $(".interface-lbl").is(":visible") ) {
+            $("#lines").html("");
+            $(".transcript-div").show();
+            $(".interface-lbl").hide();
+            $(".interface-t").hide();
+            $(".zoom-in").removeClass("disabled");
+            $(".zoom-out").removeClass("disabled");
+            $(".fit-width").removeClass("disabled");
+            $(".fit-height").removeClass("disabled");
+            if ( "{{ role }}" === "Editor" && "{{ role }}" === "Owner" ) {
+                $("#editToggle").removeClass("disabled");
+                $("a[data-target='#saveChanges']").removeClass("disabled");
+                if ( "{{ pageStatus }}" !== "GT" )
+                    $("#page_status").removeClass("disabled");
+            }
+        }
+        else if ( target === "lbl" ) {
             i = "lbl";
             $("#lineList").html("");
+            $("#lines").html("");
+            $(".transcript-div").hide();
+            $(".interface-lbl").show();
+            $(".interface-t").hide();
+            $(".zoom-in").removeClass("disabled");
+            $(".zoom-out").removeClass("disabled");
+            $(".fit-width").removeClass("disabled");
+            $(".fit-height").removeClass("disabled");
+            if ( "{{ role }}" === "Editor" && "{{ role }}" === "Owner" ) {
+                $("#editToggle").removeClass("disabled");
+                $("a[data-target='#saveChanges']").removeClass("disabled");
+                if ( "{{ pageStatus }}" !== "GT" )
+                    $("#page_status").removeClass("disabled");
+            }
         }
+        else if ( target === "t" ) {
+            i = "t";
+            $("#lineList").html("");
+            $(".transcript-div").hide();
+            $(".interface-lbl").hide();
+            $(".interface-t").show();
+            $(".zoom-in").addClass("disabled");
+            $(".zoom-out").addClass("disabled");
+            $(".fit-width").addClass("disabled");
+            $(".fit-height").addClass("disabled");
+            if ( "{{ role }}" === "Editor" && "{{ role }}" === "Owner" ) {
+                $("#editToggle").removeClass("disabled");
+                $("a[data-target='#saveChanges']").removeClass("disabled");
+                if ( "{{ pageStatus }}" !== "GT" )
+                    $("#page_status").removeClass("disabled");
+            }
+        }
+        else {
+            i = target;
+            $(".transcript-div").hide();
+            $(".interface-lbl").hide();
+            $(".interface-t").hide();
+            $(".zoom-in").addClass("disabled");
+            $(".zoom-out").addClass("disabled");
+            $(".fit-width").addClass("disabled");
+            $(".fit-height").addClass("disabled");
+            $("#editToggle").addClass("disabled");
+            $("a[data-target='#saveChanges']").addClass("disabled");
+            $("#page_status").addClass("disabled");
+        }
+
         if ( correctModal !== undefined && correctModal.isOpen() )
             correctModal.close();
 
         fitWidth();
         contentArray.forEach(function(obj, i) {
             drawLineImage(obj[0], obj[2]);
-            if ( $(".transcript-div").is(":visible") )
+            if ( $(".transcript-div").is(":visible") ) {
                 $("line_" + obj[0]).html("");
+            }
             if ( $(".interface-lbl").is(":visible") ) {
                 currentLineId = obj[0];
                 buildLineList();
+            }
+            if ( $(".interface-t").is(":visible") ) {
+                $("line_" + obj[0]).html("");
             }
         });
         updateCanvas();
@@ -657,6 +776,7 @@
 
         $("#toggleInterface_i").removeClass("disabled");
         $("#toggleInterface_lbl").removeClass("disabled");
+        $("#toggleInterface_t").removeClass("disabled");
         $(".zoom-in").removeClass("disabled");
         $(".zoom-out").removeClass("disabled");
         $(".fit-width").removeClass("disabled");
@@ -675,7 +795,15 @@
         }
         if ( i == "lbl" ) {
             $("#toggleInterface_lbl").click();// Change buttons
-            changeInterface();
+            changeInterface("lbl");
+        }
+        if ( i == "t" ) {
+            $("#toggleInterface_t").click();// Change buttons
+            changeInterface("t");
+            $(".zoom-in").addClass("disabled");
+            $(".zoom-out").addClass("disabled");
+            $(".fit-width").addClass("disabled");
+            $(".fit-height").addClass("disabled");
         }
 	});
 	var fixmeTop = $(".fix_scroll_top").offset().top;

@@ -521,9 +521,18 @@ function buildLineList() {
 			index++;
 		}
 	}
+	if ( $(".interface-t").is(":visible") ) {
+		index = 1
+		$("#text").html("");
+		while (index <= contentArray.length - 1) {
+			$("#text").append(getLineLiWithTags(contentArray[index][0]));
+			index++;
+		}
+	}
 	highlightLineList();
 	restoreSelection();
-	updateDialogSize();
+	if ( $(".transcript-div").is(":visible") )
+		updateDialogSize();
 }
 
 // UX actions
