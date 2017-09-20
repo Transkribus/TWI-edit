@@ -432,6 +432,16 @@
         if ( window.location.href.indexOf("view") == -1 && i === "i" )
             updateDialog("{{ lines|index:0|get_item:"@id" }}");
         updateCanvas();
+        if ( $(".lines-div").is(":visible") ) {
+            $("#lineList").html("");
+            contentArray.forEach(function(obj, i) {
+                drawLineImage(obj[0], obj[2]);
+                if ( $(".lines-div").is(":visible") ) {
+                    currentLineId = obj[0];
+                    buildLineList();
+                }
+            });
+        }
 	});
 	$("a[data-target='#toggleInterface']").click(function(e) {
     	e.preventDefault();
@@ -787,7 +797,7 @@
         $(".next-page").removeClass("disabled");
         $(".last-page").removeClass("disabled");
         $("a[aria-controls='thumbDiv']").removeClass("disabled");
-        if ( "{{ role }}" === "Editor" && "{{ role }}" === "Owner" ) {
+        if ( "{{ role }}" === "Editor" || "{{ role }}" === "Owner" ) {
             $("#editToggle").removeClass("disabled");
             $("a[data-target='#saveChanges']").removeClass("disabled");
             if ( "{{ pageStatus }}" !== "GT" )
