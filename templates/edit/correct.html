@@ -432,8 +432,7 @@
         if ( window.location.href.indexOf("view") == -1 && i === "i" )
             updateDialog("{{ lines|index:0|get_item:"@id" }}");
         updateCanvas();
-        if ( $(".lines-div").is(":visible") ) {
-            $("#lineList").html("");
+        if ( $(".interface-lbl").is(":visible") ) {
             contentArray.forEach(function(obj, i) {
                 drawLineImage(obj[0], obj[2]);
                 if ( $(".lines-div").is(":visible") ) {
@@ -441,6 +440,10 @@
                     buildLineList();
                 }
             });
+        }
+        if ( $(".interface-t").is(":visible") ) {
+            $("#text").html("");
+            buildLineList();
         }
 	});
 	$("a[data-target='#toggleInterface']").click(function(e) {
