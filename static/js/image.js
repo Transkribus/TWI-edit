@@ -105,7 +105,7 @@ function updateCanvas() {
     		highlightLineList();
     	}
     }
-    else if ( $(".lines-div").is(":visible") ) {
+    else if ( $(".interface-lbl").is(":visible") ) {
         contentArray.forEach(function(obj, i) {
             var c = document.getElementById("canvas_" + obj[0]);
             if ( c !== null && c !== undefined ) {

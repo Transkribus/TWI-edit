@@ -107,7 +107,7 @@
 			<img src="{{ imageUrl }}" usemap="#transcriptMap" id="transcriptImage" class="transcript-img" style="z-index: 999;">
 		</div>
 	</div>
-    <div class="lines-div" style="padding-left: 15px; display: none;">
+    <div class="interface-lbl" style="padding-left: 15px; display: none;">
         <script type="text/javascript">
             function drawLineImage(lineId, coordinates) {
                 var c = document.getElementById("canvas_" + lineId)
@@ -536,8 +536,8 @@
         $(".transcript-div").toggle();
         if ( $(".transcript-div").is(":visible") )
             i = "i";
-        $(".lines-div").toggle();
-        if ( $(".lines-div").is(":visible") ) {
+        $(".interface-lbl").toggle();
+        if ( $(".interface-lbl").is(":visible") ) {
             i = "lbl";
             $("#lineList").html("");
         }
@@ -549,7 +549,7 @@
             drawLineImage(obj[0], obj[2]);
             if ( $(".transcript-div").is(":visible") )
                 $("line_" + obj[0]).html("");
-            if ( $(".lines-div").is(":visible") ) {
+            if ( $(".interface-lbl").is(":visible") ) {
                 currentLineId = obj[0];
                 buildLineList();
             }

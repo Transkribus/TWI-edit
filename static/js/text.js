@@ -514,7 +514,7 @@ function buildLineList() {
 				$("#lineList").append(getLineLiWithTags(contentArray[index++][0]));
 		}
 	}
-	if ( $(".lines-div").is(":visible") ) {
+	if ( $(".interface-lbl").is(":visible") ) {
 		index = 1
 		while (index <= contentArray.length - 1) {
 			$("#line_" + contentArray[index][0]).html(getLineLiWithTags(contentArray[index][0]));
