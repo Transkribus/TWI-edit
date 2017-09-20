@@ -133,7 +133,7 @@
 			<div lineId="{{ line|get_item:"@id" }}" style="margin-bottom: 10px;">
                 <div id="canvas_wrapper_{{ line|get_item:"@id" }}" class="line-div" style="border: 1px solid #d3d3d3; width: 800px; height: 100px;">
     				<canvas id="canvas_{{ line|get_item:"@id" }}" width="800" height="100">
-    					Your browser does not support the HTML5 canvas tag.
+    					{% trans "Your browser does not support the HTML5 canvas tag." %}
     				</canvas>
                 </div>
 				<ol id="line_{{ line|get_item:"@id" }}" class="line-list" contenteditable="true" style="margin-top: 3px; margin-bottom: 0;">
@@ -224,6 +224,9 @@
     <div class="interface-t" style="padding-left: 15px; display: none;">
         <ol id="text" class="line-list" contenteditable="true" style="margin-top: 3px; margin-bottom: 0;">
         </ol>
+        <canvas id="canvas_text" width="800" height="100" style="display: none; z-index: 1998; border: 1px solid #d3d3d3; position: fixed;">
+            {% trans "Your browser does not support the HTML5 canvas tag." %}
+        </canvas>
         <script type="text/javascript">
             $("#text").on("keydown", function(e) {
                 if ( window.location.href.indexOf('edit') >= 0 )
@@ -267,6 +270,31 @@
                     cut(e);
                 else
                     e.preventDefault();
+            });
+            $("#text").on("mouseenter mouseleave", "li", function(e) {
+                $("#canvas_text").toggle();
+                var c = document.getElementById("#canvas_text");
+                if ( c !== null && c !== undefined ) {
+                    ctx.fillStyle = "rgba(0, 0, 0, 0.15)";
+                    ctx.fillRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+                    ctx.save();
+                }
+            });
+            $("#text").on("mouseover", "li", function(e) {
+                if ( window.innerHeight - (e.clientY + 180) <= 0 )
+                    $("#canvas_text").css("top", e.clientY - 180);
+                else
+                    $("#canvas_text").css("top", e.clientY + 10);
+                var c = document.getElementById("canvas_text")
+                if ( c !== null && c !== undefined ) {
+                    var ctx = c.getContext("2d");
+                    var image = document.getElementById("transcriptImage");
+                    var contentLine = contentArray[getIndexFromLineId(e.currentTarget.id.substring(5))];
+                    var width = contentLine[2][2] - contentLine[2][0];
+                    var height = contentLine[2][5] - contentLine[2][1];
+                    ctx.drawImage(image, contentLine[2][0], contentLine[2][1], width, height, 0, 0, ctx.canvas.width, ctx.canvas.height);
+                    ctx.save();
+                }
             });
             /*$("#line_{#{ line|get_item:"@id" }#}").on("focus", function() {
                 if ( window.location.href.indexOf('edit') >= 0 )
@@ -721,6 +749,7 @@
 		initialHeight = $('#transcriptImage').height();
 		naturalWidth = $('#transcriptImage').get(0).naturalWidth;
 		$(".transcript-div").height(window.innerHeight - 200);
+        $("#canvas_text").width(window.innerWidth - 50);
 		initialScale = initialWidth / naturalWidth;
 		pathWithoutPage = "{% url 'edit:correct' collId docId %}/";
 		pageNo = {{pageNo}};
