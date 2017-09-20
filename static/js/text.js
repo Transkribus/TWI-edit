@@ -394,7 +394,7 @@ function getLineLiWithTags(tagLineId) { // generates a line with spans matching 
 		var backgroundHeight = lineY + bottomPadding;
 		// generate lines with spans showing the tags...
 		var tagStack = [];
-		var tagString = '<li value="' + lineNo + '" spanOffset="0" class="tag-menu" id="text_' + tagLineId + '" spellcheck="false"' + highlightCurrent
+		var tagString = '<li value="' + lineNo + '" spanOffset="0" class="tag-menu ' + ( window.location.href.indexOf('view') >= 0 ? 'context-menu-disabled' : '' ) + '" id="text_' + tagLineId + '" spellcheck="false"' + highlightCurrent
 									+ '><div style="padding-bottom: ' + bottomPadding + 'px;" '
 									+ 'style="min-height: ' + backgroundHeight + 'px;">';
 		var rangeBegin;
