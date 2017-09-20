@@ -53,7 +53,6 @@ function getContent() { // "JSON.stringifies" (verbing a noun) contentArray and 
 			content += ',';
 	}
 	content += '}';
-	console.log("custom content: " + content);
 	return content;
 }
 function saveChanges(e) {

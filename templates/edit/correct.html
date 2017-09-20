@@ -81,7 +81,7 @@
                     </div>
                 {% else %}
                     <div class="btn-group">
-                        <span class="btn btn-sm btn-default">{% trans "This page lacks segmentation and cannot be edited. Please use the expert client to create a segmentation first." %}</span>
+                        <span class="btn btn-sm btn-default">{% trans "This page lacks segmentation and cannot be edited. Please use TranskribusX to create a segmentation first." %}</span>
                     </div>
                 {% endif %}
             </div>
@@ -106,6 +106,10 @@
 			<canvas id="transcriptCanvas" style="position: absolute; z-index: 998; pointer-events: none;"></canvas>
 			<img src="{{ imageUrl }}" usemap="#transcriptMap" id="transcriptImage" class="transcript-img"  style="z-index: 999;">
 		</div>
+	</div>
+	<div class="side-by-side" style="padding-left: 15px; display: none;">
+		side-by-side goes here (and shouldn't be called proofread anymore)
+		{# {% include "edit/proofread.html" %} #}
 	</div>
 	<div class="lines-div" style="padding-left: 15px; display: none;">
 		<script type="text/javascript">
@@ -278,6 +282,7 @@
 	var resizeTimeout;
     var pageStatus = "{{ pageStatus }}";
 	var zoomFactor = 1;
+	var i = "{{ i }}";
 
 	tagItems = {
 		{% for tag in tags %}"{{tag.name}}": {name: "<span href=\"#\" style=\"color: #{{tag.color}};\">{{tag.name}}</span>", type: "checkbox", isHtmlName: true} {% if not forloop.last %}, {% endif %}
@@ -287,7 +292,7 @@
 		{% for tag in tags %}"{{tag.name}}": "{{tag.color}}" {% if not forloop.last %}, {% endif %}
 		{% endfor %}
 	}
-	i = "{{ i }}";
+
 	$("a[data-target='#saveChanges']").click(function(e) {
 		saveChanges(e);
 	});
@@ -349,10 +354,7 @@
 	});
 	$("a[data-target='#toggleInterface']").click(function(e) {
     	e.preventDefault();
-        if ( e.target.id.substring(16) == i )
-            return;
-
-        changeInterface();
+        changeInterface(e.target.id.substring(16));
 	});
 	$('.transcript-map-div').draggable({
 		start: function() {
@@ -372,14 +374,15 @@
 	});
 	$( "#transcriptMap area" ).on('click', function(e) {
     	e.preventDefault();
-		if ( isDragged || window.location.href.indexOf('view') >= 0 ) {# We ignore clicks if the user has been dragging the image, we assume that that's what the user wants. #}
+		if (isDragged || window.location.href.indexOf('view') >= 0 ) {# We ignore clicks if the user has been dragging the image, we assume that that's what the user wants. #}
 			return;
 		//ignoreLeave = true; {# We don't want the original selection "unhighlighted" when the user moves the mouse to the modal. #}
 		updateDialog($(this).attr("line-key"));
 		updateCanvas();
 	});
 	$('area').mouseenter(function(e) {
-		highlightLine(e.target.id);
+		if (window.location.href.indexOf('view') < 0)
+			highlightLine(e.target.id);
 	});
 	$('area').mouseleave(function(e) {
 		updateCanvas();
@@ -502,20 +505,22 @@
 	$("#pageNumber").change(function() {
    		checkPageNumberInput();
 	});
-    function changeInterface() {
-        currentLineId = null;
-        $(".transcript-div").toggle();
-        if ( $(".transcript-div").is(":visible") )
-            i = "i";
-        $(".lines-div").toggle();
-        if ( $(".lines-div").is(":visible") ) {
-            i = "lbl";
-            $("#lineList").html("");
+    function changeInterface(changeTo) {
+        $(".transcript-div").hide();
+        $(".lines-div").hide();
+        $(".side-by-side").hide();
+        if ("i" === changeTo) {
+	        $(".transcript-div").show();
+        } else if ("lbl" === changeTo) {
+	        $(".lines-div").show();
+        } else if ("sbs" === changeTo) {
+	        $(".side-by-side").show();
         }
+        
         if ( correctModal !== undefined && correctModal.isOpen() )
-            correctModal.close();
+            correctModal.close(); // TODO Close with save, there's a function for that...
 
-        contentArray.forEach(function(obj, i) {
+        contentArray.forEach(function(obj, i) { // TODO Put this in a separate function (in a separate file?)
             var c = document.getElementById("canvas_" + obj[0]);
             if ( c !== null && c !== undefined ) {
                 var ctx = c.getContext("2d");
@@ -600,7 +605,6 @@
 				ignoreLeave = false;
 		    },
     		resizeStart: function (e) {
-    			console.log("width when starting resize: " + this.style.width);
     			dialogBeingResized = true;
     			updateDockingStatus(false);
     		},
@@ -628,7 +632,6 @@
     				$("#correctModal").css("top",  (window.innerHeight - dialogHeight) + "px");
     		},
     		resizeStop: function (e) {
-    			console.log("width when stopping resize: " + this.style.width);
     			dialogWidth = parseInt(this.style.width, 10); // saving this... TODO Ask if this is to be saved? User opinions vary...!?
     			dialogHeight = parseInt(this.style.height, 10);
     			dialogBeingResized = false;
@@ -638,10 +641,21 @@
 
         $("#toggleInterface_i").removeClass("disabled");
         $("#toggleInterface_lbl").removeClass("disabled");
+        $("#toggleInterface_sbs").removeClass("disabled");
+        
+        changeInterface(i);
+        /*
 		if ( i == "lbl" ) {
             $("#toggleInterface_lbl").click();// Change buttons
 			changeInterface();
         }
+		if ( i == "sbs" ) {
+            $("#toggleInterface_sbs").click();// Change buttons
+			changeInterface();
+        }
+        */
+        
+        
 	});
 	var fixmeTop = $(".fix_scroll_top").offset().top;
 	$(window).scroll(function() {
