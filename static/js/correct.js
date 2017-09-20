@@ -3,6 +3,7 @@ var currentLineId;
 var zoomFactor = 0;
 var accumExtraX = 0;
 var accumExtraY = 0;
+var accumExtra;
 var initialWidth, initialHeight, initialScale, naturalWidth;
 var previousInnerWidth = window.innerWidth;
 var correctModal;

@@ -13,7 +13,7 @@ function scrollThumbsLeft() {
 }
 function scrollThumbsRight() {
 	thumbCountOffset -= THUMBS_TO_SHOW;
-	thumbCountOffset = Math.max(thumbCountOffset, -thumbArray.length + THUMBS_TO_SHOW + 1);
+	thumbCountOffset = Math.max(thumbCountOffset, -thumbArray.length + THUMBS_TO_SHOW);
 	$(".thumbs" ).css("transition", "1s");
 	$(".thumbs" ).css("transform",  "translateX(" + thumbCountOffset * thumbWidth + "px)");
 	updateArrows();
@@ -23,7 +23,7 @@ function updateArrows() { // call to show and hide arrows depending on whether t
 		$("#leftArrow").hide();
 	else
 		$("#leftArrow").show();
-	if (thumbCountOffset <= (-thumbArray.length + 11)) // 11 because we're comparing offset and length, not indices
+	if (thumbCountOffset <= (-thumbArray.length + 10))
 		$("#rightArrow").hide();
 	else
 		$("#rightArrow").show();

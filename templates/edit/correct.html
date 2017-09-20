@@ -25,27 +25,27 @@
                     <a id="toggleInterface_t" class="btn btn-sm btn-default disabled" data-target="#toggleInterface">{% trans "Text" %}</a>
                 </div>
                 <div class="btn-group">
-                    <a class="zoom-in btn btn-sm btn-default" href="#" title="{% trans "Zoom In" %}"><span class="glyphicon glyphicon-zoom-in"></span></a>
-                    <a class="zoom-out btn btn-sm btn-default" href="#" title="{% trans "Zoom Out" %}"><span class="glyphicon glyphicon-zoom-out"></span></a>
-                    <a class="fit-width btn btn-sm btn-default" href="#" title="{% trans "Fit Width" %}"><span class="glyphicon glyphicon-resize-horizontal"></span></a>
-					<a class="fit-height btn btn-sm btn-default" href="#" title="{% trans "Fit Height" %}"><span class="glyphicon glyphicon-resize-vertical"></span></a>                
+                    <a class="zoom-in btn btn-sm btn-default disabled" href="#" title="{% trans "Zoom In" %}"><span class="glyphicon glyphicon-zoom-in"></span></a>
+                    <a class="zoom-out btn btn-sm btn-default disabled" href="#" title="{% trans "Zoom Out" %}"><span class="glyphicon glyphicon-zoom-out"></span></a>
+                    <a class="fit-width btn btn-sm btn-default disabled" href="#" title="{% trans "Fit Width" %}"><span class="glyphicon glyphicon-resize-horizontal"></span></a>
+                    <a class="fit-height btn btn-sm btn-default disabled" href="#" title="{% trans "Fit Height" %}"><span class="glyphicon glyphicon-resize-vertical"></span></a>
                 </div>
                 <div class="btn-group">
-                    <a class="first-page btn btn-sm btn-default" href="#" title="{% trans "First page" %}"><span class="glyphicon glyphicon-step-backward"></span></a>
-                    <a class="previous-page btn btn-sm btn-default" href="#" title="{% trans "Previous page" %}"><span class="glyphicon glyphicon-triangle-left"></span></a>
-                    <input type="text" class="btn btn-sm btn-default" id="pageNumber">
-                    <a class="next-page btn btn-sm btn-default" href="#" title="{% trans "Next page" %}"><span class="glyphicon glyphicon-triangle-right"></span></a>
-                    <a class="last-page btn btn-sm btn-default" href="#" title="{% trans "Last page" %}"><span class="glyphicon glyphicon-step-forward"></span></a>
-                    <a class="btn btn-sm btn-default" data-toggle="collapse" href="#thumbDiv" aria-expanded="false" aria-controls="thumbDiv"><span class="glyphicon glyphicon-th-large" title="{% trans "Thumb overview" %}"></span></a>
+                    <a class="first-page btn btn-sm btn-default disabled" href="#" title="{% trans "First page" %}"><span class="glyphicon glyphicon-step-backward"></span></a>
+                    <a class="previous-page btn btn-sm btn-default disabled" href="#" title="{% trans "Previous page" %}"><span class="glyphicon glyphicon-triangle-left"></span></a>
+                    <input type="text" class="btn btn-sm btn-default disabled" id="pageNumber">
+                    <a class="next-page btn btn-sm btn-default disabled" href="#" title="{% trans "Next page" %}"><span class="glyphicon glyphicon-triangle-right"></span></a>
+                    <a class="last-page btn btn-sm btn-default disabled" href="#" title="{% trans "Last page" %}"><span class="glyphicon glyphicon-step-forward"></span></a>
+                    <a class="btn btn-sm btn-default disabled" data-toggle="collapse" href="#thumbDiv" aria-expanded="false" aria-controls="thumbDiv"><span class="glyphicon glyphicon-th-large" title="{% trans "Thumb overview" %}"></span></a>
                 </div>
                 <div class="btn-group">
-                    <a id="editToggle" class="btn btn-sm btn-primary" data-target="#toggleEdit">{% if "view" in request.path %}{% trans "Edit" %}{% else %}{% trans "View" %}{% endif %}</a>
+                    <a id="editToggle" class="btn btn-sm btn-primary disabled" data-target="#toggleEdit">{% if "view" in request.path %}{% trans "Edit" %}{% else %}{% trans "View" %}{% endif %}</a>
                 </div>
                 {% if lines %}
                     <div class="btn-group">
                         {% if role == "Owner" %}
                             <div class="btn-group btn-group-sm editControls" {% if "view" in request.path %}style="display: none;"{% endif %}>
-                                <a id="page_status" type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown">
+                                <a id="page_status" type="button" class="btn btn-default dropdown-toggle disabled" data-toggle="dropdown">
                                     {% if pageStatus == "NEW" or pageStatus == "IN_PROGRESS" %}
                                         {% trans "Page status: in progress" %}
                                     {% elif pageStatus == "DONE" %}
@@ -64,7 +64,7 @@
                                 </ul>
                             </div>
                         {% else %}
-                            <a id="page_status" class="btn btn-sm btn-default {% if pageStatus == "GT" %}disabled{% endif %} editControls" {% if "view" in request.path %}style="display: none;"{% endif %} data-target="#page_status">
+                            <a id="page_status" class="btn btn-sm btn-default disabled editControls" {% if "view" in request.path %}style="display: none;"{% endif %} data-target="#page_status">
                                 {% if pageStatus == "NEW" or pageStatus == "IN_PROGRESS" %}
                                     {% trans "Page status: in progress" %}
                                 {% elif pageStatus == "DONE" %}
@@ -76,7 +76,7 @@
                                 {% endif %}
                             </a>
                         {% endif %}
-                        <a href="#" class="btn btn-sm btn-primary editControls" data-target="#saveChanges" {% if "view" in request.path %}style="display: none;"{% endif %}>{% trans "Save changes" %}</a>
+                        <a href="#" class="btn btn-sm btn-primary editControls disabled" data-target="#saveChanges" {% if "view" in request.path %}style="display: none;"{% endif %}>{% trans "Save changes" %}</a>
                         <span id="message" class="btn btn-sm"></span>
                     </div>
                 {% else %}
@@ -104,7 +104,7 @@
 				{% endfor %}
 			</map>
 			<canvas id="transcriptCanvas" style="position: absolute; z-index: 998; pointer-events: none;"></canvas>
-			<img src="{{ imageUrl }}" usemap="#transcriptMap" id="transcriptImage" class="transcript-img"  style="z-index: 999;">
+			<img src="{{ imageUrl }}" usemap="#transcriptMap" id="transcriptImage" class="transcript-img" style="z-index: 999;">
 		</div>
 	</div>
 	<div class="side-by-side" style="padding-left: 15px; display: none;">
@@ -112,28 +112,34 @@
 		{# {% include "edit/proofread.html" %} #}
 	</div>
 	<div class="lines-div" style="padding-left: 15px; display: none;">
-		<script type="text/javascript">
-			function drawLineImage(lineId, coordinates) {
-				var c = document.getElementById("canvas_" + lineId)
-				var ctx = c.getContext("2d");
-				var image = document.getElementById("transcriptImage");
-				var coords = coordinates.toString().split(',');
-				var width = coords[2] - coords[0];
-				var height = coords[5] - coords[1];
-				c.height = height;
-				c.width = width;
-				ctx.canvas.width = Math.min(window.innerWidth - 70, Math.max(width, 250));
-				document.getElementById("line_" + lineId).style.width = Math.min(window.innerWidth - 70, Math.max(width, 250)) + "px";
-				document.getElementById("options_" + lineId).style.width = Math.min(window.innerWidth - 70, Math.max(width, 250)) + "px";
-				ctx.drawImage(image, coords[0], coords[1], width, height, 0, 0, Math.min(window.innerWidth - 70, Math.max(width, 250)), height);
-				ctx.save();
-			}
-		</script>
+        <script type="text/javascript">
+            function drawLineImage(lineId, coordinates) {
+                var c = document.getElementById("canvas_" + lineId)
+                if ( c !== null && c !== undefined ) {
+                    var ctx = c.getContext("2d");
+                    var image = document.getElementById("transcriptImage");
+                    var coords = coordinates.toString().split(',');
+                    var width = coords[2] - coords[0];
+                    var height = coords[5] - coords[1];
+                    c.height = height;
+                    c.width = width;
+                    ctx.canvas.width = Math.min(window.innerWidth - 70, Math.max(width, 250));
+                    $("#line_" + lineId).width(Math.min(window.innerWidth - 70, Math.max(width, 250)));
+                    $("#options_" + lineId).width(Math.min(window.innerWidth - 70, Math.max(width, 250)));
+                    $("#canvas_wrapper_" + lineId).height(height);
+                    $("#canvas_wrapper_" + lineId).width(Math.min(window.innerWidth - 70, Math.max(width, 250)));
+                    ctx.drawImage(image, coords[0], coords[1], width, height, 0, 0, Math.min(window.innerWidth - 70, Math.max(width, 250)), height);
+                    ctx.save();
+                }
+            }
+        </script>
 		{% for line in lines %}
 			<div lineId="{{ line|get_item:"@id" }}" style="margin-bottom: 10px;">
-				<canvas id="canvas_{{ line|get_item:"@id" }}" width="800" height="100" style="border: 1px solid #d3d3d3;">
-					Your browser does not support the HTML5 canvas tag.
-				</canvas>
+                <div id="canvas_wrapper_{{ line|get_item:"@id" }}" class="line-div" style="border: 1px solid #d3d3d3; width: 800px; height: 100px;">
+    				<canvas id="canvas_{{ line|get_item:"@id" }}" width="800" height="100">
+    					Your browser does not support the HTML5 canvas tag.
+    				</canvas>
+                </div>
 				<ol id="line_{{ line|get_item:"@id" }}" class="line-list" contenteditable="true" style="margin-top: 3px; margin-bottom: 0;">
 				</ol>
 				<div id="options_{{ line|get_item:"@id" }}" class="option-box">
@@ -194,6 +200,25 @@
 						if ( !$("#options_{{ line|get_item:"@id" }}").is(":hover") )
 							$("#options_{{ line|get_item:"@id" }}").hide();
 					});
+                    $("#canvas_{{ line|get_item:"@id" }}").draggable({
+                        stop: function(e, ui) {
+                            {# We prefer to keep it simple and let accumExtra* contain the offsets regardless of how they were created (i.e. also when the user has dragged the image): #}
+                            accumExtra["{{ line|get_item:"@id" }}"]["x"] -= ui.position.left;
+                            accumExtra["{{ line|get_item:"@id" }}"]["y"] -= ui.position.top;
+                            $("#canvas_{{ line|get_item:"@id" }}").css("top", "0px");
+                            $("#canvas_{{ line|get_item:"@id" }}").css("left", "0px");
+                            $("#canvas_{{ line|get_item:"@id" }}").css("transform", "translate(" + -accumExtra["{{ line|get_item:"@id" }}"]["x"] +"px, " + -accumExtra["{{ line|get_item:"@id" }}"]["y"]+ "px) scale(" + accumExtra["{{ line|get_item:"@id" }}"]["factor"] + ")");// Note, the CSS is set to "transform-origin: 0px 0px"
+                        }
+                    });
+                    $("#canvas_wrapper_{{ line|get_item:"@id" }}").on("mousewheel DOMMouseScroll", function(e) {
+                        e.preventDefault();
+                        var mouseZoom;
+                        if ( e.originalEvent.detail > 0 || e.originalEvent.wheelDelta < 0 )
+                            mouseZoom = -20;
+                        else
+                            mouseZoom = 20;
+                        setZoom(mouseZoom, e.originalEvent.pageX - $("#canvas_wrapper_{{ line|get_item:"@id" }}").offset().left, e.originalEvent.pageY - $("#canvas_wrapper_{{ line|get_item:"@id" }}").offset().top);
+                    });
 				</script>
 			</div>
 		{% empty %}
@@ -291,7 +316,10 @@
 	tagColors = {
 		{% for tag in tags %}"{{tag.name}}": "{{tag.color}}" {% if not forloop.last %}, {% endif %}
 		{% endfor %}
-	}
+	};
+    accumExtra = {
+        {% for line in lines %}"{{ line|get_item:"@id" }}": {"x": 0, "y": 0, "factor": 1}, {% endfor %}
+    };
 
 	$("a[data-target='#saveChanges']").click(function(e) {
 		saveChanges(e);
@@ -351,6 +379,16 @@
         if ( window.location.href.indexOf("view") == -1 && i === "i" )
             updateDialog("{{ lines|index:0|get_item:"@id" }}");
         updateCanvas();
+        if ( $(".lines-div").is(":visible") ) {
+            $("#lineList").html("");
+            contentArray.forEach(function(obj, i) {
+                drawLineImage(obj[0], obj[2]);
+                if ( $(".lines-div").is(":visible") ) {
+                    currentLineId = obj[0];
+                    buildLineList();
+                }
+            });
+        }
 	});
 	$("a[data-target='#toggleInterface']").click(function(e) {
     	e.preventDefault();
@@ -369,7 +407,7 @@
 			accumExtraX -= Math.round(parseInt($( ".transcript-map-div" ).css("left"), 10));
 			$(".transcript-map-div" ).css("top", "0px");
 			$(".transcript-map-div" ).css("left", "0px");
-			$(".transcript-map-div" ).css("transform",  "translate(" + -accumExtraX +"px, " + -accumExtraY+ "px) scale(" + zoomFactor + ")");// Note, the CSS is set to "transform-origin: 0px 0px"
+			$(".transcript-map-div" ).css("transform", "translate(" + -accumExtraX +"px, " + -accumExtraY+ "px) scale(" + zoomFactor + ")");// Note, the CSS is set to "transform-origin: 0px 0px"
 		}
 	});
 	$( "#transcriptMap area" ).on('click', function(e) {
@@ -520,6 +558,7 @@
         if ( correctModal !== undefined && correctModal.isOpen() )
             correctModal.close(); // TODO Close with save, there's a function for that...
 
+        fitWidth();
         contentArray.forEach(function(obj, i) { // TODO Put this in a separate function (in a separate file?)
             var c = document.getElementById("canvas_" + obj[0]);
             if ( c !== null && c !== undefined ) {
@@ -589,7 +628,6 @@
 
 		updateCanvas();
 		calculateAreas();
-		readyToZoom = true;
 		loadThumbs();
 
 		// Getting this from the CSS file for now, set a variable instead?
@@ -642,7 +680,22 @@
         $("#toggleInterface_i").removeClass("disabled");
         $("#toggleInterface_lbl").removeClass("disabled");
         $("#toggleInterface_sbs").removeClass("disabled");
-        
+        $(".zoom-in").removeClass("disabled");
+        $(".zoom-out").removeClass("disabled");
+        $(".fit-width").removeClass("disabled");
+        $(".fit-height").removeClass("disabled");
+        $(".first-page").removeClass("disabled");
+        $(".previous-page").removeClass("disabled");
+        $("#pageNumber").removeClass("disabled");
+        $(".next-page").removeClass("disabled");
+        $(".last-page").removeClass("disabled");
+        $("a[aria-controls='thumbDiv']").removeClass("disabled");
+        if ( "{{ role }}" === "Editor" || "{{ role }}" === "Owner" ) {
+            $("#editToggle").removeClass("disabled");
+            $("a[data-target='#saveChanges']").removeClass("disabled");
+            if ( "{{ pageStatus }}" !== "GT" )
+                $("#page_status").removeClass("disabled");
+        }
         changeInterface(i);
         /*
 		if ( i == "lbl" ) {

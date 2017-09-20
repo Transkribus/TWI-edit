@@ -19,6 +19,13 @@
 	transform-origin: 0px 0px;/* Required by the zoom transform... */
 }
 
+.line-div {
+    background-color: gray;
+    overflow: hidden;
+    position: relative;
+    transform-origin: 0px 0px;/* Required by the zoom transform... */
+}
+
 /* We make the transcript fit neatly... */
 .transcript-img {
 	max-width: 100% !important;
