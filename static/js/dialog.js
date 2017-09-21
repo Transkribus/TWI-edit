@@ -52,11 +52,16 @@ function saveDialogProperties() { // Saves the undocked dialog properties...
 	dialogHeight = $("#correctModal").height();
 }
 function updateDialog(lineId) { // This function can be called without a line ID to reset the dialog after resizing the window
+<<<<<<< HEAD
 
+=======
+>>>>>>> 87041cc0020dd2fb9a12bcff0175a0ae6d49ac82
 	if (null == currentLineId) {
 		if (1 == arguments.length) // can this happen anymore?
 			currentLineId = lineId;
 		var lineIdx = getIndexFromLineId(currentLineId);
+		var endOfLine = contentArray[lineIdx][1].length;
+		setSelectionData(currentLineId, endOfLine, endOfLine);
 		correctModal.open();
 		buildLineList();
 		dialogX =  Math.max(Math.min(initialScale * zoomFactor * contentArray[lineIdx][2][0] + $(".transcript-div").offset().left - accumExtraX, window.innerWidth - dialogWidth - 20), $(".transcript-div").offset().left);
