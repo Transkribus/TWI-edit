@@ -672,10 +672,10 @@
             $(".interface-lbl").hide();
             $(".interface-sbs").show();
             $(".interface-t").hide();
-            $(".zoom-in").addClass("disabled");
-            $(".zoom-out").addClass("disabled");
-            $(".fit-width").addClass("disabled");
-            $(".fit-height").addClass("disabled");
+            $(".zoom-in").removeClass("disabled");
+            $(".zoom-out").removeClass("disabled");
+            $(".fit-width").removeClass("disabled");
+            $(".fit-height").removeClass("disabled");
             if ( "{{ role }}" === "Editor" && "{{ role }}" === "Owner" ) {
                 $("#editToggle").removeClass("disabled");
                 $("a[data-target='#saveChanges']").removeClass("disabled");
@@ -857,28 +857,9 @@
                 $("#page_status").removeClass("disabled");
         }
 
-		if ( "lbl" === ifc ) {
-            $("#toggleInterface_lbl").click();// Change buttons
-            changeInterface("lbl");
-        }
-        if ( "t" == ifc ) {
-            $("#toggleInterface_t").click();// Change buttons
-            changeInterface("t");
-            $(".zoom-in").addClass("disabled");
-            $(".zoom-out").addClass("disabled");
-            $(".fit-width").addClass("disabled");
-            $(".fit-height").addClass("disabled");
-            $("#editToggle").addClass("disabled");
-            $("a[data-target='#saveChanges']").addClass("disabled");
-            $("#page_status").addClass("disabled");
-        }
-		if ( "sbs" == ifc ) {
-            $("#toggleInterface_sbs").click();// Change buttons
-			changeInterface();
-        }
-
-
-	});
+        $("#toggleInterface_" + ifc).click();// Change buttons
+        changeInterface(ifc);
+    });
 	var fixmeTop = $(".fix_scroll_top").offset().top;
 	$(window).scroll(function() {
 		var currentScroll = $(window).scrollTop();
