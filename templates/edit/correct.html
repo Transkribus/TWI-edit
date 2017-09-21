@@ -307,7 +307,7 @@
 	var resizeTimeout;
     var pageStatus = "{{ pageStatus }}";
 	var zoomFactor = 1;
-	var i = "{{ i }}";
+	var ifc = "{{ i }}";
 
 	tagItems = {
 		{% for tag in tags %}"{{tag.name}}": {name: "<span href=\"#\" style=\"color: #{{tag.color}};\">{{tag.name}}</span>", type: "checkbox", isHtmlName: true} {% if not forloop.last %}, {% endif %}
@@ -376,7 +376,7 @@
     	$(".editControls").toggle();
     	$("#editToggle").html(newButtonText);
     	$("area").css("cursor", "pointer");
-        if ( window.location.href.indexOf("view") == -1 && i === "i" )
+        if ( window.location.href.indexOf("view") == -1 && "i" === ifc )
             updateDialog("{{ lines|index:0|get_item:"@id" }}");
         updateCanvas();
         if ( $(".lines-div").is(":visible") ) {
@@ -698,11 +698,11 @@
         }
         changeInterface(i);
         /*
-		if ( i == "lbl" ) {
+		if ( "lbl" === ifc ) {
             $("#toggleInterface_lbl").click();// Change buttons
 			changeInterface();
         }
-		if ( i == "sbs" ) {
+		if ( "sbs" == ifc ) {
             $("#toggleInterface_sbs").click();// Change buttons
 			changeInterface();
         }

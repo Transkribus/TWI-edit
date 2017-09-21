@@ -34,7 +34,7 @@ function fitHeight() {
     updateCanvas();
 }
 function setZoom(zoom, x, y) {
-    if ( i === "i" && (zoom > 0 || $( ".transcript-div" ).innerHeight() < initialHeight * zoomFactor) ) {// is the image still larger than the viewport? We allow one "step" of zooming out below that size, hence using the old zoomFactor
+    if ( ifc === "i" && (zoom > 0 || $( ".transcript-div" ).innerHeight() < initialHeight * zoomFactor) ) {// is the image still larger than the viewport? We allow one "step" of zooming out below that size, hence using the old zoomFactor
         var newZoomFactor = zoomFactor * (zoom/50 +1);
         if (1 == arguments.length) { // If no cursor position has been given, we use the center
             x = initialWidth / 2 + accumExtraX;
@@ -47,7 +47,7 @@ function setZoom(zoom, x, y) {
         $( ".transcript-map-div" ).css("transform",  "translate(" + -accumExtraX +"px, " + -accumExtraY+ "px) scale(" + newZoomFactor + ")");// Note, the CSS is set to "transform-origin: 0px 0px"
         zoomFactor = newZoomFactor;// update this
     }
-    else if ( i === "lbl" ) {
+    else if ( ifc === "lbl" ) {
         contentArray.forEach(function(obj, i) {
             var width = obj[2][2] - obj[2][0];
             var height = obj[2][5] - obj[2][1];
