@@ -52,10 +52,6 @@ function saveDialogProperties() { // Saves the undocked dialog properties...
 	dialogHeight = $("#correctModal").height();
 }
 function updateDialog(lineId) { // This function can be called without a line ID to reset the dialog after resizing the window
-<<<<<<< HEAD
-
-=======
->>>>>>> 87041cc0020dd2fb9a12bcff0175a0ae6d49ac82
 	if (null == currentLineId) {
 		if (1 == arguments.length) // can this happen anymore?
 			currentLineId = lineId;
