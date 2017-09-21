@@ -523,7 +523,8 @@ function buildLineList() {
 	}
 	highlightLineList();
 	restoreSelection();
-	updateDialogSize();
+	if ( $(".transcript-div").is(":visible") )
+		updateDialogSize();
 }
 
 // UX actions
