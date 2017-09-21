@@ -702,12 +702,15 @@
             $(".zoom-out").addClass("disabled");
             $(".fit-width").addClass("disabled");
             $(".fit-height").addClass("disabled");
-            if ( "{{ role }}" === "Editor" && "{{ role }}" === "Owner" ) {
+            /*if ( "{{ role }}" === "Editor" && "{{ role }}" === "Owner" ) {
                 $("#editToggle").removeClass("disabled");
                 $("a[data-target='#saveChanges']").removeClass("disabled");
                 if ( "{{ pageStatus }}" !== "GT" )
                     $("#page_status").removeClass("disabled");
-            }
+            }*/
+            $("#editToggle").addClass("disabled");
+            $("a[data-target='#saveChanges']").addClass("disabled");
+            $("#page_status").addClass("disabled");
         }
         else {
             i = target;
@@ -873,6 +876,9 @@
             $(".zoom-out").addClass("disabled");
             $(".fit-width").addClass("disabled");
             $(".fit-height").addClass("disabled");
+            $("#editToggle").addClass("disabled");
+            $("a[data-target='#saveChanges']").addClass("disabled");
+            $("#page_status").addClass("disabled");
         }
 		if ( "sbs" == ifc ) {
             $("#toggleInterface_sbs").click();// Change buttons
