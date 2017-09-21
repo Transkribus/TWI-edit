@@ -233,50 +233,38 @@
         </canvas>
         <script type="text/javascript">
             $("#text").on("keydown", function(e) {
-                if ( window.location.href.indexOf('edit') >= 0 )
+                if ( window.location.href.indexOf("edit") >= 0 )
                     keydown(e);
                 else
                     e.preventDefault();
             });
             $("#text").on("keyup", function(e) {
-                if ( window.location.href.indexOf('edit') >= 0 )
+                if ( window.location.href.indexOf("edit") >= 0 )
                     keyup(e);
                 else
                     e.preventDefault();
-            });
-            $("#text").on("mouseup", function(e) {
-                if ( window.location.href.indexOf('edit') >= 0 ) {
-                    /*if ( currentLineId !== "{#{ line|get_item:"@id" }#}" ) {
-                        var sel = window.getSelection();
-                        sel.removeAllRanges();
-                        selectionData = [["{#{ line|get_item:"@id" }#}", 0, 0]];
-                        currentLineId = "{#{ line|get_item:"@id" }#}";
-                        updateCanvas();
-                        buildLineList();
-                    }*/
-                    mouseup(e);
-                }
+                showLineImage(e);
             });
             $("#text").on("paste", function(e) {
-                if ( window.location.href.indexOf('edit') >= 0 )
+                if ( window.location.href.indexOf("edit") >= 0 )
                     paste(e);
                 else
                     e.preventDefault();
             });
             $("#text").on("drop", function(e) {
-                if ( window.location.href.indexOf('edit') >= 0 )
+                if ( window.location.href.indexOf("edit") >= 0 )
                     drop(e);
                 else
                     e.preventDefault();
             });
             $("#text").on("cut", function(e) {
-                if ( window.location.href.indexOf('edit') >= 0 )
+                if ( window.location.href.indexOf("edit") >= 0 )
                     cut(e);
                 else
                     e.preventDefault();
             });
-            $("#text").on("mouseenter mouseleave", "li", function(e) {
-                $("#canvas_text").toggle();
+            $("#text").on("mouseenter", "li", function(e) {
+                $("#canvas_text").show();
                 var c = document.getElementById("#canvas_text");
                 if ( c !== null && c !== undefined ) {
                     ctx.fillStyle = "rgba(0, 0, 0, 0.15)";
@@ -284,21 +272,26 @@
                     ctx.save();
                 }
             });
+            $("#text").on("mouseleave", "li", function(e) {
+                $("#canvas_text").hide();
+            });
             $("#text").on("mouseover", "li", function(e) {
-                if ( window.innerHeight - (e.clientY + 180) <= 0 )
-                    $("#canvas_text").css("top", e.clientY - 180);
-                else
-                    $("#canvas_text").css("top", e.clientY + 10);
-                var c = document.getElementById("canvas_text")
-                if ( c !== null && c !== undefined ) {
-                    var ctx = c.getContext("2d");
-                    var image = document.getElementById("transcriptImage");
-                    var contentLine = contentArray[getIndexFromLineId(e.currentTarget.id.substring(5))];
-                    var width = contentLine[2][2] - contentLine[2][0];
-                    var height = contentLine[2][5] - contentLine[2][1];
-                    ctx.drawImage(image, contentLine[2][0], contentLine[2][1], width, height, 0, 0, ctx.canvas.width, ctx.canvas.height);
-                    ctx.save();
+                showLineImage(e);
+            });
+            $("#text").on("mouseup", "li", function(e) {
+                var lineId = e.currentTarget.id.substring(5);
+                if ( window.location.href.indexOf("edit") >= 0 ) {
+                    if ( currentLineId !== lineId ) {
+                        var sel = window.getSelection();
+                        sel.removeAllRanges();
+                        selectionData = [[lineId, 0, 0]];
+                        currentLineId = lineId;
+                        updateCanvas();
+                        buildLineList();
+                    }
+                    mouseup(e);
                 }
+                showLineImage(e);
             });
             /*$("#line_{#{ line|get_item:"@id" }#}").on("focus", function() {
                 if ( window.location.href.indexOf('edit') >= 0 )

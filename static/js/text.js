@@ -126,12 +126,12 @@ function editAction(event) {
 	        typewriterNext();
 	        return;
 	    } else {
-	    	if (event.key == "ArrowUp" && "i" === ifc) {
+			if (event.key == "ArrowUp" && ("i" === ifc || "t" === ifc)) {
 	    		if (getIndexFromLineId(editedLineId) == (getIndexFromLineId(currentLineId) - surroundingCount)) { // if there's no line left in the dialog to go to...
 		    		event.preventDefault();
 	    			typewriterPrevious(); // ...the expected behaviour is identical to this
 	    		} // otherwise we can let the caret simply move as normal
-	    	} else if (event.key == "ArrowDown" && "i" === ifc) {
+			} else if (event.key == "ArrowDown" && ("i" === ifc || "t" === ifc)) {
 	    		if (getIndexFromLineId(editedLineId) == (getIndexFromLineId(currentLineId) + surroundingCount)) { // if there's no line left in the dialog to go to...
 	    			event.preventDefault();
 	    			typewriterNext(); // ...the expected behaviour is identical to this
