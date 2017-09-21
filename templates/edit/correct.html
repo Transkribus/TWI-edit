@@ -81,7 +81,7 @@
                     </div>
                 {% else %}
                     <div class="btn-group">
-                        <span class="btn btn-sm btn-default">{% trans "This page lacks segmentation and cannot be edited. Please use the expert client to create a segmentation first." %}</span>
+                        <span class="btn btn-sm btn-default">{% trans "This page lacks segmentation and cannot be edited. Please use TranskribusX to create a segmentation first." %}</span>
                     </div>
                 {% endif %}
             </div>
@@ -107,7 +107,11 @@
 			<img src="{{ imageUrl }}" usemap="#transcriptMap" id="transcriptImage" class="transcript-img" style="z-index: 999;">
 		</div>
 	</div>
-    <div class="interface-lbl" style="padding-left: 15px; display: none;">
+	<div class="interface-sbs" style="padding-left: 15px; display: none;">
+		side-by-side goes here (and shouldn't be called proofread anymore)
+		{# {% include "edit/proofread.html" %} #}
+	</div>
+	<div class="interface-lbl" style="padding-left: 15px; display: none;">
         <script type="text/javascript">
             function drawLineImage(lineId, coordinates) {
                 var c = document.getElementById("canvas_" + lineId)
@@ -388,6 +392,7 @@
 	var resizeTimeout;
     var pageStatus = "{{ pageStatus }}";
 	var zoomFactor = 1;
+	var ifc = "{{ i }}";
 
 	tagItems = {
 		{% for tag in tags %}"{{tag.name}}": {name: "<span href=\"#\" style=\"color: #{{tag.color}};\">{{tag.name}}</span>", type: "checkbox", isHtmlName: true} {% if not forloop.last %}, {% endif %}
@@ -400,7 +405,6 @@
     accumExtra = {
         {% for line in lines %}"{{ line|get_item:"@id" }}": {"x": 0, "y": 0, "factor": 1}, {% endfor %}
     };
-	i = "{{ i }}";
 
 	$("a[data-target='#saveChanges']").click(function(e) {
 		saveChanges(e);
@@ -457,7 +461,7 @@
     	$(".editControls").toggle();
     	$("#editToggle").html(newButtonText);
     	$("area").css("cursor", "pointer");
-        if ( window.location.href.indexOf("view") == -1 && i === "i" )
+        if ( window.location.href.indexOf("view") == -1 && "i" === ifc )
             updateDialog("{{ lines|index:0|get_item:"@id" }}");
         updateCanvas();
         if ( $(".interface-lbl").is(":visible") ) {
@@ -478,7 +482,6 @@
     	e.preventDefault();
         if ( e.target.id.substring(16) == i )
             return;
-
         changeInterface(e.target.id.substring(16));
 	});
 	$('.transcript-map-div').draggable({
@@ -499,14 +502,15 @@
 	});
 	$( "#transcriptMap area" ).on('click', function(e) {
     	e.preventDefault();
-		if ( isDragged || window.location.href.indexOf('view') >= 0 ) {# We ignore clicks if the user has been dragging the image, we assume that that's what the user wants. #}
+		if (isDragged || window.location.href.indexOf('view') >= 0 ) {# We ignore clicks if the user has been dragging the image, we assume that that's what the user wants. #}
 			return;
 		//ignoreLeave = true; {# We don't want the original selection "unhighlighted" when the user moves the mouse to the modal. #}
 		updateDialog($(this).attr("line-key"));
 		updateCanvas();
 	});
 	$('area').mouseenter(function(e) {
-		highlightLine(e.target.id);
+		if (window.location.href.indexOf('view') < 0)
+			highlightLine(e.target.id);
 	});
 	$('area').mouseleave(function(e) {
 		updateCanvas();
@@ -629,6 +633,7 @@
 	$("#pageNumber").change(function() {
    		checkPageNumberInput();
 	});
+<<<<<<< HEAD
     function changeInterface(target) {
         currentLineId = null;
         if ( target === "i" ) {
@@ -636,6 +641,7 @@
             $("#lines").html("");
             $(".transcript-div").show();
             $(".interface-lbl").hide();
+            $(".interface-sbs").hide();
             $(".interface-t").hide();
             $(".zoom-in").removeClass("disabled");
             $(".zoom-out").removeClass("disabled");
@@ -654,6 +660,7 @@
             $("#lines").html("");
             $(".transcript-div").hide();
             $(".interface-lbl").show();
+            $(".interface-sbs").hide();
             $(".interface-t").hide();
             $(".zoom-in").removeClass("disabled");
             $(".zoom-out").removeClass("disabled");
@@ -666,11 +673,30 @@
                     $("#page_status").removeClass("disabled");
             }
         }
+        else if ( target === "sbs" ) {
+            i = "sbs";
+            $("#lineList").html("");
+            $(".transcript-div").hide();
+            $(".interface-lbl").hide();
+            $(".interface-sbs").show();
+            $(".interface-t").hide();
+            $(".zoom-in").addClass("disabled");
+            $(".zoom-out").addClass("disabled");
+            $(".fit-width").addClass("disabled");
+            $(".fit-height").addClass("disabled");
+            if ( "{{ role }}" === "Editor" && "{{ role }}" === "Owner" ) {
+                $("#editToggle").removeClass("disabled");
+                $("a[data-target='#saveChanges']").removeClass("disabled");
+                if ( "{{ pageStatus }}" !== "GT" )
+                    $("#page_status").removeClass("disabled");
+            }
+        }
         else if ( target === "t" ) {
             i = "t";
             $("#lineList").html("");
             $(".transcript-div").hide();
             $(".interface-lbl").hide();
+            $(".interface-sbs").hide();
             $(".interface-t").show();
             $(".zoom-in").addClass("disabled");
             $(".zoom-out").addClass("disabled");
@@ -687,6 +713,7 @@
             i = target;
             $(".transcript-div").hide();
             $(".interface-lbl").hide();
+            $(".interface-sbs").hide();
             $(".interface-t").hide();
             $(".zoom-in").addClass("disabled");
             $(".zoom-out").addClass("disabled");
@@ -698,7 +725,7 @@
         }
 
         if ( correctModal !== undefined && correctModal.isOpen() )
-            correctModal.close();
+            correctModal.close(); // TODO Close with save, there's a function for that...
 
         fitWidth();
         contentArray.forEach(function(obj, i) {
@@ -780,7 +807,6 @@
 				ignoreLeave = false;
 		    },
     		resizeStart: function (e) {
-    			console.log("width when starting resize: " + this.style.width);
     			dialogBeingResized = true;
     			updateDockingStatus(false);
     		},
@@ -808,16 +834,16 @@
     				$("#correctModal").css("top",  (window.innerHeight - dialogHeight) + "px");
     		},
     		resizeStop: function (e) {
-    			console.log("width when stopping resize: " + this.style.width);
     			dialogWidth = parseInt(this.style.width, 10); // saving this... TODO Ask if this is to be saved? User opinions vary...!?
     			dialogHeight = parseInt(this.style.height, 10);
     			dialogBeingResized = false;
-				$(".line-list").css("min-height", (dialogHeight - dialogAbsoluteMinHeight) + "px"); // TODO Put this and the actions above in a separate function...?
+				$("#lineList").css("min-height", (dialogHeight - dialogAbsoluteMinHeight) + "px"); // TODO Put this and the actions above in a separate function...?
     		}
         });
 
         $("#toggleInterface_i").removeClass("disabled");
         $("#toggleInterface_lbl").removeClass("disabled");
+        $("#toggleInterface_sbs").removeClass("disabled");
         $("#toggleInterface_t").removeClass("disabled");
         $(".zoom-in").removeClass("disabled");
         $(".zoom-out").removeClass("disabled");
@@ -835,7 +861,8 @@
             if ( "{{ pageStatus }}" !== "GT" )
                 $("#page_status").removeClass("disabled");
         }
-        if ( i == "lbl" ) {
+
+		if ( "lbl" === ifc ) {
             $("#toggleInterface_lbl").click();// Change buttons
             changeInterface("lbl");
         }
@@ -847,6 +874,12 @@
             $(".fit-width").addClass("disabled");
             $(".fit-height").addClass("disabled");
         }
+		if ( "sbs" == ifc ) {
+            $("#toggleInterface_sbs").click();// Change buttons
+			changeInterface();
+        }
+
+
 	});
 	var fixmeTop = $(".fix_scroll_top").offset().top;
 	$(window).scroll(function() {

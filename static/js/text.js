@@ -13,7 +13,7 @@ var contentLineFontSize = parseInt($('.line-list').css("font-size"));
 
 // text editing
 function keydown(e) {
-	console.log("KD: e.key: " + e.key);
+	console.log("key DOWN key: " + e.key);
 	if (e.which == 17 || e.which == 112 || e.which == 111) { // we handle CTRL like this because of one of the weirdest things I've ever come across. Any one of these (i.e. also F1 and divide) can be triggered when pressing CTRL.
 		ctrlKey = true;
 	} else if (!ctrlKey) {
@@ -28,7 +28,7 @@ function keydown(e) {
 	}
 }
 function keyup(e) { // TODO Refactor this. This now does more than before because we don't have keyPress and a different split between this and editAction might be better....
-	console.log("KU e.key: " + e.key);
+	console.log("key UP key: " + e.key);
 	if (ctrlKey) { // see above why we do this
 		e.preventDefault(); // TODO what about cut and copy?
 		if (e.which == 17 || e.which == 112 || e.which == 111) // the weird behaviour
@@ -121,17 +121,21 @@ function editAction(event) {
 			if (endOffset == startOffset && endOffset < contentArray[getIndexFromLineId(editedLineId)][1].length) // can we allow a deletion without removing a linebreak?
 	    		startOffset++; // pretend that the character in front of the caret was selected
     		lineEditAction(editedLineId, startOffset, endOffset);
-	    } else if (event.keyCode == 13 || event.keyCode == 9) { // return?
-	    	event.preventDefault(); // we don't allow linebreaks
+	    } else if (event.keyCode == 13 || event.keyCode == 9) { // return key?
+	    	event.preventDefault();
 	        typewriterNext();
-	        return; // TODO We don't restoreSelection() here as we do below. Which behaviour is preferable?
+	        return;
 	    } else {
-	    	if (event.key == "ArrowUp" && getIndexFromLineId(editedLineId) == (getIndexFromLineId(currentLineId) - surroundingCount) && i === "i") {
-    			 typewriterPrevious();
-    			 restoreSelection();
-	    	} else if (event.key == "ArrowDown" && getIndexFromLineId(editedLineId) == (getIndexFromLineId(currentLineId) + surroundingCount) && i === "i") {
-	    		typewriterNext();
-	    		restoreSelection();
+	    	if (event.key == "ArrowUp" && "i" === ifc) {
+	    		if (getIndexFromLineId(editedLineId) == (getIndexFromLineId(currentLineId) - surroundingCount)) { // if there's no line left in the dialog to go to...
+		    		event.preventDefault();
+	    			typewriterPrevious(); // ...the expected behaviour is identical to this
+	    		} // otherwise we can let the caret simply move as normal
+	    	} else if (event.key == "ArrowDown" && "i" === ifc) {
+	    		if (getIndexFromLineId(editedLineId) == (getIndexFromLineId(currentLineId) + surroundingCount)) { // if there's no line left in the dialog to go to...
+	    			event.preventDefault();
+	    			typewriterNext(); // ...the expected behaviour is identical to this
+	    		} // otherwise we can let the caret simply move as normal
 	    	} else if (event.key == "Home") // In some cases the "parent" is the LI which doesn't yield the right offset in updateSelection
 	    		selectionData = [[selectionData[0][0], 0, 0]];
 	    	else if (event.key == "End") { // same thing
@@ -149,15 +153,15 @@ function editAction(event) {
 				inject = event.key;
 			else
 				inject = "";
-			var i = 1;
+			var c = 1;
 			var lastButOne = selectionData.length - 1;
 			lineEditAction(editedLineId, contentArray[getIndexFromLineId(editedLineId)][1].length, endOffset, inject);
 			var deleteFromId = getNextLineId(editedLineId);
-			while (i < lastButOne) {
+			while (c < lastButOne) {
 				undoArray.push(contentArray[getIndexFromLineId(deleteFromId)].slice());
 				lineEditAction(deleteFromId, contentArray[getIndexFromLineId(deleteFromId)][1].length, 0);
 				deleteFromId = getNextLineId(deleteFromId);
-				i++;
+				c++;
 			}
 			undoArray.push(contentArray[getIndexFromLineId(deleteFromId)].slice());
 			lineEditAction(deleteFromId, selectionData[i][2], 0);
@@ -394,7 +398,7 @@ function getLineLiWithTags(tagLineId) { // generates a line with spans matching 
 		var backgroundHeight = lineY + bottomPadding;
 		// generate lines with spans showing the tags...
 		var tagStack = [];
-		var tagString = '<li value="' + lineNo + '" spanOffset="0" class="tag-menu ' + ( window.location.href.indexOf('view') >= 0 ? 'context-menu-disabled' : '' ) + '" id="text_' + tagLineId + '" spellcheck="false"' + highlightCurrent
+		var tagString = '<li value="' + lineNo + '" spanOffset="0" class="tag-menu" id="text_' + tagLineId + '" spellcheck="false"' + highlightCurrent
 									+ '><div style="padding-bottom: ' + bottomPadding + 'px;" '
 									+ 'style="min-height: ' + backgroundHeight + 'px;">';
 		var rangeBegin;
@@ -504,15 +508,15 @@ function contenteditableToArray(lineId, overwriteText) { // converts an editable
 }
 function buildLineList() {
 	var index;
-	if ( $(".transcript-div").is(":visible") ) {
-		if ( currentLineId !== undefined ) {
+	if ( $(".transcript-div").is(":visible") && currentLineId !== undefined && correctModal.isOpen()) {
 			var currentIdx = getIndexFromLineId(currentLineId);
 			var showTo = Math.min(currentIdx + surroundingCount, contentArray.length - 1);
 			index = Math.max(1, currentIdx - surroundingCount); // 1 because the first line is not real
 			$("#lineList").html("");
 			while (index <= showTo)
 				$("#lineList").append(getLineLiWithTags(contentArray[index++][0]));
-		}
+			highlightLineList();
+			updateDialogSize();
 	}
 	if ( $(".interface-lbl").is(":visible") ) {
 		index = 1
@@ -529,10 +533,7 @@ function buildLineList() {
 			index++;
 		}
 	}
-	highlightLineList();
 	restoreSelection();
-	if ( $(".transcript-div").is(":visible") )
-		updateDialogSize();
 }
 
 // UX actions
@@ -544,11 +545,8 @@ function resizeText(delta) {
 	$('.line-list').css("font-size", contentLineFontSize+ 'px');
 	buildLineList();
 }
-function typewriterNext() { // Aka. "press typewriter enter scroll". Changes the selected lines and the modal content.
-	newLineId = getNextLineId(currentLineId);
+function typewriterMove(newLineId, caretLineId) {
 	if (newLineId != null && selectionData !== undefined && selectionData[0] !== undefined ) {
-		// move the caret one line down to the closest matching character offset by pixels, when moved repeatedly without other actions inbetween, we use the first offset in pixels
-		var caretLineId = getNextLineId(selectionData[0][0]);
 		if (null === caretOffsetInPixels) { // if we don't have a stored offset in pixels, we calculate it, otherwise we use it
 			// get the relative caret offset in pixels...
 			var selection = window.getSelection();
@@ -561,7 +559,12 @@ function typewriterNext() { // Aka. "press typewriter enter scroll". Changes the
 			caretOffsetInPixels = parentElement.offsetLeft + $(hiddenCopy).outerWidth();
 			$(hiddenCopy).remove();
 		}
-		saveCaretPixelOffset = true; // set this since if the very first user action after this iis also a "typewriter step" we will use the same offset
+		saveCaretPixelOffset = true; // set this since if the very first user action after this is also a "typewriter step" we will use the same offset
+		// TODO Move the caret down even when we cannot make the lines move anymore?
+		// TODO Remove this if our users approve of the new behaviour.
+		//typewriterStep(newLineId, (contentArray[Math.min(getIndexFromLineId(newLineId), contentArray.length - 1)][2][5]) - Math.round(contentArray[Math.min(getIndexFromLineId(currentLineId), contentArray.length - 1)][2][5]));
+		updateDialog(newLineId);
+		updateCanvas();
 		// get the closest span offset on the new line
 		var span, spanOffset;
 		$("[tagLineId=" + caretLineId + "]").each(function() {
@@ -584,19 +587,24 @@ function typewriterNext() { // Aka. "press typewriter enter scroll". Changes the
 				break;
 			cA = cB;
 		}
-		var caretOffset = Math.min(t - 1 + parseInt($(span).attr("spanOffset")), contentArray[Math.min(getIndexFromLineId(caretLineId))][1].length);
+		var caretOffset = Math.min(t - 1 + parseInt($(span).attr("spanOffset")), contentArray[getIndexFromLineId(caretLineId)][1].length);
 		selectionData = [[caretLineId, caretOffset, caretOffset]];
-		// TODO Move the caret down even when we cannot make the lines move anymore?
-		typewriterStep(newLineId, (contentArray[Math.min(getIndexFromLineId(newLineId), contentArray.length - 1)][2][5]) - Math.round(contentArray[Math.min(getIndexFromLineId(currentLineId), contentArray.length - 1)][2][5]));
+		restoreSelection();
 	}
+}
+function typewriterNext() { // Aka. "press typewriter enter scroll". Changes the selected lines and the modal content.
+	typewriterMove(getNextLineId(currentLineId), getNextLineId(selectionData[0][0])); // the caret will "remain in place" and the lines shifted around it
 }
 function typewriterPrevious() {
 	$("#options_" + currentLineId).hide();
-	newLineId = getPreviousLineId(currentLineId);
+
+	typewriterMove(getPreviousLineId(currentLineId), getPreviousLineId(selectionData[0][0])); // the caret will "remain in place" and the lines shifted around it
+	/* TODO Remove this old stuff when the new behaviour is ok.
 	if (newLineId != null)
 		typewriterStep(newLineId, Math.round(contentArray[Math.min(getIndexFromLineId(newLineId), contentArray.length - 1)][2][5]) - Math.round(contentArray[Math.min(getIndexFromLineId(currentLineId), contentArray.length - 1)][2][5]));
+	*/
 }
-function typewriterStep(newLineId, delta) {
+function typewriterStep(newLineId, delta) { // TODO Remove this function unless the line by line interface still needs it. If our users prefer the new image moving behaviour, this is redundant.
 	accumExtraY += delta * initialScale * zoomFactor;
 	$( ".transcript-map-div" ).css("transform",  "translate(" + -accumExtraX +"px, " + -accumExtraY+ "px) scale(" + zoomFactor + ")");// Note, the CSS is set to "transform-origin: 0px 0px"
 	currentLineId = newLineId;

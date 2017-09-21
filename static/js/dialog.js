@@ -52,11 +52,16 @@ function saveDialogProperties() { // Saves the undocked dialog properties...
 	dialogHeight = $("#correctModal").height();
 }
 function updateDialog(lineId) { // This function can be called without a line ID to reset the dialog after resizing the window
-	
+<<<<<<< HEAD
+
+=======
+>>>>>>> 87041cc0020dd2fb9a12bcff0175a0ae6d49ac82
 	if (null == currentLineId) {
 		if (1 == arguments.length) // can this happen anymore?
 			currentLineId = lineId;
 		var lineIdx = getIndexFromLineId(currentLineId);
+		var endOfLine = contentArray[lineIdx][1].length;
+		setSelectionData(currentLineId, endOfLine, endOfLine);
 		correctModal.open();
 		buildLineList();
 		dialogX =  Math.max(Math.min(initialScale * zoomFactor * contentArray[lineIdx][2][0] + $(".transcript-div").offset().left - accumExtraX, window.innerWidth - dialogWidth - 20), $(".transcript-div").offset().left);
@@ -65,7 +70,7 @@ function updateDialog(lineId) { // This function can be called without a line ID
 		// place the dialog one "last line height" below the last shown BELOW the clicked line (a higher index does not guarantee a lower position)
 		var lowest;
 		for (lowest = lineIdx; lowest < lastShown && contentArray[lowest][2][7] < contentArray[lowest + 1][2][7]; lowest++);
-		dialogY = initialScale * zoomFactor * (2 * contentArray[lowest][2][7] - contentArray[lowest][2][1]) + $(".transcript-div" ).offset().top - accumExtraY; 
+		dialogY = initialScale * zoomFactor * (2 * contentArray[lowest][2][7] - contentArray[lowest][2][1]) + $(".transcript-div" ).offset().top - accumExtraY;
 		if (dialogX <= 0)
 			dialogX = 0;
 		else if ((dialogX + dialogWidth) >= window.innerWidth)
@@ -74,13 +79,13 @@ function updateDialog(lineId) { // This function can be called without a line ID
 			dialogY = 0;
 		else if ((dialogY + dialogHeight) > document.body.clientHeight)
 			dialogY = window.innerHeight - dialogHeight;
-		$("#correctModal").css("left",  dialogX + "px");		
+		$("#correctModal").css("left",  dialogX + "px");
 		$("#correctModal").css("top",  dialogY + "px");
 		updateDocking(); // We restore the dialog to a docked state, if it was docked when closed
 	} else {
 		var oldDeltaX = contentArray[getIndexFromLineId(currentLineId)][2][0] * initialScale * zoomFactor - accumExtraX - $("#correctModal").offset().left;
 		var oldDeltaY = contentArray[getIndexFromLineId(currentLineId)][2][1] * initialScale * zoomFactor - accumExtraY - $("#correctModal").offset().top;
-		if (1 == arguments.length) 
+		if (1 == arguments.length)
 			currentLineId = lineId;
 		var lineIdx = getIndexFromLineId(currentLineId);
 		accumExtraX = contentArray[getIndexFromLineId(currentLineId)][2][0] * initialScale * zoomFactor - $("#correctModal").offset().left - oldDeltaX;
@@ -94,7 +99,7 @@ function updateDialogSize() {
 		return;
 	if (null === dialogAbsoluteMinWidth) { // if we're doing this for the very first time, we calculate the absolute minimum, which means space for all buttons on a single row
 		var buttonSum = 0;
-		// get the delta between a button group and the span containing it when there's another button following it 
+		// get the delta between a button group and the span containing it when there's another button following it
 		var spanPadding = $(".dialogbutton-group").first().parent().outerWidth(true) - $(".dialogbutton-group").first().outerWidth(true);
 		$(".dialogbutton-group").each(function() {
 			buttonSum += $(this).outerWidth(true) + spanPadding; // spanPadding must be added to avoid line breaks
@@ -104,8 +109,8 @@ function updateDialogSize() {
 		dialogAbsoluteMinHeight = 2 * parseInt($(".modal-header").css("padding-top"))
 				+ $(".modal-title").outerHeight(true)
 				+ $(".dialogbutton-group").outerHeight(true)
-				+ 2 * parseInt($(".modal-body").css("padding-top")); // the sum of these is the height of the dialog without any text 
-	} 
+				+ 2 * parseInt($(".modal-body").css("padding-top")); // the sum of these is the height of the dialog without any text
+	}
 	var currentMinH = dialogAbsoluteMinHeight;
 	if ($(".transcript-div").is(":visible") && currentLineId !== undefined ) { // check if any line is longer than the absolute minimum
 		var longestLine = 0;
@@ -118,12 +123,12 @@ function updateDialogSize() {
 			currentMinH += $("#text_" + lineId).outerHeight(true);
 		}
 	}
-	var currentMinW = Math.max(dialogAbsoluteMinWidth, longestLine + 2 * ($("[tagLineId]").first().offset().left - $("#correctModal").offset().left));	
-	dialogWidth = Math.max(dialogWidth, currentMinW); // we don't shrink the dialog automatically 
+	var currentMinW = Math.max(dialogAbsoluteMinWidth, longestLine + 2 * ($("[tagLineId]").first().offset().left - $("#correctModal").offset().left));
+	dialogWidth = Math.max(dialogWidth, currentMinW); // we don't shrink the dialog automatically
 	dialogHeight = Math.max(dialogHeight, currentMinH);
 	$("#correctModal").css("width",  dialogWidth + "px");
 	$("#correctModal").css("height",  dialogHeight + "px");
 	$("#correctModal").css("min-width",  currentMinW + "px");
 	$("#correctModal").css("min-height",  currentMinH + "px");
-	$(".line-list").css("min-height", (dialogHeight - dialogAbsoluteMinHeight) + "px"); // the text contenteditable isn't updated automagically
+	$("#line-list").css("min-height", (dialogHeight - dialogAbsoluteMinHeight) + "px"); // the text contenteditable isn't updated automagically
 }

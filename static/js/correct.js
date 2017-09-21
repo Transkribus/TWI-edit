@@ -7,7 +7,6 @@ var accumExtra;
 var initialWidth, initialHeight, initialScale, naturalWidth;
 var previousInnerWidth = window.innerWidth;
 var correctModal;
-var i = "";
 var changed = false;
 
 // i18n vars needed: transUnsavedChanges, transSavingChanges
@@ -54,7 +53,6 @@ function getContent() { // "JSON.stringifies" (verbing a noun) contentArray and 
 			content += ',';
 	}
 	content += '}';
-	console.log("custom content: " + content);
 	return content;
 }
 function saveChanges(e) {
