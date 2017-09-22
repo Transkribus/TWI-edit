@@ -195,11 +195,17 @@ function showLineImage(e) {
             $("#canvas_text").css("top", e.clientY + 10);
     }
     else if ( e.type.indexOf("key") >= 0 && currentLineId !== null && currentLineId !== undefined ) {
-        var position = $("#text_" + currentLineId).offset();
-        if ( window.innerHeight - (position.top + $("#text_" + currentLineId).height() + 180) <= 0 )
-            $("#canvas_text").css("top", position.top - 180);
+        var top = $("#text_" + currentLineId).offset().top - $(window).scrollTop();
+        if ( window.innerHeight - (top + $("#text_" + currentLineId).height()) <= 0 )
+            $(window).scrollTop($(window).scrollTop() + $("#text_" + currentLineId).height());
+        else if ( top + $("#text_" + currentLineId).height() <= 80 )
+            $(window).scrollTop($(window).scrollTop() - $("#text_" + currentLineId).height());
+
+        top = $("#text_" + currentLineId).offset().top - $(window).scrollTop();
+        if ( window.innerHeight - (top + $("#text_" + currentLineId).height() + 180) <= 0 )
+            $("#canvas_text").css("top", top - 180);
         else
-            $("#canvas_text").css("top", position.top + $("#text_" + currentLineId).height() + 10);
+            $("#canvas_text").css("top", top + $("#text_" + currentLineId).height());
     }
 
     var c = document.getElementById("canvas_text")
