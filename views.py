@@ -118,7 +118,7 @@ def correct(request, collId, docId, page=None, transcriptId=None):# TODO Decide 
 
     #Use this to get the role of the current user untils such time as it is available from t.collection
     role = apps.utils.utils.get_role(request,collId)
-    if 'edit' in request.path and not (role is 'Editor' or role is 'Owner'):
+    if 'edit' in request.path and not (role == 'Editor' or role == 'Owner'):
         t_log('Redirect user due to insufficient role access. [from: %s to: %s]' % (request.get_full_path(), request.get_full_path().replace('edit', 'view')))
         return HttpResponseRedirect(request.get_full_path().replace('edit', 'view'))
 
