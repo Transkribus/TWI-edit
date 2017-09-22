@@ -411,7 +411,7 @@
 	});
     $("a[data-target='#page_status']").click(function(e) {
         {# TODO Handle failures here or are we happy with the current solution? #}
-        if ( "{{ role }}" === "Editor" ) {
+        if ( "{{ role }}" === "Editor" || "{{ role }}" === "CrowdTranscriber" ) {
             if ( pageStatus === "NEW" || pageStatus === "IN_PROGRESS" )
                 $.post(window.location.href, {status: "DONE", csrfmiddlewaretoken: "{{ csrf_token }}"}, function( data ) {
                     setMessage(data, "success");
@@ -427,7 +427,7 @@
             else
                 setMessage("{% trans "You can not change the page status." %}", "danger");
         }
-        else if ( "{{ role }}" === "Owner" )
+        else if ( "{{ role }}" === "Owner" || "{{ role }}" === "Admin" )
             $.post(window.location.href, {status: e.currentTarget.name, csrfmiddlewaretoken: "{{ csrf_token }}"}, function( data ) {
                 setMessage(data, "success");
                 if ( e.currentTarget.name === "IN_PROGRESS" )
@@ -646,7 +646,7 @@
             $(".zoom-out").removeClass("disabled");
             $(".fit-width").removeClass("disabled");
             $(".fit-height").removeClass("disabled");
-            if ( "{{ role }}" === "Editor" && "{{ role }}" === "Owner" ) {
+            if ( "{{ role }}" === "Editor" || "{{ role }}" === "Owner" || "{{ role }}" === "Admin" || "{{ role }}" === "CrowdTranscriber" ) {
                 $("#editToggle").removeClass("disabled");
                 $("a[data-target='#saveChanges']").removeClass("disabled");
                 if ( "{{ pageStatus }}" !== "GT" )
@@ -665,7 +665,7 @@
             $(".zoom-out").removeClass("disabled");
             $(".fit-width").removeClass("disabled");
             $(".fit-height").removeClass("disabled");
-            if ( "{{ role }}" === "Editor" && "{{ role }}" === "Owner" ) {
+            if ( "{{ role }}" === "Editor" || "{{ role }}" === "Owner" || "{{ role }}" === "Admin" || "{{ role }}" === "CrowdTranscriber" )  {
                 $("#editToggle").removeClass("disabled");
                 $("a[data-target='#saveChanges']").removeClass("disabled");
                 if ( "{{ pageStatus }}" !== "GT" )
@@ -683,7 +683,7 @@
             $(".zoom-out").removeClass("disabled");
             $(".fit-width").removeClass("disabled");
             $(".fit-height").removeClass("disabled");
-            if ( "{{ role }}" === "Editor" && "{{ role }}" === "Owner" ) {
+            if ( "{{ role }}" === "Editor" || "{{ role }}" === "Owner" || "{{ role }}" === "Admin" || "{{ role }}" === "CrowdTranscriber" )  {
                 $("#editToggle").removeClass("disabled");
                 $("a[data-target='#saveChanges']").removeClass("disabled");
                 if ( "{{ pageStatus }}" !== "GT" )
@@ -701,7 +701,7 @@
             $(".zoom-out").addClass("disabled");
             $(".fit-width").addClass("disabled");
             $(".fit-height").addClass("disabled");
-            /*if ( "{{ role }}" === "Editor" && "{{ role }}" === "Owner" ) {
+            /*if ( "{{ role }}" === "Editor" || "{{ role }}" === "Owner" || "{{ role }}" === "Admin" || "{{ role }}" === "CrowdTranscriber" )  {
                 $("#editToggle").removeClass("disabled");
                 $("a[data-target='#saveChanges']").removeClass("disabled");
                 if ( "{{ pageStatus }}" !== "GT" )
@@ -857,7 +857,7 @@
         $(".next-page").removeClass("disabled");
         $(".last-page").removeClass("disabled");
         $("a[aria-controls='thumbDiv']").removeClass("disabled");
-        if ( "{{ role }}" === "Editor" || "{{ role }}" === "Owner" ) {
+        if ( "{{ role }}" === "Editor" || "{{ role }}" === "Owner" || "{{ role }}" === "Admin" || "{{ role }}" === "CrowdTranscriber" )  {
             $("#editToggle").removeClass("disabled");
             $("a[data-target='#saveChanges']").removeClass("disabled");
             if ( "{{ pageStatus }}" !== "GT" )
