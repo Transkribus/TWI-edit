@@ -237,6 +237,13 @@
                     keydown(e);
                 else
                     e.preventDefault();
+                $("#canvas_text").show();
+                var c = document.getElementById("#canvas_text");
+                if ( c !== null && c !== undefined ) {
+                    ctx.fillStyle = "rgba(0, 0, 0, 0.15)";
+                    ctx.fillRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+                    ctx.save();
+                }
             });
             $("#text").on("keyup", function(e) {
                 if ( window.location.href.indexOf("edit") >= 0 )
