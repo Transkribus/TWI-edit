@@ -202,6 +202,11 @@ def correct(request, collId, docId, page=None, transcriptId=None):# TODO Decide 
                         line['Unicode'] = unicode.replace(" ", "\u00A0")
                     else:
                         line['Unicode'] = ""
+        else:
+            if 'edit' in request.path:
+                t_log('Redirect user back to view mode since no lines in on page. [from: %s to: %s]' % (request.get_full_path(), request.get_full_path().replace('edit', 'view')))
+                return HttpResponseRedirect(request.get_full_path().replace('edit', 'view'))
+
         # Get thumbnails
         # RM Make one document request here...
         # RM need to test whether this has been successful

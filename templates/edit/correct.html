@@ -454,8 +454,8 @@
     	$(".editControls").toggle();
     	$("#editToggle").html(newButtonText);
     	$("area").css("cursor", "pointer");
-        if ( window.location.href.indexOf("view") == -1 && "i" === ifc )
-            updateDialog("{{ lines|index:0|get_item:"@id" }}");
+        if ( window.location.href.indexOf("view") === -1 && "i" === ifc )
+            updateDialog({% if lines %}"{{ lines|index:0|get_item:"@id" }}"{% endif %});
         updateCanvas();
         if ( $(".interface-lbl").is(":visible") ) {
             contentArray.forEach(function(obj, i) {
@@ -639,12 +639,14 @@
             $(".zoom-out").removeClass("disabled");
             $(".fit-width").removeClass("disabled");
             $(".fit-height").removeClass("disabled");
-            if ( "{{ role }}" === "Editor" || "{{ role }}" === "Owner" || "{{ role }}" === "Admin" || "{{ role }}" === "CrowdTranscriber" ) {
-                $("#editToggle").removeClass("disabled");
-                $("a[data-target='#saveChanges']").removeClass("disabled");
-                if ( "{{ pageStatus }}" !== "GT" )
-                    $("#page_status").removeClass("disabled");
-            }
+            {% if lines %}
+                if ( "{{ role }}" === "Editor" || "{{ role }}" === "Owner" || "{{ role }}" === "Admin" || "{{ role }}" === "CrowdTranscriber" ) {
+                    $("#editToggle").removeClass("disabled");
+                    $("a[data-target='#saveChanges']").removeClass("disabled");
+                    if ( "{{ pageStatus }}" !== "GT" )
+                        $("#page_status").removeClass("disabled");
+                }
+            {% endif %}
         }
         else if ( target === "lbl" ) {
             ifc = "lbl";
@@ -658,12 +660,14 @@
             $(".zoom-out").removeClass("disabled");
             $(".fit-width").removeClass("disabled");
             $(".fit-height").removeClass("disabled");
-            if ( "{{ role }}" === "Editor" || "{{ role }}" === "Owner" || "{{ role }}" === "Admin" || "{{ role }}" === "CrowdTranscriber" )  {
-                $("#editToggle").removeClass("disabled");
-                $("a[data-target='#saveChanges']").removeClass("disabled");
-                if ( "{{ pageStatus }}" !== "GT" )
-                    $("#page_status").removeClass("disabled");
-            }
+            {% if lines %}
+                if ( "{{ role }}" === "Editor" || "{{ role }}" === "Owner" || "{{ role }}" === "Admin" || "{{ role }}" === "CrowdTranscriber" )  {
+                    $("#editToggle").removeClass("disabled");
+                    $("a[data-target='#saveChanges']").removeClass("disabled");
+                    if ( "{{ pageStatus }}" !== "GT" )
+                        $("#page_status").removeClass("disabled");
+                }
+            {% endif %}
         }
         else if ( target === "sbs" ) {
             ifc = "sbs";
@@ -676,12 +680,14 @@
             $(".zoom-out").removeClass("disabled");
             $(".fit-width").removeClass("disabled");
             $(".fit-height").removeClass("disabled");
-            if ( "{{ role }}" === "Editor" || "{{ role }}" === "Owner" || "{{ role }}" === "Admin" || "{{ role }}" === "CrowdTranscriber" )  {
-                $("#editToggle").removeClass("disabled");
-                $("a[data-target='#saveChanges']").removeClass("disabled");
-                if ( "{{ pageStatus }}" !== "GT" )
-                    $("#page_status").removeClass("disabled");
-            }
+            {% if lines %}
+                if ( "{{ role }}" === "Editor" || "{{ role }}" === "Owner" || "{{ role }}" === "Admin" || "{{ role }}" === "CrowdTranscriber" )  {
+                    $("#editToggle").removeClass("disabled");
+                    $("a[data-target='#saveChanges']").removeClass("disabled");
+                    if ( "{{ pageStatus }}" !== "GT" )
+                        $("#page_status").removeClass("disabled");
+                }
+            {% endif %}
         }
         else if ( target === "t" ) {
             ifc = "t";
@@ -694,12 +700,14 @@
             $(".zoom-out").addClass("disabled");
             $(".fit-width").addClass("disabled");
             $(".fit-height").addClass("disabled");
-            /*if ( "{{ role }}" === "Editor" || "{{ role }}" === "Owner" || "{{ role }}" === "Admin" || "{{ role }}" === "CrowdTranscriber" )  {
-                $("#editToggle").removeClass("disabled");
-                $("a[data-target='#saveChanges']").removeClass("disabled");
-                if ( "{{ pageStatus }}" !== "GT" )
-                    $("#page_status").removeClass("disabled");
-            }*/
+            {% if lines %}
+                /*if ( "{{ role }}" === "Editor" || "{{ role }}" === "Owner" || "{{ role }}" === "Admin" || "{{ role }}" === "CrowdTranscriber" )  {
+                    $("#editToggle").removeClass("disabled");
+                    $("a[data-target='#saveChanges']").removeClass("disabled");
+                    if ( "{{ pageStatus }}" !== "GT" )
+                        $("#page_status").removeClass("disabled");
+                }*/
+            {% endif %}
             $("#editToggle").addClass("disabled");
             $("a[data-target='#saveChanges']").addClass("disabled");
             $("#page_status").addClass("disabled");
@@ -714,9 +722,11 @@
             $(".zoom-out").addClass("disabled");
             $(".fit-width").addClass("disabled");
             $(".fit-height").addClass("disabled");
-            $("#editToggle").addClass("disabled");
-            $("a[data-target='#saveChanges']").addClass("disabled");
-            $("#page_status").addClass("disabled");
+            {% if lines %}
+                $("#editToggle").addClass("disabled");
+                $("a[data-target='#saveChanges']").addClass("disabled");
+                $("#page_status").addClass("disabled");
+            {% endif %}
         }
 
         if ( correctModal !== undefined && correctModal.isOpen() )
@@ -850,12 +860,14 @@
         $(".next-page").removeClass("disabled");
         $(".last-page").removeClass("disabled");
         $("a[aria-controls='thumbDiv']").removeClass("disabled");
-        if ( "{{ role }}" === "Editor" || "{{ role }}" === "Owner" || "{{ role }}" === "Admin" || "{{ role }}" === "CrowdTranscriber" )  {
-            $("#editToggle").removeClass("disabled");
-            $("a[data-target='#saveChanges']").removeClass("disabled");
-            if ( "{{ pageStatus }}" !== "GT" )
-                $("#page_status").removeClass("disabled");
-        }
+        {% if lines %}
+            if ( "{{ role }}" === "Editor" || "{{ role }}" === "Owner" || "{{ role }}" === "Admin" || "{{ role }}" === "CrowdTranscriber" )  {
+                $("#editToggle").removeClass("disabled");
+                $("a[data-target='#saveChanges']").removeClass("disabled");
+                if ( "{{ pageStatus }}" !== "GT" )
+                    $("#page_status").removeClass("disabled");
+            }
+        {% endif %}
 
         $("#toggleInterface_" + ifc).click();// Change buttons
         changeInterface(ifc);
