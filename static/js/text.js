@@ -509,14 +509,14 @@ function contenteditableToArray(lineId, overwriteText) { // converts an editable
 function buildLineList() {
 	var index;
 	if ( $(".transcript-div").is(":visible") && currentLineId !== undefined && correctModal.isOpen()) {
-			var currentIdx = getIndexFromLineId(currentLineId);
-			var showTo = Math.min(currentIdx + surroundingCount, contentArray.length - 1);
-			index = Math.max(1, currentIdx - surroundingCount); // 1 because the first line is not real
-			$("#lineList").html("");
-			while (index <= showTo)
-				$("#lineList").append(getLineLiWithTags(contentArray[index++][0]));
-			highlightLineList();
-			updateDialogSize();
+		var currentIdx = getIndexFromLineId(currentLineId);
+		var showTo = Math.min(currentIdx + surroundingCount, contentArray.length - 1);
+		index = Math.max(1, currentIdx - surroundingCount); // 1 because the first line is not real
+		$("#lineList").html("");
+		while (index <= showTo)
+			$("#lineList").append(getLineLiWithTags(contentArray[index++][0]));
+		highlightLineList();
+		updateDialogSize();
 	}
 	if ( $(".interface-lbl").is(":visible") ) {
 		index = 1
@@ -524,6 +524,15 @@ function buildLineList() {
 			$("#line_" + contentArray[index][0]).html(getLineLiWithTags(contentArray[index][0]));
 			index++;
 		}
+	}
+	if ( $(".interface-sbs").is(":visible") ) {
+		console.log("interface sbs");
+		if ($("#your").is(":visible"))
+			for (index = 1; index <= contentArray.length - 1; index++)
+				$("#yourVersion").append(getLineLiWithTags(contentArray[index][0]));
+		if ($("#original").is(":visible"))
+			for (index = 1; index <= contentArray.length - 1; index++)
+				$("#originalVersion").append(getLineLiWithTags(contentArray[index][0]));
 	}
 	if ( $(".interface-t").is(":visible") ) {
 		index = 1
@@ -597,7 +606,6 @@ function typewriterNext() { // Aka. "press typewriter enter scroll". Changes the
 }
 function typewriterPrevious() {
 	$("#options_" + currentLineId).hide();
-
 	typewriterMove(getPreviousLineId(currentLineId), getPreviousLineId(selectionData[0][0])); // the caret will "remain in place" and the lines shifted around it
 	/* TODO Remove this old stuff when the new behaviour is ok.
 	if (newLineId != null)
