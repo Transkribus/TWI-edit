@@ -52,14 +52,10 @@ function setZoom(zoom, x, y) {
             var width = obj[2][2] - obj[2][0];
             var height = obj[2][5] - obj[2][1];
             var newZoomFactor = accumExtra[obj[0]]["factor"] * (zoom / 50 + 1);
-            if ( x === undefined && y === undefined ) {
-                x = width / 2 + accumExtra[obj[0]]["x"];
-                y = $("#canvas_wrapper_" + obj[0]).innerHeight() / 2 + accumExtra[obj[0]]["y"];
-            }
+            if (newZoomFactor < 0.1 )
+                newZoomFactor = 0.1;
 
-            accumExtra[obj[0]]["x"] += (newZoomFactor - accumExtra[obj[0]]["factor"]) * x / accumExtra[obj[0]]["factor"];
-            accumExtra[obj[0]]["y"] += (newZoomFactor - accumExtra[obj[0]]["factor"]) * y / accumExtra[obj[0]]["factor"];
-            $("#canvas_" + obj[0]).css("transform", "translate(" + -accumExtra[obj[0]]["x"] +"px, " + -accumExtra[obj[0]]["y"]+ "px) scale(" + newZoomFactor + ")");
+            $("#canvas_" + obj[0]).css("transform", "scale(" + newZoomFactor + ")");
             accumExtra[obj[0]]["factor"] = newZoomFactor;
         });
     }
