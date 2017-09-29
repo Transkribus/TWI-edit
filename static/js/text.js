@@ -526,7 +526,6 @@ function buildLineList() {
 		}
 	}
 	if ( $(".interface-sbs").is(":visible") ) {
-		console.log("interface sbs");
 		if ($("#your").is(":visible"))
 			for (index = 1; index <= contentArray.length - 1; index++)
 				$("#yourVersion").append(getLineLiWithTags(contentArray[index][0]));
