@@ -34,7 +34,7 @@ function fitHeight() {
     updateCanvas();
 }
 function setZoom(zoom, x, y) {
-    if ( ifc === "i" && (zoom > 0 || $( ".transcript-div" ).innerHeight() < initialHeight * zoomFactor) ) {// is the image still larger than the viewport? We allow one "step" of zooming out below that size, hence using the old zoomFactor
+    if ( (ifc === "sbs" || ifc === "i") && (zoom > 0 || $( ".transcript-div" ).innerHeight() < initialHeight * zoomFactor) ) {// is the image still larger than the viewport? We allow one "step" of zooming out below that size, hence using the old zoomFactor
         var newZoomFactor = zoomFactor * (zoom/50 +1);
         if (1 == arguments.length) { // If no cursor position has been given, we use the center
             x = initialWidth / 2 + accumExtraX;

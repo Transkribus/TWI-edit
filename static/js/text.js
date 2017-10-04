@@ -399,8 +399,7 @@ function getLineLiWithTags(tagLineId) { // generates a line with spans matching 
 		// generate lines with spans showing the tags...
 		var tagStack = [];
 		var tagString = '<li value="' + lineNo + '" spanOffset="0" class="tag-menu" id="text_' + tagLineId + '" spellcheck="false"' + highlightCurrent
-									+ '><div style="padding-bottom: ' + bottomPadding + 'px;" '
-									+ 'style="min-height: ' + backgroundHeight + 'px;">';
+									+ '><div style="padding-bottom: ' + bottomPadding + 'px; ' + 'min-height: ' + backgroundHeight + 'px;">';
 		var rangeBegin;
 		var keepOpenStack = [];
 		var previousTag;
@@ -428,6 +427,8 @@ function getLineLiWithTags(tagLineId) { // generates a line with spans matching 
 						tagDecoration = "text-decoration: line-through;";
 					else if ( keepTag.tag === "underlined" )
 						tagDecoration = "text-decoration: underline;";
+					else if (keepTag.tag === "changeFromOriginal")
+						tagDecoration = "color: blue;";
 					tagString += "<span tagLineId='" + tagLineId + "' spanOffset=\"" + rangeBegin + "\" "
 											+ "style=\"padding-bottom: " + bottomPadding + "px; " + tagDecoration + "\""
 											+ ">";// we use initialWidth here and below because it's guaranteed to be enough
@@ -448,6 +449,8 @@ function getLineLiWithTags(tagLineId) { // generates a line with spans matching 
 						tagDecoration = "text-decoration: line-through;";
 					else if ( tag.tag === "underlined" )
 						tagDecoration = "text-decoration: underline;";
+					else if (tag.tag === "changeFromOriginal")
+						tagDecoration = "color: blue;";
 					tagString += "<span offset=\"" + offset + "\" spanOffset=\"" + offset + "\" tagLength=\"" + length +  "\" tagLineId='" + tagLineId + "' tag='" + currentTag + "' " //" // a "tag" = span with a tag attribute
 											+ "style=\"padding-bottom: " + bottomPadding + "px; " + tagDecoration + "\""
 											+ ">";
@@ -507,8 +510,9 @@ function contenteditableToArray(lineId, overwriteText) { // converts an editable
 		contentArray[lineIndex][1] = $("#text_" + lineId).text().replace(/\u200B/g,''); // remove the zero width space!!!
 }
 function buildLineList() {
+	console.log("building line list!");
 	var index;
-	if ( $(".transcript-div").is(":visible") && currentLineId !== undefined && correctModal.isOpen()) {
+	if ( $(".transcript-div").is(":visible") && currentLineId !== undefined && correctModal.isOpen()) { // TODO A better test? This works but sbs below also has transcript-div :visible...
 		var currentIdx = getIndexFromLineId(currentLineId);
 		var showTo = Math.min(currentIdx + surroundingCount, contentArray.length - 1);
 		index = Math.max(1, currentIdx - surroundingCount); // 1 because the first line is not real
@@ -525,7 +529,7 @@ function buildLineList() {
 			index++;
 		}
 	}
-	if ( $(".interface-sbs").is(":visible") ) {
+	if ("sbs" === ifc) {
 		console.log("interface sbs");
 		if ($("#your").is(":visible"))
 			for (index = 1; index <= contentArray.length - 1; index++)

@@ -1,88 +1,70 @@
-{% extends "navi_base.html" %}
 {% load i18n %}
-
-{% load staticfiles %}
-
-{% block content %}
-
-<link href="{% static "css/correct.css" %}" rel="stylesheet">
-
-<div class="container">
-    <div class="row">
-        <h1>
-            {% trans "Proofreading Interface (working title)" %}
-        </h1>
+<div>
+	<div class="radio" style="text-align: center;">
+	  <label>
+	    <input type="radio" name="version" value="original">
+	    	{% trans "Original version" %}
+	  </label>
+	  <label>
+	    <input type="radio" name="version" value="your" checked>
+	    	{% trans "Your version" %}
+	  </label>
 	</div>
-	<div class="row row-centered">
-		<div class="col-md-3">	
-			<div class="radio">
-			  <label>
-			    <input type="radio" name="version" value="original">
-			    	{% trans "Original version" %}
-			  </label>
-			</div>
-		</div>
-	    <div class="col-md-3">
-			<div class="radio">
-			  <label>
-			    <input type="radio" name="version" value="your" checked>
-			    	{% trans "Your version" %}
-			  </label>
-			</div>
-		</div>
-	    <div class="col-md-3">
-			<div id="message"></div>
-		</div>
-		<div class="col-md-3">
-			<a href="#" class="btn btn-primary" data-target="#saveChanges">{% trans "Save changes" %}</a><br/><br/><br/>{# TODO CSS for this purpose. #}
-		</div>
-	</div>
-    <div class="row">
-		<div class="col-md-6 collapse version" id="original">
-			{% for line in lines %}
-				<div class="col-md-1">{{forloop.counter}}</div>
-				<div class="col-md-11" spellcheck="false">{{line|get_item:"Unicode"}}</div>
-			{% endfor %}			
-		</div>
-		<div class="col-md-6 version" id="your">
-			{% for line in lines %}
-				<div class="col-md-1">{{forloop.counter}}</div>
-				<div class="col-md-11 editable-line" contenteditable="true" id="{{line|get_item:"id"}}" spellcheck="false">{{line|get_item:"Unicode"}}</div>
-			{% endfor %}			
-		</div>
-		<div class="col-md-6">
-			TODO Implement some navigation?</br>
-			<img src="{{imageUrl}}" usemap="#transcriptMap"  id="transcriptImage" class="transcript-img" style="position: absolute; z-index: 999;">
-		</div>
-	</div>
+	<div class="col-xs-12 line-list-div collapse version" id="original">
+		<ol class="original-line-list" id="originalVersion">
+		</ol>
+    </div>
+	<div class="col-xs-12 line-list-div version"id="your">
+		<ol class="line-list" contenteditable="true" id="yourVersion">
+		</ol>
+    </div>
 </div>
-
-<script src="{% static "js/proofread.js" %}"></script>
-<script src="{% static "js/diff.js" %}"></script>
-
 <script>
 	var lines= {
 		{% for line in lines %}
 			"{{ line|get_item:"id"}}": "{{line|get_item:"Unicode"}}",
 		{% endfor %}
 	};
-	var changedLines = {};
-	
-	var transUnsavedChanges = "{% trans "You have unsaved changes." %}";
-
+	var changedLines = {};	
 	$("input[name$='version']").click(function(event) {
 		$(".version").hide();
-		$("#" + $(this).val()).show();
+		$("#" + event.target.value).show();
+		console.log("switching to:" + event.target.value);
+		/*if (event.target.value == "your") {
+			$("#yourVersion").html("");
+			refreshYourVersion();
+		}*/
 	});
-	
-	$("a[data-target='#saveChanges']").click(function(event) {
-    	event.preventDefault();
-    	$.post(window.location.href, {content: JSON.stringify(changedLines), csrfmiddlewaretoken: '{{ csrf_token }}'}, function( data ) {
-    		setMessage(data);
-    		changed = false;
-		});
-    	{# TODO Handle failures here or are we happy with the current solution? #}
-	});
+    $("#yourVersion").on("keydown", function(e) {
+        if ( window.location.href.indexOf("edit") >= 0 )
+            keydown(e);
+        else
+            e.preventDefault();
+    });
+    $("#yourVersion").on("keyup", function(e) {
+        if ( window.location.href.indexOf("edit") >= 0 ) {
+            keyup(e);
+            refreshYourVersion();
+        } else
+            e.preventDefault();
+    });
+    $("#yourVersion").on("paste", function(e) {
+        if ( window.location.href.indexOf("edit") >= 0 )
+            paste(e);
+        else
+            e.preventDefault();
+    });
+    $("#yourVersion").on("drop", function(e) {
+        if ( window.location.href.indexOf("edit") >= 0 )
+            drop(e);
+        else
+            e.preventDefault();
+    });
+    $("#yourVersion").on("cut", function(e) {
+        if ( window.location.href.indexOf("edit") >= 0 )
+            cut(e);
+        else
+            e.preventDefault();
+    });
 </script>
 
-{% endblock %}

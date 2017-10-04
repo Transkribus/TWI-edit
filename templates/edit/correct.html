@@ -11,6 +11,13 @@
 
 {% block content %}
 
+<link rel="stylesheet" href="https://swisnl.github.io/jQuery-contextMenu/css/screen.css" type="text/css"/>
+<link href="{% static "css/correct.css" %}" rel="stylesheet">
+<link href="{% static "css/gijgo.min.css" %}" rel="stylesheet">
+<!-- <link rel="stylesheet" href="https://swisnl.github.io/jQuery-contextMenu/css/theme.css" type="text/css"/>-->
+<link rel="stylesheet" href="https://swisnl.github.io/jQuery-contextMenu/css/theme-fixes.css" type="text/css"/>
+<link href="https://swisnl.github.io/jQuery-contextMenu/dist/jquery.contextMenu.css" rel="stylesheet" type="text/css" />
+
 <script src="{% static "js/correct.js" %}"></script>
 <script src="{% static "js/thumbs.js" %}"></script>
 <script src="{% static "js/image.js" %}"></script>
@@ -55,13 +62,6 @@
         {% for line in lines %}"{{ line|get_item:"@id" }}": {"x": 0, "y": 0, "factor": 1}, {% endfor %}
     };
 </script>
-
-<link rel="stylesheet" href="https://swisnl.github.io/jQuery-contextMenu/css/screen.css" type="text/css"/>
-<link href="{% static "css/correct.css" %}" rel="stylesheet">
-<link href="{% static "css/gijgo.min.css" %}" rel="stylesheet">
-<!-- <link rel="stylesheet" href="https://swisnl.github.io/jQuery-contextMenu/css/theme.css" type="text/css"/>-->
-<link rel="stylesheet" href="https://swisnl.github.io/jQuery-contextMenu/css/theme-fixes.css" type="text/css"/>
-<link href="https://swisnl.github.io/jQuery-contextMenu/dist/jquery.contextMenu.css" rel="stylesheet" type="text/css" />
 
 <div class="top-div col-md-12">
     <div class="row row-centered fix_scroll_top">
@@ -145,19 +145,21 @@
 			</table>
 		</div>
     </div>
-	<div class="transcript-div">
-		<div class="transcript-map-div">
-			<map name="transcriptMap" id="transcriptMap">
-				{% for line in lines %}
-						<area line-key="{{ line|get_item:"@id"}}" id="{{ line|get_item:"@id"}}"  href="{{ line|get_item:"@id"}}"  shape="poly"  style="cursor: default;">
-				{% endfor %}
-			</map>
-			<canvas id="transcriptCanvas" style="position: absolute; z-index: 998; pointer-events: none;"></canvas>
-			<img src="{{ imageUrl }}" usemap="#transcriptMap" id="transcriptImage" class="transcript-img" style="z-index: 999;">
+    <div class="row row-centered">
+    	<div class="col-lg-6" id="compareText" style="display:none;">
+    		{% include "edit/proofread.html" %}
+    	</div>
+		<div class="transcript-div col-lg-12">
+			<div class="transcript-map-div">
+				<map name="transcriptMap" id="transcriptMap">
+					{% for line in lines %}
+							<area line-key="{{ line|get_item:"@id"}}" id="{{ line|get_item:"@id"}}"  href="{{ line|get_item:"@id"}}"  shape="poly"  style="cursor: default;">
+					{% endfor %}
+				</map>
+				<canvas id="transcriptCanvas" style="position: absolute; z-index: 998; pointer-events: none;"></canvas>
+				<img src="{{ imageUrl }}" usemap="#transcriptMap" id="transcriptImage" class="transcript-img" style="z-index: 999;">
+			</div>
 		</div>
-	</div>
-	<div class="interface-sbs" style="padding-left: 15px; display: none;">
-		{% include "edit/proofread.html" %}
 	</div>
 	<div class="interface-lbl" style="padding-left: 15px; display: none;">
         <script type="text/javascript">
@@ -629,18 +631,18 @@
 	});
     function changeInterface(target) {
         currentLineId = null;
-                
-        //refreshOriginalVersion();
-            
-        
         if ( target === "i" ) {
             ifc = "i";
-            $("#lines").html("");
-            $(".line-list").html(""); {# the dialog height does not get calculated correctly unless we do this! #}
+            $("").html(""); {# the dialog height does not get calculated correctly unless we do this! #}
             $(".transcript-div").show();
             $(".interface-lbl").hide();
             $(".interface-sbs").hide();
             $(".interface-t").hide();
+            $("#compareText").hide();
+            // in case we've been to sbs and shrunk the image:
+            $(".transcript-div").removeClass("col-lg-6");
+            $(".transcript-div").addClass("col-lg-12");            
+            resizeContents();
             $(".zoom-in").removeClass("disabled");
             $(".zoom-out").removeClass("disabled");
             $(".fit-width").removeClass("disabled");
@@ -656,12 +658,14 @@
         }
         else if ( target === "lbl" ) {
             ifc = "lbl";
-            $("#lineList").html("");
-            $("#lines").html("");
+            $(".line-list").html("");
+            hideDialog();
             $(".transcript-div").hide();
             $(".interface-lbl").show();
             $(".interface-sbs").hide();
             $(".interface-t").hide();
+            $("#compareText").hide();
+            resizeContents();
             $(".zoom-in").removeClass("disabled");
             $(".zoom-out").removeClass("disabled");
             $(".fit-width").removeClass("disabled");
@@ -677,11 +681,17 @@
         }
         else if ( target === "sbs" ) {
             ifc = "sbs";
-            $("#lineList").html("");
-            $(".transcript-div").hide();
+            $(".line-list").html("");
+            hideDialog();
             $(".interface-lbl").hide();
-            $(".interface-sbs").show();
             $(".interface-t").hide();
+			// we shrink the image to make space for compareText
+            $(".transcript-div").show();
+            $(".transcript-div").removeClass("col-lg-12");
+            $(".transcript-div").addClass("col-lg-6");
+            $("#compareText").show();
+            refreshYourVersion();
+            resizeContents();
             $(".zoom-in").removeClass("disabled");
             $(".zoom-out").removeClass("disabled");
             $(".fit-width").removeClass("disabled");
@@ -694,14 +704,18 @@
                         $("#page_status").removeClass("disabled");
                 }
             {% endif %}
+            return;
         }
         else if ( target === "t" ) {
             ifc = "t";
-            $("#lineList").html("");
+            $(".line-list").html("");
+            hideDialog();
             $(".transcript-div").hide();
             $(".interface-lbl").hide();
             $(".interface-sbs").hide();
             $(".interface-t").show();
+            $("#compareText").hide();
+            resizeContents();
             $(".zoom-in").addClass("disabled");
             $(".zoom-out").addClass("disabled");
             $(".fit-width").addClass("disabled");
@@ -736,7 +750,7 @@
         }
 
         if ( correctModal !== undefined && correctModal.isOpen() )
-            correctModal.close(); // TODO Close with save, there's a function for that...
+            hideModal();
 
         fitWidth();
         contentArray.forEach(function(obj, i) {
@@ -873,7 +887,7 @@
                     $("#page_status").removeClass("disabled");
             }
         {% endif %}
-
+         refreshOriginalVersion();
         $("#toggleInterface_" + ifc).click();// Change buttons
         changeInterface(ifc);
     });
