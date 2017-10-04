@@ -261,13 +261,15 @@
                         }
                     });
                     $("#canvas_wrapper_{{ line|get_item:"@id" }}").on("mousewheel DOMMouseScroll", function(e) {
-                        e.preventDefault();
-                        var mouseZoom;
-                        if ( e.originalEvent.detail > 0 || e.originalEvent.wheelDelta < 0 )
-                            mouseZoom = -20;
-                        else
-                            mouseZoom = 20;
-                        setZoom(mouseZoom, e.originalEvent.pageX - $("#canvas_wrapper_{{ line|get_item:"@id" }}").offset().left, e.originalEvent.pageY - $("#canvas_wrapper_{{ line|get_item:"@id" }}").offset().top);
+                        if ( ctrlKey ) {
+                            e.preventDefault();
+                            var mouseZoom;
+                            if ( e.originalEvent.detail > 0 || e.originalEvent.wheelDelta < 0 )
+                                mouseZoom = -20;
+                            else
+                                mouseZoom = 20;
+                            setZoom(mouseZoom, e.originalEvent.pageX - $("#canvas_wrapper_{{ line|get_item:"@id" }}").offset().left, e.originalEvent.pageY - $("#canvas_wrapper_{{ line|get_item:"@id" }}").offset().top);
+                        }
                     });
 				</script>
 			</div>
@@ -641,7 +643,7 @@
             $("#compareText").hide();
             // in case we've been to sbs and shrunk the image:
             $(".transcript-div").removeClass("col-lg-6");
-            $(".transcript-div").addClass("col-lg-12");            
+            $(".transcript-div").addClass("col-lg-12");
             resizeContents();
             $(".zoom-in").removeClass("disabled");
             $(".zoom-out").removeClass("disabled");
@@ -911,12 +913,18 @@
 			return '{% trans "You have unsaved changes. Are you sure you want to leave?" %}'; // custom messages aren't supported by all browsers now, this is for those that do show them
 	});
     $(window).bind("keydown", function(e) {
-        if (e.ctrlKey || e.metaKey) {
+        if ( e.ctrlKey || e.metaKey ) {
             if ( String.fromCharCode(e.which).toLowerCase() === "s" ) {
                 e.preventDefault();
                 saveChanges(e);
             }
+            else if ( e.charCode === 0 )
+                ctrlKey = true;
         }
+    });
+    $(window).bind("keyup", function(e) {
+        if ( e.which == 17 || e.which == 112 || e.which == 111 )
+            ctrlKey = false;
     });
 </script>
 
