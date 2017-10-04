@@ -92,7 +92,7 @@
                 </div>
                 {% if lines %}
                     <div class="btn-group">
-                        {% if role == "Owner" %}
+                        {% if role == "Editor" or role == "Owner" or role == "Admin" %}
                             <div class="btn-group btn-group-sm editControls" {% if "view" in request.path %}style="display: none;"{% endif %}>
                                 <a id="page_status" type="button" class="btn btn-default dropdown-toggle disabled" data-toggle="dropdown">
                                     {% if pageStatus == "NEW" or pageStatus == "IN_PROGRESS" %}
@@ -407,7 +407,7 @@
 	});
     $("a[data-target='#page_status']").click(function(e) {
         {# TODO Handle failures here or are we happy with the current solution? #}
-        if ( "{{ role }}" === "Editor" || "{{ role }}" === "CrowdTranscriber" ) {
+        if ( "{{ role }}" === "CrowdTranscriber" ) {
             if ( pageStatus === "NEW" || pageStatus === "IN_PROGRESS" )
                 $.post(window.location.href, {status: "DONE", csrfmiddlewaretoken: "{{ csrf_token }}"}, function( data ) {
                     setMessage(data, "success");
