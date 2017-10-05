@@ -380,13 +380,19 @@ function getLineLiWithTags(tagLineId) { // generates a line with spans matching 
 		// sort the stack and generate a graphical representation for each tag type (placement depends on order and total # of tags)
 		tagGfxStack.sort()
 		var gapTag = false;
+		nonHeightTags = 0;
 		tagGfxStack.forEach(function (gfxTag) { // we use initialWidth here and below since it's definitely long enough, except for the "gap" tag
-			if (gfxTag != "gap") { // we exclude this special case
+			if ( gfxTag === "gap" ) {// we exclude this special case
+				gapTag = true;
+				nonHeightTags++;
+			}
+			else if ( gfxTag === "bold" || gfxTag === "italic" || gfxTag === "strikethrough" || gfxTag === "underlined" || gfxTag === "changeFromOriginal" || gfxTag === "subscript" || gfxTag === "superscript" )
+				nonHeightTags++;
+			else {
 				svgRectsJSON += '"' + gfxTag + '":' + "\"<rect x=\\\\'0\\\\' y=\\\\'" + lineY + "\\\\' width=\\\\'" + initialWidth + "\\\\' height=\\\\'" + lineThickness + "\\\\' style=\\\\'fill: %23" + tagColors[gfxTag] + ";\\\\' />\""; // # must be %23 and yes \\\\ [sic!]
 				lineY +=thicknessAndSpacing;
 				svgRectsJSON += ',';
-			} else
-				gapTag = true;
+			}
 		});
 		if (gapTag) // insert the "gap" tag, if necessary. This also ensures that we don't have a comma in the end before conversion...
 			svgRectsJSON += '"gap":' + "\"<line x1=\\\\'0\\\\' y1=\\\\'0\\\\' x2=\\\\'0\\\\' y2=\\\\'" + lineY + "\\\\' style=\\\\'stroke-width: " + lineThickness + "; stroke: %23" +  (tagColors["gap"]) + ";\\\\' />\""; // # must be %23 and yes \\\\ [sic!]
@@ -394,7 +400,7 @@ function getLineLiWithTags(tagLineId) { // generates a line with spans matching 
 			svgRectsJSON = svgRectsJSON.substring(0, svgRectsJSON.length - 1); // remove the comma in the end
 		svgRectsJSON = JSON.parse("{" +svgRectsJSON + "}");
 		// more graphics variables
-		var bottomPadding = (1 + (tagGfxStack.length - gapTag)) * thicknessAndSpacing; // gapTag must be subtracted from the count since it shouldn't affect the height
+		var bottomPadding = (1 + (tagGfxStack.length - nonHeightTags)) * thicknessAndSpacing; // nonHeightTags must be subtracted from the count since it shouldn't affect the height
 		var backgroundHeight = lineY + bottomPadding;
 		// generate lines with spans showing the tags...
 		var tagStack = [];
