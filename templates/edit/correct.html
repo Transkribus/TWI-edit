@@ -261,13 +261,15 @@
                         }
                     });
                     $("#canvas_wrapper_{{ line|get_item:"@id" }}").on("mousewheel DOMMouseScroll", function(e) {
-                        e.preventDefault();
-                        var mouseZoom;
-                        if ( e.originalEvent.detail > 0 || e.originalEvent.wheelDelta < 0 )
-                            mouseZoom = -20;
-                        else
-                            mouseZoom = 20;
-                        setZoom(mouseZoom, e.originalEvent.pageX - $("#canvas_wrapper_{{ line|get_item:"@id" }}").offset().left, e.originalEvent.pageY - $("#canvas_wrapper_{{ line|get_item:"@id" }}").offset().top);
+                        if ( ctrlKey ) {
+                            e.preventDefault();
+                            var mouseZoom;
+                            if ( e.originalEvent.detail > 0 || e.originalEvent.wheelDelta < 0 )
+                                mouseZoom = -20;
+                            else
+                                mouseZoom = 20;
+                            setZoom(mouseZoom, e.originalEvent.pageX - $("#canvas_wrapper_{{ line|get_item:"@id" }}").offset().left, e.originalEvent.pageY - $("#canvas_wrapper_{{ line|get_item:"@id" }}").offset().top);
+                        }
                     });
 				</script>
 			</div>
@@ -407,7 +409,7 @@
 	});
     $("a[data-target='#page_status']").click(function(e) {
         {# TODO Handle failures here or are we happy with the current solution? #}
-        if ( "{{ role }}" === "CrowdTranscriber" ) {
+        if ( "{{ role }}" === "CrowdTranscriber" || "{{ role }}" === "Transcriber" ) {
             if ( pageStatus === "NEW" || pageStatus === "IN_PROGRESS" )
                 $.post(window.location.href, {status: "DONE", csrfmiddlewaretoken: "{{ csrf_token }}"}, function( data ) {
                     setMessage(data, "success");
@@ -641,14 +643,14 @@
             $("#compareText").hide();
             // in case we've been to sbs and shrunk the image:
             $(".transcript-div").removeClass("col-lg-6");
-            $(".transcript-div").addClass("col-lg-12");            
+            $(".transcript-div").addClass("col-lg-12");
             resizeContents();
             $(".zoom-in").removeClass("disabled");
             $(".zoom-out").removeClass("disabled");
             $(".fit-width").removeClass("disabled");
             $(".fit-height").removeClass("disabled");
             {% if lines %}
-                if ( "{{ role }}" === "Editor" || "{{ role }}" === "Owner" || "{{ role }}" === "Admin" || "{{ role }}" === "CrowdTranscriber" ) {
+                if ( "{{ role }}" === "Editor" || "{{ role }}" === "Owner" || "{{ role }}" === "Admin" || "{{ role }}" === "CrowdTranscriber" || "{{ role }}" === "Transcriber") {
                     $("#editToggle").removeClass("disabled");
                     $("a[data-target='#saveChanges']").removeClass("disabled");
                     if ( "{{ pageStatus }}" !== "GT" )
@@ -671,7 +673,7 @@
             $(".fit-width").removeClass("disabled");
             $(".fit-height").removeClass("disabled");
             {% if lines %}
-                if ( "{{ role }}" === "Editor" || "{{ role }}" === "Owner" || "{{ role }}" === "Admin" || "{{ role }}" === "CrowdTranscriber" )  {
+                if ( "{{ role }}" === "Editor" || "{{ role }}" === "Owner" || "{{ role }}" === "Admin" || "{{ role }}" === "CrowdTranscriber"  || "{{ role }}" === "Transcriber")  {
                     $("#editToggle").removeClass("disabled");
                     $("a[data-target='#saveChanges']").removeClass("disabled");
                     if ( "{{ pageStatus }}" !== "GT" )
@@ -697,7 +699,7 @@
             $(".fit-width").removeClass("disabled");
             $(".fit-height").removeClass("disabled");
             {% if lines %}
-                if ( "{{ role }}" === "Editor" || "{{ role }}" === "Owner" || "{{ role }}" === "Admin" || "{{ role }}" === "CrowdTranscriber" )  {
+                if ( "{{ role }}" === "Editor" || "{{ role }}" === "Owner" || "{{ role }}" === "Admin" || "{{ role }}" === "CrowdTranscriber" || "{{ role }}" === "Transcriber" )  {
                     $("#editToggle").removeClass("disabled");
                     $("a[data-target='#saveChanges']").removeClass("disabled");
                     if ( "{{ pageStatus }}" !== "GT" )
@@ -721,7 +723,7 @@
             $(".fit-width").addClass("disabled");
             $(".fit-height").addClass("disabled");
             {% if lines %}
-                /*if ( "{{ role }}" === "Editor" || "{{ role }}" === "Owner" || "{{ role }}" === "Admin" || "{{ role }}" === "CrowdTranscriber" )  {
+                /*if ( "{{ role }}" === "Editor" || "{{ role }}" === "Owner" || "{{ role }}" === "Admin" || "{{ role }}" === "CrowdTranscriber" || "{{ role }}" === "Transcriber" )  {
                     $("#editToggle").removeClass("disabled");
                     $("a[data-target='#saveChanges']").removeClass("disabled");
                     if ( "{{ pageStatus }}" !== "GT" )
@@ -882,7 +884,7 @@
         $(".last-page").removeClass("disabled");
         $("a[aria-controls='thumbDiv']").removeClass("disabled");
         {% if lines %}
-            if ( "{{ role }}" === "Editor" || "{{ role }}" === "Owner" || "{{ role }}" === "Admin" || "{{ role }}" === "CrowdTranscriber" )  {
+            if ( "{{ role }}" === "Editor" || "{{ role }}" === "Owner" || "{{ role }}" === "Admin" || "{{ role }}" === "CrowdTranscriber" || "{{ role }}" === "Transcriber" )  {
                 $("#editToggle").removeClass("disabled");
                 $("a[data-target='#saveChanges']").removeClass("disabled");
                 if ( "{{ pageStatus }}" !== "GT" )
@@ -913,12 +915,18 @@
 			return '{% trans "You have unsaved changes. Are you sure you want to leave?" %}'; // custom messages aren't supported by all browsers now, this is for those that do show them
 	});
     $(window).bind("keydown", function(e) {
-        if (e.ctrlKey || e.metaKey) {
+        if ( e.ctrlKey || e.metaKey ) {
             if ( String.fromCharCode(e.which).toLowerCase() === "s" ) {
                 e.preventDefault();
                 saveChanges(e);
             }
+            else if ( e.charCode === 0 )
+                ctrlKey = true;
         }
+    });
+    $(window).bind("keyup", function(e) {
+        if ( e.which == 17 || e.which == 112 || e.which == 111 )
+            ctrlKey = false;
     });
 </script>
 
