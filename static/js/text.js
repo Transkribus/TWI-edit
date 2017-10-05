@@ -614,10 +614,13 @@ function typewriterMove(newLineId, caretLineId) {
 	}
 }
 function typewriterNext() { // Aka. "press typewriter enter scroll". Changes the selected lines and the modal content.
+	if ( ifc === "lbl" )
+		$("#options_" + currentLineId).hide();
 	typewriterMove(getNextLineId(currentLineId), getNextLineId(selectionData[0][0])); // the caret will "remain in place" and the lines shifted around it
 }
 function typewriterPrevious() {
-	$("#options_" + currentLineId).hide();
+	if ( ifc === "lbl" )
+		$("#options_" + currentLineId).hide();
 	typewriterMove(getPreviousLineId(currentLineId), getPreviousLineId(selectionData[0][0])); // the caret will "remain in place" and the lines shifted around it
 	/* TODO Remove this old stuff when the new behaviour is ok.
 	if (newLineId != null)
