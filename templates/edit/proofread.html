@@ -20,12 +20,6 @@
     </div>
 </div>
 <script>
-	var lines= {
-		{% for line in lines %}
-			"{{ line|get_item:"id"}}": "{{line|get_item:"Unicode"}}",
-		{% endfor %}
-	};
-	var changedLines = {};	
 	$("input[name$='version']").click(function(event) {
 		$(".version").hide();
 		$("#" + event.target.value).show();
