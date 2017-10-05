@@ -63,7 +63,7 @@ function removeTag(removeTag, everywhere) { // Removes the given tag from the se
 		tag = "textStyle";
 	if (2 == arguments.length && everywhere) {
 		for (var k = 1; k < contentArray.length; k++)
-			contentArray[k][4] = String(contentArray[k][4]).replace(new RegExp("\\s" + tag + "[^}]*}"), "");		
+			contentArray[k][4] = String(contentArray[k][4]).replace(new RegExp("\\s" + tag + "[^}]*}", "g"), "");
 		return; // TODO Return true/false depending on result? Not needed at the moment but technically this is a bug.
 	}
 	var lastButOne = selectionData.length - 1;
