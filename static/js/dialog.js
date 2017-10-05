@@ -14,6 +14,10 @@ var dockedHeight = 250;// TODO Decide how to calculate this.
 // these JavaScripts must also be imported
 // TODO Check which...?
 
+function hideDialog() {
+	saveDialogProperties();
+	correctModal.close();
+}
 function updateDocking(dock) { // docks (true) / undocks (false) the dialog. When not specified, docking status remains unchanged and just the dialog position and size gets updated
 	if (1 == arguments.length)
 		docked = dock;
@@ -115,11 +119,11 @@ function updateDialogSize() {
 		var index = Math.max(1, currentIdx - surroundingCount); // 1 because the first line is not real
 		while (index <= showTo) {
 			var lineId = contentArray[index++][0];
-			longestLine = Math.max(longestLine, $("[tagLineId=" + lineId + "]").last().offset().left + $("[tagLineId=" + lineId + "]").last().outerWidth() - $("#text_" + lineId).offset().left);
-			currentMinH += $("#text_" + lineId).outerHeight(true);
+			longestLine = Math.max(longestLine, $("[tagLineId=" + lineId + "]").last().offset().left + $("[tagLineId=" + lineId + "]").last().outerWidth() - $("#correctModal").offset().left);//$("#text_" + lineId).offset().left);
+			currentMinH += parseInt($("#text_" + lineId).children().first().css("min-height")); // get min-height from the div
 		}
 	}
-	var currentMinW = Math.max(dialogAbsoluteMinWidth, longestLine + 2 * ($("[tagLineId]").first().offset().left - $("#correctModal").offset().left));
+	var currentMinW = Math.max(dialogAbsoluteMinWidth, longestLine + parseInt($(".line-list-div").css("padding-right")));
 	dialogWidth = Math.max(dialogWidth, currentMinW); // we don't shrink the dialog automatically
 	dialogHeight = Math.max(dialogHeight, currentMinH);
 	$("#correctModal").css("width",  dialogWidth + "px");

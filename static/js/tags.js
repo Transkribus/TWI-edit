@@ -56,11 +56,16 @@ function toggleTag(toggleTag) { // sets/removes the tag depending on whether the
 		setMessage(transUnsavedChanges);
 	changed = true;
 }
-function removeTag(removeTag) { // removes the given tag from the selection, returns true if removals were made, otherwise false
+function removeTag(removeTag, everywhere) { // Removes the given tag from the selection and everywhere, if the second parameter is true. Returns true if removals were made, otherwise false.
 	var tag = removeTag;
+	var removals = false;
 	if ( removeTag === "bold" || removeTag === "italic" || removeTag === "strikethrough" || removeTag === "underlined" || removeTag === "subscript" || removeTag === "superscript" )
 		tag = "textStyle";
-	var removals = false;
+	if (2 == arguments.length && everywhere) {
+		for (var k = 1; k < contentArray.length; k++)
+			contentArray[k][4] = String(contentArray[k][4]).replace(new RegExp("\\s" + tag + "[^}]*}", "g"), "");
+		return; // TODO Return true/false depending on result? Not needed at the moment but technically this is a bug.
+	}
 	var lastButOne = selectionData.length - 1;
 	var lineIndex = getIndexFromLineId(selectionData[0][0]);
 	var tagsOnLine = getSortedCustomTagArray(lineIndex, removeTag);

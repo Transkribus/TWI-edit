@@ -345,7 +345,10 @@ function pixelsToCharOffset(element, pixels) { // returns the character index wi
 }
 
 // text rendering
-function getLineLiWithTags(tagLineId) { // generates a line with spans matching the tags and generates and applies the relevant CSS/SVG to show them
+function getLineLiWithTags(tagLineId, idPrefix) { // generates a line with spans matching the tags and generates and applies the relevant CSS/SVG to show them,  idPrefix is an optional prefix added to each the ID of each LI, defaults to "text" for compatibility reasons
+	var prefix = "text";
+	if (arguments.length == 2)
+		prefix = idPrefix;
 	// values for creating SVGs with the right height to be used as a background and a 1 px "long" line corresponding to each tag:
 	var lineY = Math.round(1.5 * contentLineFontSize);
 	var lineThickness = Math.round(lineY / 6);// TODO Test what looks good...
@@ -365,7 +368,7 @@ function getLineLiWithTags(tagLineId) { // generates a line with spans matching 
 	if (tagLineId == currentLineId)
 		 highlightCurrent = ' style="color: green;" '; // A quick and dirty solution for highlighting the current line in each case below
 	if ("" == lineUnicode)
-		return '<li value="' + lineNo + '" id="text_' + tagLineId + '" spellcheck="false"' + highlightCurrent + '><div style="min-height: ' + backgroundHeight + 'px;"><span tagLineId="' + tagLineId + '" spanOffset="-1">&#8203;</span></div></li>'; // spanOffset -1 ensures that &#8203; is ignored when new text is entered
+		return '<li value="' + lineNo + '" id="' + prefix + '_' + tagLineId + '" spellcheck="false"' + highlightCurrent + '><div style="min-height: ' + backgroundHeight + 'px;"><span tagLineId="' + tagLineId + '" spanOffset="-1">&#8203;</span></div></li>'; // spanOffset -1 ensures that &#8203; is ignored when new text is entered
 	var customTagArray = getSortedCustomTagArray(tagLineIndex);
 	if (customTagArray.length > 0) {
 		customTagArray.forEach(function (tag) { // get a stack with all unique tags present
@@ -380,13 +383,19 @@ function getLineLiWithTags(tagLineId) { // generates a line with spans matching 
 		// sort the stack and generate a graphical representation for each tag type (placement depends on order and total # of tags)
 		tagGfxStack.sort()
 		var gapTag = false;
+		nonHeightTags = 0;
 		tagGfxStack.forEach(function (gfxTag) { // we use initialWidth here and below since it's definitely long enough, except for the "gap" tag
-			if (gfxTag != "gap") { // we exclude this special case
+			if ( gfxTag === "gap" ) {// we exclude this special case
+				gapTag = true;
+				nonHeightTags++;
+			}
+			else if ( gfxTag === "bold" || gfxTag === "italic" || gfxTag === "strikethrough" || gfxTag === "underlined" || gfxTag === "changeFromOriginal" || gfxTag === "subscript" || gfxTag === "superscript" )
+				nonHeightTags++;
+			else {
 				svgRectsJSON += '"' + gfxTag + '":' + "\"<rect x=\\\\'0\\\\' y=\\\\'" + lineY + "\\\\' width=\\\\'" + initialWidth + "\\\\' height=\\\\'" + lineThickness + "\\\\' style=\\\\'fill: %23" + tagColors[gfxTag] + ";\\\\' />\""; // # must be %23 and yes \\\\ [sic!]
 				lineY +=thicknessAndSpacing;
 				svgRectsJSON += ',';
-			} else
-				gapTag = true;
+			}
 		});
 		if (gapTag) // insert the "gap" tag, if necessary. This also ensures that we don't have a comma in the end before conversion...
 			svgRectsJSON += '"gap":' + "\"<line x1=\\\\'0\\\\' y1=\\\\'0\\\\' x2=\\\\'0\\\\' y2=\\\\'" + lineY + "\\\\' style=\\\\'stroke-width: " + lineThickness + "; stroke: %23" +  (tagColors["gap"]) + ";\\\\' />\""; // # must be %23 and yes \\\\ [sic!]
@@ -394,13 +403,12 @@ function getLineLiWithTags(tagLineId) { // generates a line with spans matching 
 			svgRectsJSON = svgRectsJSON.substring(0, svgRectsJSON.length - 1); // remove the comma in the end
 		svgRectsJSON = JSON.parse("{" +svgRectsJSON + "}");
 		// more graphics variables
-		var bottomPadding = (1 + (tagGfxStack.length - gapTag)) * thicknessAndSpacing; // gapTag must be subtracted from the count since it shouldn't affect the height
+		var bottomPadding = (1 + (tagGfxStack.length - nonHeightTags)) * thicknessAndSpacing; // nonHeightTags must be subtracted from the count since it shouldn't affect the height
 		var backgroundHeight = lineY + bottomPadding;
 		// generate lines with spans showing the tags...
 		var tagStack = [];
-		var tagString = '<li value="' + lineNo + '" spanOffset="0" class="tag-menu" id="text_' + tagLineId + '" spellcheck="false"' + highlightCurrent
-									+ '><div style="padding-bottom: ' + bottomPadding + 'px;" '
-									+ 'style="min-height: ' + backgroundHeight + 'px;">';
+		var tagString = '<li value="' + lineNo + '" spanOffset="0" class="tag-menu" id="' + prefix + '_' + tagLineId + '" spellcheck="false"' + highlightCurrent
+									+ '><div style="padding-bottom: ' + bottomPadding + 'px; ' + 'min-height: ' + backgroundHeight + 'px;">';
 		var rangeBegin;
 		var keepOpenStack = [];
 		var previousTag;
@@ -428,6 +436,8 @@ function getLineLiWithTags(tagLineId) { // generates a line with spans matching 
 						tagDecoration = "text-decoration: line-through;";
 					else if ( keepTag.tag === "underlined" )
 						tagDecoration = "text-decoration: underline;";
+					else if (keepTag.tag === "changeFromOriginal")
+						tagDecoration = "color: blue;";
 					tagString += "<span tagLineId='" + tagLineId + "' spanOffset=\"" + rangeBegin + "\" "
 											+ "style=\"padding-bottom: " + bottomPadding + "px; " + tagDecoration + "\""
 											+ ">";// we use initialWidth here and below because it's guaranteed to be enough
@@ -448,6 +458,8 @@ function getLineLiWithTags(tagLineId) { // generates a line with spans matching 
 						tagDecoration = "text-decoration: line-through;";
 					else if ( tag.tag === "underlined" )
 						tagDecoration = "text-decoration: underline;";
+					else if (tag.tag === "changeFromOriginal")
+						tagDecoration = "color: blue;";
 					tagString += "<span offset=\"" + offset + "\" spanOffset=\"" + offset + "\" tagLength=\"" + length +  "\" tagLineId='" + tagLineId + "' tag='" + currentTag + "' " //" // a "tag" = span with a tag attribute
 											+ "style=\"padding-bottom: " + bottomPadding + "px; " + tagDecoration + "\""
 											+ ">";
@@ -483,7 +495,7 @@ function getLineLiWithTags(tagLineId) { // generates a line with spans matching 
 		tagString += '<span tagLineId="' + tagLineId + '" spanOffset="' + rangeBegin + '">' + remainder + '</span></div></li>';
 		return tagString;
 	} else
-		return '<li value="' + lineNo + '" class="tag-menu" id="text_' + tagLineId + '" spellcheck="false"' + highlightCurrent + '><div style="min-height: ' + backgroundHeight + 'px;"><span tagLineId="' + tagLineId + '" spanOffset="0">' + lineUnicode + '</span></div></li>';
+		return '<li value="' + lineNo + '" class="tag-menu" id="' + prefix + '_' + tagLineId + '" spellcheck="false"' + highlightCurrent + '><div style="min-height: ' + backgroundHeight + 'px;"><span tagLineId="' + tagLineId + '" spanOffset="0">' + lineUnicode + '</span></div></li>';
 }
 
 // utils
@@ -507,8 +519,9 @@ function contenteditableToArray(lineId, overwriteText) { // converts an editable
 		contentArray[lineIndex][1] = $("#text_" + lineId).text().replace(/\u200B/g,''); // remove the zero width space!!!
 }
 function buildLineList() {
+	console.log("building line list!");
 	var index;
-	if ( $(".transcript-div").is(":visible") && currentLineId !== undefined && correctModal.isOpen()) {
+	if ( $(".transcript-div").is(":visible") && currentLineId !== undefined && correctModal.isOpen()) { // TODO A better test? This works but sbs below also has transcript-div :visible...
 		var currentIdx = getIndexFromLineId(currentLineId);
 		var showTo = Math.min(currentIdx + surroundingCount, contentArray.length - 1);
 		index = Math.max(1, currentIdx - surroundingCount); // 1 because the first line is not real
@@ -525,13 +538,10 @@ function buildLineList() {
 			index++;
 		}
 	}
-	if ( $(".interface-sbs").is(":visible") ) {
+	if ("sbs" === ifc) {
 		if ($("#your").is(":visible"))
 			for (index = 1; index <= contentArray.length - 1; index++)
 				$("#yourVersion").append(getLineLiWithTags(contentArray[index][0]));
-		if ($("#original").is(":visible"))
-			for (index = 1; index <= contentArray.length - 1; index++)
-				$("#originalVersion").append(getLineLiWithTags(contentArray[index][0]));
 	}
 	if ( $(".interface-t").is(":visible") ) {
 		index = 1
@@ -601,10 +611,13 @@ function typewriterMove(newLineId, caretLineId) {
 	}
 }
 function typewriterNext() { // Aka. "press typewriter enter scroll". Changes the selected lines and the modal content.
+	if ( ifc === "lbl" )
+		$("#options_" + currentLineId).hide();
 	typewriterMove(getNextLineId(currentLineId), getNextLineId(selectionData[0][0])); // the caret will "remain in place" and the lines shifted around it
 }
 function typewriterPrevious() {
-	$("#options_" + currentLineId).hide();
+	if ( ifc === "lbl" )
+		$("#options_" + currentLineId).hide();
 	typewriterMove(getPreviousLineId(currentLineId), getPreviousLineId(selectionData[0][0])); // the caret will "remain in place" and the lines shifted around it
 	/* TODO Remove this old stuff when the new behaviour is ok.
 	if (newLineId != null)

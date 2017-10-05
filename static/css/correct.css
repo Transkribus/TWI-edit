@@ -50,8 +50,6 @@
     padding: 3%;
     background-color: white;
 }
-
-/* Dialog content: */
 .line-list-div {
 	overflow: auto;
 }
@@ -59,10 +57,16 @@
 	font-size: 25px;
 	letter-spacing: 5px;
 }
-ol {
-
-}
 ol.line-list {
+    list-style: none;
+    padding-left: 0;
+}
+/* Temporary solution to give the original version the same look. Using ".line-list" is a problematic selector. TODO New selector? Other solution? */
+.original-line-list {
+	font-size: 25px;
+	letter-spacing: 5px;
+}
+ol.original-line-list {
     list-style: none;
     padding-left: 0;
 }

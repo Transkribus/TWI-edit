@@ -11,6 +11,13 @@
 
 {% block content %}
 
+<link rel="stylesheet" href="https://swisnl.github.io/jQuery-contextMenu/css/screen.css" type="text/css"/>
+<link href="{% static "css/correct.css" %}" rel="stylesheet">
+<link href="{% static "css/gijgo.min.css" %}" rel="stylesheet">
+<!-- <link rel="stylesheet" href="https://swisnl.github.io/jQuery-contextMenu/css/theme.css" type="text/css"/>-->
+<link rel="stylesheet" href="https://swisnl.github.io/jQuery-contextMenu/css/theme-fixes.css" type="text/css"/>
+<link href="https://swisnl.github.io/jQuery-contextMenu/dist/jquery.contextMenu.css" rel="stylesheet" type="text/css" />
+
 <script src="{% static "js/correct.js" %}"></script>
 <script src="{% static "js/thumbs.js" %}"></script>
 <script src="{% static "js/image.js" %}"></script>
@@ -56,13 +63,6 @@
     };
 </script>
 
-<link rel="stylesheet" href="https://swisnl.github.io/jQuery-contextMenu/css/screen.css" type="text/css"/>
-<link href="{% static "css/correct.css" %}" rel="stylesheet">
-<link href="{% static "css/gijgo.min.css" %}" rel="stylesheet">
-<!-- <link rel="stylesheet" href="https://swisnl.github.io/jQuery-contextMenu/css/theme.css" type="text/css"/>-->
-<link rel="stylesheet" href="https://swisnl.github.io/jQuery-contextMenu/css/theme-fixes.css" type="text/css"/>
-<link href="https://swisnl.github.io/jQuery-contextMenu/dist/jquery.contextMenu.css" rel="stylesheet" type="text/css" />
-
 <div class="top-div col-md-12">
     <div class="row row-centered fix_scroll_top">
         <div class="col-md-12">
@@ -92,7 +92,7 @@
                 </div>
                 {% if lines %}
                     <div class="btn-group">
-                        {% if role == "Owner" %}
+                        {% if role == "Editor" or role == "Owner" or role == "Admin" %}
                             <div class="btn-group btn-group-sm editControls" {% if "view" in request.path %}style="display: none;"{% endif %}>
                                 <a id="page_status" type="button" class="btn btn-default dropdown-toggle disabled" data-toggle="dropdown">
                                     {% if pageStatus == "NEW" or pageStatus == "IN_PROGRESS" %}
@@ -145,19 +145,21 @@
 			</table>
 		</div>
     </div>
-	<div class="transcript-div">
-		<div class="transcript-map-div">
-			<map name="transcriptMap" id="transcriptMap">
-				{% for line in lines %}
-						<area line-key="{{ line|get_item:"@id"}}" id="{{ line|get_item:"@id"}}"  href="{{ line|get_item:"@id"}}"  shape="poly"  style="cursor: default;">
-				{% endfor %}
-			</map>
-			<canvas id="transcriptCanvas" style="position: absolute; z-index: 998; pointer-events: none;"></canvas>
-			<img src="{{ imageUrl }}" usemap="#transcriptMap" id="transcriptImage" class="transcript-img" style="z-index: 999;">
+    <div class="row row-centered">
+    	<div class="col-lg-6" id="compareText" style="display:none;">
+    		{% include "edit/proofread.html" %}
+    	</div>
+		<div class="transcript-div col-lg-12">
+			<div class="transcript-map-div">
+				<map name="transcriptMap" id="transcriptMap">
+					{% for line in lines %}
+							<area line-key="{{ line|get_item:"@id"}}" id="{{ line|get_item:"@id"}}"  href="{{ line|get_item:"@id"}}"  shape="poly"  style="cursor: default;">
+					{% endfor %}
+				</map>
+				<canvas id="transcriptCanvas" style="position: absolute; z-index: 998; pointer-events: none;"></canvas>
+				<img src="{{ imageUrl }}" usemap="#transcriptMap" id="transcriptImage" class="transcript-img" style="z-index: 999;">
+			</div>
 		</div>
-	</div>
-	<div class="interface-sbs" style="padding-left: 15px; display: none;">
-		{% include "edit/proofread.html" %}
 	</div>
 	<div class="interface-lbl" style="padding-left: 15px; display: none;">
         <script type="text/javascript">
@@ -245,7 +247,7 @@
 							$("#options_{{ line|get_item:"@id" }}").show();
 					});
 					$("#line_{{ line|get_item:"@id" }}").on("blur", function() {
-						if ( !$("#options_{{ line|get_item:"@id" }}").is(":hover") )
+						if ( !$("#options_{{ line|get_item:"@id" }}").is(":hover") || currentLineId !== "{{ line|get_item:"@id" }}" )
 							$("#options_{{ line|get_item:"@id" }}").hide();
 					});
                     $("#canvas_{{ line|get_item:"@id" }}").draggable({
@@ -259,13 +261,15 @@
                         }
                     });
                     $("#canvas_wrapper_{{ line|get_item:"@id" }}").on("mousewheel DOMMouseScroll", function(e) {
-                        e.preventDefault();
-                        var mouseZoom;
-                        if ( e.originalEvent.detail > 0 || e.originalEvent.wheelDelta < 0 )
-                            mouseZoom = -20;
-                        else
-                            mouseZoom = 20;
-                        setZoom(mouseZoom, e.originalEvent.pageX - $("#canvas_wrapper_{{ line|get_item:"@id" }}").offset().left, e.originalEvent.pageY - $("#canvas_wrapper_{{ line|get_item:"@id" }}").offset().top);
+                        if ( ctrlKey ) {
+                            e.preventDefault();
+                            var mouseZoom;
+                            if ( e.originalEvent.detail > 0 || e.originalEvent.wheelDelta < 0 )
+                                mouseZoom = -20;
+                            else
+                                mouseZoom = 20;
+                            setZoom(mouseZoom, e.originalEvent.pageX - $("#canvas_wrapper_{{ line|get_item:"@id" }}").offset().left, e.originalEvent.pageY - $("#canvas_wrapper_{{ line|get_item:"@id" }}").offset().top);
+                        }
                     });
 				</script>
 			</div>
@@ -412,7 +416,7 @@
 	});
     $("a[data-target='#page_status']").click(function(e) {
         {# TODO Handle failures here or are we happy with the current solution? #}
-        if ( "{{ role }}" === "Editor" || "{{ role }}" === "CrowdTranscriber" ) {
+        if ( "{{ role }}" === "CrowdTranscriber" || "{{ role }}" === "Transcriber" ) {
             if ( pageStatus === "NEW" || pageStatus === "IN_PROGRESS" )
                 $.post(window.location.href, {status: "DONE", csrfmiddlewaretoken: "{{ csrf_token }}"}, function( data ) {
                     setMessage(data, "success");
@@ -503,7 +507,7 @@
 	});
 	$( "#transcriptMap area" ).on('click', function(e) {
     	e.preventDefault();
-		if (isDragged || window.location.href.indexOf('view') >= 0 ) {# We ignore clicks if the user has been dragging the image, we assume that that's what the user wants. #}
+		if (isDragged || window.location.href.indexOf('view') >= 0 || ifc != "i") {# We ignore clicks if the user has been dragging the image, we assume that that's what the user wants. #}
 			return;
 		//ignoreLeave = true; {# We don't want the original selection "unhighlighted" when the user moves the mouse to the modal. #}
 		updateDialog($(this).attr("line-key"));
@@ -639,18 +643,22 @@
 
         if ( target === "i" ) {
             ifc = "i";
-            $("#lines").html("");
-            $(".line-list").html(""); {# the dialog height does not get calculated correctly unless we do this! #}
+            $("").html(""); {# the dialog height does not get calculated correctly unless we do this! #}
             $(".transcript-div").show();
             $(".interface-lbl").hide();
             $(".interface-sbs").hide();
             $(".interface-t").hide();
+            $("#compareText").hide();
+            // in case we've been to sbs and shrunk the image:
+            $(".transcript-div").removeClass("col-lg-6");
+            $(".transcript-div").addClass("col-lg-12");
+            resizeContents();
             $(".zoom-in").removeClass("disabled");
             $(".zoom-out").removeClass("disabled");
             $(".fit-width").removeClass("disabled");
             $(".fit-height").removeClass("disabled");
             {% if lines %}
-                if ( "{{ role }}" === "Editor" || "{{ role }}" === "Owner" || "{{ role }}" === "Admin" || "{{ role }}" === "CrowdTranscriber" ) {
+                if ( "{{ role }}" === "Editor" || "{{ role }}" === "Owner" || "{{ role }}" === "Admin" || "{{ role }}" === "CrowdTranscriber" || "{{ role }}" === "Transcriber") {
                     $("#editToggle").removeClass("disabled");
                     $("a[data-target='#saveChanges']").removeClass("disabled");
                     if ( "{{ pageStatus }}" !== "GT" )
@@ -660,18 +668,20 @@
         }
         else if ( target === "lbl" ) {
             ifc = "lbl";
-            $("#lineList").html("");
-            $("#lines").html("");
+            $(".line-list").html("");
+            hideDialog();
             $(".transcript-div").hide();
             $(".interface-lbl").show();
             $(".interface-sbs").hide();
             $(".interface-t").hide();
+            $("#compareText").hide();
+            resizeContents();
             $(".zoom-in").removeClass("disabled");
             $(".zoom-out").removeClass("disabled");
             $(".fit-width").removeClass("disabled");
             $(".fit-height").removeClass("disabled");
             {% if lines %}
-                if ( "{{ role }}" === "Editor" || "{{ role }}" === "Owner" || "{{ role }}" === "Admin" || "{{ role }}" === "CrowdTranscriber" )  {
+                if ( "{{ role }}" === "Editor" || "{{ role }}" === "Owner" || "{{ role }}" === "Admin" || "{{ role }}" === "CrowdTranscriber"  || "{{ role }}" === "Transcriber")  {
                     $("#editToggle").removeClass("disabled");
                     $("a[data-target='#saveChanges']").removeClass("disabled");
                     if ( "{{ pageStatus }}" !== "GT" )
@@ -681,37 +691,47 @@
         }
         else if ( target === "sbs" ) {
             ifc = "sbs";
-            $("#lineList").html("");
-            $(".transcript-div").hide();
+            $(".line-list").html("");
+            hideDialog();
             $(".interface-lbl").hide();
-            $(".interface-sbs").show();
             $(".interface-t").hide();
+			// we shrink the image to make space for compareText
+            $(".transcript-div").show();
+            $(".transcript-div").removeClass("col-lg-12");
+            $(".transcript-div").addClass("col-lg-6");
+            $("#compareText").show();
+            refreshYourVersion();
+            resizeContents();
             $(".zoom-in").removeClass("disabled");
             $(".zoom-out").removeClass("disabled");
             $(".fit-width").removeClass("disabled");
             $(".fit-height").removeClass("disabled");
             {% if lines %}
-                if ( "{{ role }}" === "Editor" || "{{ role }}" === "Owner" || "{{ role }}" === "Admin" || "{{ role }}" === "CrowdTranscriber" )  {
+                if ( "{{ role }}" === "Editor" || "{{ role }}" === "Owner" || "{{ role }}" === "Admin" || "{{ role }}" === "CrowdTranscriber" || "{{ role }}" === "Transcriber" )  {
                     $("#editToggle").removeClass("disabled");
                     $("a[data-target='#saveChanges']").removeClass("disabled");
                     if ( "{{ pageStatus }}" !== "GT" )
                         $("#page_status").removeClass("disabled");
                 }
             {% endif %}
+            return;
         }
         else if ( target === "t" ) {
             ifc = "t";
-            $("#lineList").html("");
+            $(".line-list").html("");
+            hideDialog();
             $(".transcript-div").hide();
             $(".interface-lbl").hide();
             $(".interface-sbs").hide();
             $(".interface-t").show();
+            $("#compareText").hide();
+            resizeContents();
             $(".zoom-in").addClass("disabled");
             $(".zoom-out").addClass("disabled");
             $(".fit-width").addClass("disabled");
             $(".fit-height").addClass("disabled");
             {% if lines %}
-                if ( "{{ role }}" === "Editor" || "{{ role }}" === "Owner" || "{{ role }}" === "Admin" || "{{ role }}" === "CrowdTranscriber" )  {
+                if ( "{{ role }}" === "Editor" || "{{ role }}" === "Owner" || "{{ role }}" === "Admin" || "{{ role }}" === "CrowdTranscriber" || "{{ role }}" === "Transcriber" )  {
                     $("#editToggle").removeClass("disabled");
                     $("a[data-target='#saveChanges']").removeClass("disabled");
                     if ( "{{ pageStatus }}" !== "GT" )
@@ -737,7 +757,7 @@
         }
 
         if ( correctModal !== undefined && correctModal.isOpen() )
-            correctModal.close(); // TODO Close with save, there's a function for that...
+            hideModal();
 
         fitWidth();
         contentArray.forEach(function(obj, i) {
@@ -780,6 +800,8 @@
 		canOpenContextMenu = contextMenuOpenable(e);
 	});
     $(document.body).on("click", ".context-menu-input", function(e) { // TODO Place this somewhere else....
+    	if (e.target.nodeName != "INPUT") // multiple clicks can be triggered, some of which are label or span...
+    		return;
 		toggleTag($(e.target).prop("name").substr(19)); // "context-menu-input-".length is 19
 	});
 	$(window).on("load", function() {
@@ -867,14 +889,14 @@
         $(".last-page").removeClass("disabled");
         $("a[aria-controls='thumbDiv']").removeClass("disabled");
         {% if lines %}
-            if ( "{{ role }}" === "Editor" || "{{ role }}" === "Owner" || "{{ role }}" === "Admin" || "{{ role }}" === "CrowdTranscriber" )  {
+            if ( "{{ role }}" === "Editor" || "{{ role }}" === "Owner" || "{{ role }}" === "Admin" || "{{ role }}" === "CrowdTranscriber" || "{{ role }}" === "Transcriber" )  {
                 $("#editToggle").removeClass("disabled");
                 $("a[data-target='#saveChanges']").removeClass("disabled");
                 if ( "{{ pageStatus }}" !== "GT" )
                     $("#page_status").removeClass("disabled");
             }
         {% endif %}
-
+         refreshOriginalVersion();
         $("#toggleInterface_" + ifc).click();// Change buttons
         changeInterface(ifc);
     });
@@ -898,12 +920,18 @@
 			return '{% trans "You have unsaved changes. Are you sure you want to leave?" %}'; // custom messages aren't supported by all browsers now, this is for those that do show them
 	});
     $(window).bind("keydown", function(e) {
-        if (e.ctrlKey || e.metaKey) {
+        if ( e.ctrlKey || e.metaKey ) {
             if ( String.fromCharCode(e.which).toLowerCase() === "s" ) {
                 e.preventDefault();
                 saveChanges(e);
             }
+            else if ( e.charCode === 0 )
+                ctrlKey = true;
         }
+    });
+    $(window).bind("keyup", function(e) {
+        if ( e.which == 17 || e.which == 112 || e.which == 111 )
+            ctrlKey = false;
     });
 </script>
 
