@@ -46,7 +46,7 @@ function loadThumbs() { // Loads all thumbs and shows the ones which are visible
 	}
 }
 function generateThumbGrid() {
-	thumbWidth = initialWidth / 11;// 11 because we show 10 thumbs and each arrow will be half as wide as a thumbnail
+	thumbWidth = (window.innerWidth - 50) / 11;// 11 because we show 10 thumbs and each arrow will be half as wide as a thumbnail
 	var arrowWidth = thumbWidth / 2;
 	var padding = 0.08 * thumbWidth; // This results in roughly 10 pixels with a maximized window on an HD screen if 10 thumbs are shown
 	var thumbTDs = ''; // thumbTDs will become a string that's inserted into the <tr> with id thumbTR
@@ -80,7 +80,7 @@ function generateThumbGrid() {
 
 	// Then we alter the CSS:
 	//$(".thumb").css("width", (thumbWidth - 2*padding) + "px");
-	$(".thumb-row").css("width", (initialWidth - thumbWidth) + "px"); // THUMBS_TO_SHOW * thumbWidth + "px");
+	$(".thumb-row").css("width", ((window.innerWidth - 50) - thumbWidth) + "px"); // THUMBS_TO_SHOW * thumbWidth + "px");
 	$(".thumb-img").css("width", (thumbWidth - 2 * padding)+ "px");
 	$(".thumb-current").css("width", (thumbWidth - 2 * padding)+ "px");
 	$(".thumbs" ).css("transition", "0s");

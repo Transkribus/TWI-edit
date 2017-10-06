@@ -65,3 +65,6 @@ function saveChanges(e) {
 	});
 	// TODO Handle failures here or are we happy with the current solution?
 }
+function hasEditPermission(role) {
+	return role === "Editor" || role === "Owner" || role === "Admin" || role === "CrowdTranscriber" || role === "Transcriber"
+}
