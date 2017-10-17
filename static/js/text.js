@@ -1,31 +1,62 @@
 var undoArray = [];
-var keyDownString = '';
-var keyDownCount = 0;
 var ctrlKey = false, metaKey = false, altKey = false;
 var caretOffsetInPixels = null;
 var saveCaretPixelOffset = false;
 var selectionData = [];
 var contentLineFontSize = parseInt($('.line-list').css("font-size"));
+var wasDead = false;
+var keyDown;
+var bufferedKeys = "";
+var keyIsDown = false;
 // these vars must be initialized when importing this JavaScript
 // surroundingCount, currentLineId, view, changed
 // these JavaScripts must also be imported
-// TODO Check
+// TODO Check which.
 
-// text editing
 function keydown(e) {
 	console.log("key DOWN key: " + e.key);
+	keyDown = e.key; // needed to ensure that keys are processed in the right order and resolve issues with some not triggering this at all
 	if (e.which == 17 || e.which == 112 || e.which == 111) { // we handle CTRL like this because of one of the weirdest things I've ever come across. Any one of these (i.e. also F1 and divide) can be triggered when pressing CTRL.
 		ctrlKey = true;
 	} else if (!ctrlKey) {
-		if (e.key.length == 1) { // only characters are input
-			e.preventDefault();
-			updateSelectionData();
-			inputAction(e.key);
+		if (e.key.length == 1) {
+			if (keyIsDown) { // if we're already busy with a key, we buffer this (note: the caveat with this method is that composite characters lose their dead key composite but such fast entry should be impossible)
+				e.preventDefault();
+				bufferedKeys += e.key;
+				getInput(); // we make sure that the contenteditable is updated asap
+				updateSelectionData(); // redundant? 
+			} else { // we allow input into the contenteditable since we're not busy
+				bufferedKeys += e.key;
+				keyIsDown = true;
+				updateSelectionData();
+			}
 		} else {
 			updateSelectionData();
-			editAction(e);
+			editAction(e); // TODO preventDefault should perhaps be handled here instead of in editAction
 		}
 	}
+}
+function getInput() {
+	if (0 == bufferedKeys.length) // even if a keydown has emptied the buffer, a keyup might still bring us here unnecessarily
+		return;
+		
+	var lineId = selectionData[0][0];
+	var newContent =  $("[id='text_" + lineId+ "']").text();
+	var inputLength = newContent.length - contentArray[getIndexFromLineId(selectionData[0][0])][1].length;
+	var startPos = selectionData[0][1];
+	var endPos = startPos  + inputLength;
+	// TODO Make inputAction update selectionData? At least in these two cases it would make sense:
+	setSelectionData(lineId, startPos);
+	if (inputLength != 0) { // if the input has had a chance to get rendered, we read it from the contenteditable
+		inputAction(newContent.substring(startPos, endPos));
+		bufferedKeys = bufferedKeys.substring(inputLength);
+		setSelectionData(lineId, endPos);
+	}
+	// we get what's in the buffer BUT we don't get composite keys this way. However, in these cases the input has been really fast and there can't (!?) be any.
+	inputAction(bufferedKeys);
+	setSelectionData(lineId, startPos + bufferedKeys.length);
+	bufferedKeys = "";	
+	keyIsDown = false; // we're not busy anymore
 }
 function keyup(e) { // TODO Refactor this. This now does more than before because we don't have keyPress and a different split between this and editAction might be better....
 	console.log("key UP key: " + e.key);
@@ -37,8 +68,14 @@ function keyup(e) { // TODO Refactor this. This now does more than before becaus
 			undoAction();
 		if ( (e.key == "v" || e.key == "V") && e.originalEvent.clipboardData !== undefined ) // and this
 			inputAction(e.originalEvent.clipboardData.getData('text'));
-		return;
+	} else if (e.key.length == 1) { // the user has released the key
+		getInput();
+	} else if ("Dead" == e.key) {
+		wasDead = true;
+	} else {
+		wasDead = false;
 	}
+	keyDown = null; // we're done with the key, this ensures that we detect keys that come in the wrong order
 }
 function mouseup(e) {
 	updateSelectionData();
@@ -95,8 +132,9 @@ function editAction(event) {
 			undoAction();
 		return;
 	}
-	if ( selectionData == undefined || selectionData[0] === undefined )
+	if ( selectionData == undefined || selectionData[0] === undefined ) {
 		return;
+	}
     var editedLineId = selectionData[0][0];
 	var startOffset = selectionData[0][2];
 	var endOffset = selectionData[0][1]; // TODO Some cleanup? This is just for one line edits, changed in the else below...
@@ -323,11 +361,13 @@ function restoreSelection() {
 	if ( bElement === undefined || eElement === undefined )
 		return;
 	var range = document.createRange();
+	var test = bElement[0].firstChild === null ? bElement[0] : bElement[0].firstChild;
 	range.setStart(bElement[0].firstChild === null ? bElement[0] : bElement[0].firstChild, begCharCount - bElement.attr("spanoffset"));
 	range.setEnd(eElement[0].firstChild === null ? eElement[0] : eElement[0].firstChild, endCharCount - eElement.attr("spanoffset"));
 	var sel = window.getSelection();
 	sel.removeAllRanges();
 	sel.addRange(range);
+	eElement.focus(); // TODO Remove unless this solves the problem with loss of focus.
 }
 function pixelsToCharOffset(element, pixels) { // returns the character index within the element which best corresponds to the no. of pixels given
 	var hiddenCopy = $(element).clone();
