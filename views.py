@@ -67,7 +67,7 @@ def proofread(request, collId, docId, page, transcriptId=None):# TODO Decide whe
                     line.find('{http://schema.primaresearch.org/PAGE/gts/pagecontent/2013-07-15}TextEquiv').find('{http://schema.primaresearch.org/PAGE/gts/pagecontent/2013-07-15}Unicode').text = modified_text
                 regionTextEquiv += modified_text +"\r\n"
             text_region.find('{http://schema.primaresearch.org/PAGE/gts/pagecontent/2013-07-15}TextEquiv').find('{http://schema.primaresearch.org/PAGE/gts/pagecontent/2013-07-15}Unicode').text = regionTextEquiv
-        t.save_transcript(request, ElementTree.tostring(transcript_root), collId, docId, page)
+        t.save_transcript(request, ElementTree.tostring(transcript_root), collId, docId, page, transcriptId)
         current_transcript = t.current_transcript(request, collId, docId, page)# We want the updated transcript now.
         if isinstance(current_transcript,HttpResponse):
             return apps.utils.views.error_view(request,current_transcript)
@@ -152,8 +152,12 @@ def correct(request, collId, docId, page=None, transcriptId=None):# TODO Decide 
                     modified_text = modified_content.get("Unicode")
                     regionTextEquiv += modified_text +"\r\n"
                     line.find('{http://schema.primaresearch.org/PAGE/gts/pagecontent/2013-07-15}TextEquiv').find('{http://schema.primaresearch.org/PAGE/gts/pagecontent/2013-07-15}Unicode').text = modified_text
-                text_region.find('{http://schema.primaresearch.org/PAGE/gts/pagecontent/2013-07-15}TextEquiv').find('{http://schema.primaresearch.org/PAGE/gts/pagecontent/2013-07-15}Unicode').text = regionTextEquiv
-            t.save_transcript(request, ElementTree.tostring(transcript_root), collId, docId, page)
+                #RM not sure what this bit is for but it was triggering a can't find() on noneType 
+                #error so best to check the fing we are calling find() on is not None
+                text_equiv = text_region.find('{http://schema.primaresearch.org/PAGE/gts/pagecontent/2013-07-15}TextEquiv')
+                if text_equiv:
+                    text_equiv.find('{http://schema.primaresearch.org/PAGE/gts/pagecontent/2013-07-15}Unicode').text = regionTextEquiv
+            t.save_transcript(request, ElementTree.tostring(transcript_root), collId, docId, page, transcriptId)
             current_transcript = t.current_transcript(request, collId, docId, page)# We want the updated transcript now.
             #RM add some error catching (though somewhat suboptimal)
             if isinstance(current_transcript,HttpResponse):
