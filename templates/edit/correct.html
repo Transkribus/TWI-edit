@@ -661,11 +661,10 @@
             $(".fit-width").removeClass("disabled");
             $(".fit-height").removeClass("disabled");
             {% if lines %}
-                if ( hasEditPermission("{{ role }}") ) {
+                if ( hasEditPermission("{{ role }}") && "{{ pageStatus }}" !== "GT" ) {
                     $("#editToggle").removeClass("disabled");
                     $("a[data-target='#saveChanges']").removeClass("disabled");
-                    if ( "{{ pageStatus }}" !== "GT" )
-                        $("#page_status").removeClass("disabled");
+                    $("#page_status").removeClass("disabled");
                 }
             {% endif %}
         }
@@ -684,11 +683,10 @@
             $(".fit-width").removeClass("disabled");
             $(".fit-height").removeClass("disabled");
             {% if lines %}
-                if ( hasEditPermission("{{ role }}") )  {
+                if ( hasEditPermission("{{ role }}") && "{{ pageStatus }}" !== "GT" )  {
                     $("#editToggle").removeClass("disabled");
                     $("a[data-target='#saveChanges']").removeClass("disabled");
-                    if ( "{{ pageStatus }}" !== "GT" )
-                        $("#page_status").removeClass("disabled");
+                    $("#page_status").removeClass("disabled");
                 }
             {% endif %}
         }
@@ -711,14 +709,12 @@
             $(".fit-width").removeClass("disabled");
             $(".fit-height").removeClass("disabled");
             {% if lines %}
-                if ( hasEditPermission("{{ role }}") )  {
+                if ( hasEditPermission("{{ role }}") && "{{ pageStatus }}" !== "GT" )  {
                     $("#editToggle").removeClass("disabled");
                     $("a[data-target='#saveChanges']").removeClass("disabled");
-                    if ( "{{ pageStatus }}" !== "GT" )
-                        $("#page_status").removeClass("disabled");
+                    $("#page_status").removeClass("disabled");
                 }
             {% endif %}
-            return;
         }
         else if ( target === "t" ) {
             ifc = "t";
@@ -735,11 +731,10 @@
             $(".fit-width").addClass("disabled");
             $(".fit-height").addClass("disabled");
             {% if lines %}
-                if ( hasEditPermission("{{ role }}") )  {
+                if ( hasEditPermission("{{ role }}") && "{{ pageStatus }}" !== "GT" )  {
                     $("#editToggle").removeClass("disabled");
                     $("a[data-target='#saveChanges']").removeClass("disabled");
-                    if ( "{{ pageStatus }}" !== "GT" )
-                        $("#page_status").removeClass("disabled");
+                    $("#page_status").removeClass("disabled");
                 }
             {% endif %}
         }
@@ -892,11 +887,10 @@
         $(".last-page").removeClass("disabled");
         $("a[aria-controls='thumbDiv']").removeClass("disabled");
         {% if lines %}
-            if ( hasEditPermission("{{ role }}") )  {
+            if ( hasEditPermission("{{ role }}") && "{{ pageStatus }}" !== "GT" )  {
                 $("#editToggle").removeClass("disabled");
                 $("a[data-target='#saveChanges']").removeClass("disabled");
-                if ( "{{ pageStatus }}" !== "GT" )
-                    $("#page_status").removeClass("disabled");
+                $("#page_status").removeClass("disabled");
             }
         {% endif %}
          refreshOriginalVersion();
