@@ -227,6 +227,10 @@ def correct(request, collId, docId, page=None, transcriptId=None):# TODO Decide 
         if pageStatus == 'GT' and 'edit' in request.path:
             t_log('Redirect user back to view mode since page status is GT. [from: %s to: %s]' % (request.get_full_path(), request.get_full_path().replace('edit', 'view')))
             return HttpResponseRedirect(request.get_full_path().replace('edit', 'view'))
+        i = request.GET.get('i') if request.GET.get('i') else 'i'
+        if i == 'sbs' or i == 't' and 'edit' in request.path:
+            t_log('Redirect user back to view mode since interface "sbs" and "t" do not support edit. [from: %s to: %s]' % (request.get_full_path(), request.get_full_path().replace('edit', 'view')))
+            return HttpResponseRedirect(request.get_full_path().replace('edit', 'view'))
 
         tags = [
             {"name": "abbrev", "color": "FF0000"},
@@ -249,7 +253,7 @@ def correct(request, collId, docId, page=None, transcriptId=None):# TODO Decide 
                  'title': document.get('md').get('title'),
                  'pageNo': page,
                  'tags': tags,
-                 'i': request.GET.get('i') if request.GET.get('i') else 'i',
+                 'i': i,
                  'role': role,
 		         'metadata' : document.get('md'),
                  #'regionData': regionData,

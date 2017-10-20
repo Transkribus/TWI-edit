@@ -454,11 +454,15 @@
     		pathWithoutPage = pathWithoutPage.replace('view', 'edit');
     		var newButtonText = "{% trans 'View' %}";
     		$('[contenteditable="false"]').attr("contenteditable", "true");
+            $("#toggleInterface_sbs").addClass("disabled");
+            $("#toggleInterface_t").addClass("disabled");
     	}else{
     		var newURL = window.location.href.replace('edit', 'view');
     		pathWithoutPage = pathWithoutPage.replace('edit', 'view');
     		var newButtonText = "{% trans 'Edit' %}";
     		$('[contenteditable="true"]').attr("contenteditable", "false");
+            $("#toggleInterface_sbs").removeClass("disabled");
+            $("#toggleInterface_t").removeClass("disabled");
     	}
 
     	window.history.pushState(null, document.title, newURL);
@@ -708,12 +712,15 @@
             $(".zoom-out").removeClass("disabled");
             $(".fit-width").removeClass("disabled");
             $(".fit-height").removeClass("disabled");
+            $("#editToggle").addClass("disabled");
+            $("a[data-target='#saveChanges']").addClass("disabled");
+            $("#page_status").addClass("disabled");
             {% if lines %}
-                if ( hasEditPermission("{{ role }}") && "{{ pageStatus }}" !== "GT" )  {
+                /*if ( hasEditPermission("{{ role }}") && "{{ pageStatus }}" !== "GT" )  {
                     $("#editToggle").removeClass("disabled");
                     $("a[data-target='#saveChanges']").removeClass("disabled");
                     $("#page_status").removeClass("disabled");
-                }
+                }*/
             {% endif %}
         }
         else if ( target === "t" ) {
@@ -730,12 +737,15 @@
             $(".zoom-out").addClass("disabled");
             $(".fit-width").addClass("disabled");
             $(".fit-height").addClass("disabled");
+            $("#editToggle").addClass("disabled");
+            $("a[data-target='#saveChanges']").addClass("disabled");
+            $("#page_status").addClass("disabled");
             {% if lines %}
-                if ( hasEditPermission("{{ role }}") && "{{ pageStatus }}" !== "GT" )  {
+                /*if ( hasEditPermission("{{ role }}") && "{{ pageStatus }}" !== "GT" )  {
                     $("#editToggle").removeClass("disabled");
                     $("a[data-target='#saveChanges']").removeClass("disabled");
                     $("#page_status").removeClass("disabled");
-                }
+                }*/
             {% endif %}
         }
         else {
