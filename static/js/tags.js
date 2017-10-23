@@ -219,6 +219,8 @@ function getSortedCustomTagArray(tagLineIndex, filterTag) { // returns an array 
 function contextMenuOpenable(contextMenuEvent) { // ensures that the caret is also moved when the user clicks the right mouse button unless the tag menu should be opened to set tags to a new selection, sets the contextMenuOk flag
 	if ("" != selectionData && (selectionData.length > 1 || (selectionData[0][1] != selectionData[0][2]))) // have we got a non-zero length selection? if so, the user wants to set tags to the selection and we thus don't move the caret
 		return true;
+	if ( window.location.href.indexOf("view") >= 0 )
+		return false;
 	var line;
 	$("[id^='text_']").each(function() { // first find the line on which the click was
 		var y = 0, testElement = this;

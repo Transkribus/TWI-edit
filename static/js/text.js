@@ -24,7 +24,7 @@ function keydown(e) {
 				e.preventDefault();
 				bufferedKeys += e.key;
 				getInput(); // we make sure that the contenteditable is updated asap
-				updateSelectionData(); // redundant? 
+				updateSelectionData(); // redundant?
 			} else { // we allow input into the contenteditable since we're not busy
 				bufferedKeys += e.key;
 				keyIsDown = true;
@@ -39,7 +39,7 @@ function keydown(e) {
 function getInput() {
 	if (0 == bufferedKeys.length) // even if a keydown has emptied the buffer, a keyup might still bring us here unnecessarily
 		return;
-		
+
 	var lineId = selectionData[0][0];
 	var newContent =  $("[id='text_" + lineId+ "']").text();
 	var inputLength = newContent.length - contentArray[getIndexFromLineId(selectionData[0][0])][1].length;
@@ -55,7 +55,7 @@ function getInput() {
 	// we get what's in the buffer BUT we don't get composite keys this way. However, in these cases the input has been really fast and there can't (!?) be any.
 	inputAction(bufferedKeys);
 	setSelectionData(lineId, startPos + bufferedKeys.length);
-	bufferedKeys = "";	
+	bufferedKeys = "";
 	keyIsDown = false; // we're not busy anymore
 }
 function keyup(e) { // TODO Refactor this. This now does more than before because we don't have keyPress and a different split between this and editAction might be better....
@@ -447,7 +447,7 @@ function getLineLiWithTags(tagLineId, idPrefix) { // generates a line with spans
 		var backgroundHeight = lineY + bottomPadding;
 		// generate lines with spans showing the tags...
 		var tagStack = [];
-		var tagString = '<li value="' + lineNo + '" spanOffset="0" class="tag-menu" id="' + prefix + '_' + tagLineId + '" spellcheck="false"' + highlightCurrent
+		var tagString = '<li value="' + lineNo + '" spanOffset="0" class="tag-menu ' + (window.location.href.indexOf("view") >= 0 ? 'context-menu-disabled' : '') + '" id="' + prefix + '_' + tagLineId + '" spellcheck="false"' + highlightCurrent
 									+ '><div style="padding-bottom: ' + bottomPadding + 'px; ' + 'min-height: ' + backgroundHeight + 'px;">';
 		var rangeBegin;
 		var keepOpenStack = [];
@@ -535,7 +535,7 @@ function getLineLiWithTags(tagLineId, idPrefix) { // generates a line with spans
 		tagString += '<span tagLineId="' + tagLineId + '" spanOffset="' + rangeBegin + '">' + remainder + '</span></div></li>';
 		return tagString;
 	} else
-		return '<li value="' + lineNo + '" class="tag-menu" id="' + prefix + '_' + tagLineId + '" spellcheck="false"' + highlightCurrent + '><div style="min-height: ' + backgroundHeight + 'px;"><span tagLineId="' + tagLineId + '" spanOffset="0">' + lineUnicode + '</span></div></li>';
+		return '<li value="' + lineNo + '" class="tag-menu ' + (window.location.href.indexOf("view") >= 0 ? 'context-menu-disabled' : '') + '" id="' + prefix + '_' + tagLineId + '" spellcheck="false"' + highlightCurrent + '><div style="min-height: ' + backgroundHeight + 'px;"><span tagLineId="' + tagLineId + '" spanOffset="0">' + lineUnicode + '</span></div></li>';
 }
 
 // utils

@@ -642,6 +642,7 @@
    		checkPageNumberInput();
 	});
     function changeInterface(target) {
+        var oldLineId = currentLineId;
         currentLineId = null;
 
         if ( target === "i" ) {
@@ -778,8 +779,11 @@
                 $("line_" + obj[0]).html("");
             }
         });
+
+        currentLineId = oldLineId;
+        if ( window.location.href.indexOf("view") === -1 && "i" === ifc )
+            updateDialog(currentLineId);
         updateCanvas();
-        currentLineId = null;
         buildLineList();
         {# TODO Handle failures here or are we happy with the current solution? #}
     }
