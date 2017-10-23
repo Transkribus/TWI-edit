@@ -53,7 +53,7 @@ function toggleTag(toggleTag) { // sets/removes the tag depending on whether the
 	if (!removeTag(toggleTag)) // if the tag can be removed, we do that...
 		applyTag(toggleTag);// ...but otherwise we apply it
 	if (!changed)
-		setMessage(transUnsavedChanges);
+		setMessage(transUnsavedChanges, 'warning', false);
 	changed = true;
 }
 function removeTag(removeTag, everywhere) { // Removes the given tag from the selection and everywhere, if the second parameter is true. Returns true if removals were made, otherwise false.

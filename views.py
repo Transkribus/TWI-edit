@@ -71,8 +71,7 @@ def proofread(request, collId, docId, page, transcriptId=None):# TODO Decide whe
         current_transcript = t.current_transcript(request, collId, docId, page)# We want the updated transcript now.
         if isinstance(current_transcript,HttpResponse):
             return apps.utils.views.error_view(request,current_transcript)
-        success_message = str(_("Transcript saved!"))
-        return HttpResponse("<div class='alert alert-success'>" + success_message + "</div>", content_type="text/plain")
+        return HttpResponse(str(_("Transcript saved!")), content_type="text/plain")
     else:
         regions=transcript.get("PcGts").get("Page").get("TextRegion");
 
