@@ -289,20 +289,20 @@
                     keydown(e);
                 else
                     e.preventDefault();
-                $("#canvas_text").show();
-                var c = document.getElementById("#canvas_text");
+                /*$("#canvas_text").hide();*/
+                /*var c = document.getElementById("#canvas_text");
                 if ( c !== null && c !== undefined ) {
                     ctx.fillStyle = "rgba(0, 0, 0, 0.15)";
                     ctx.fillRect(0, 0, ctx.canvas.width, ctx.canvas.height);
                     ctx.save();
-                }
+                }*/
             });
             $("#text").on("keyup", function(e) {
                 if ( window.location.href.indexOf("edit") >= 0 )
                     keyup(e);
                 else
                     e.preventDefault();
-                showLineImage(e);
+                /*showLineImage(e);*/
             });
             $("#text").on("paste", function(e) {
                 if ( window.location.href.indexOf("edit") >= 0 )
@@ -322,7 +322,7 @@
                 else
                     e.preventDefault();
             });
-            $("#text").on("mouseenter", "li", function(e) {
+            $("#text").on("click", "li", function(e) {
                 $("#canvas_text").show();
                 var c = document.getElementById("#canvas_text");
                 if ( c !== null && c !== undefined ) {
@@ -330,16 +330,17 @@
                     ctx.fillRect(0, 0, ctx.canvas.width, ctx.canvas.height);
                     ctx.save();
                 }
-            });
-            $("#text").on("mouseleave", "li", function(e) {
-                $("#canvas_text").hide();
-            });
-            $("#text").on("mouseover", "li", function(e) {
                 showLineImage(e);
             });
+            $(".interface-t").on("mouseleave", function(e) {
+                $("#canvas_text").hide();
+            });
+            /*$("#text").on("mouseover", "li", function(e) {
+                showLineImage(e);
+            });*/
             $("#text").on("mouseup", "li", function(e) {
                 var lineId = e.currentTarget.id.substring(5);
-                if ( window.location.href.indexOf("edit") >= 0 ) {
+                /*if ( window.location.href.indexOf("edit") >= 0 ) {
                     if ( currentLineId !== lineId ) {
                         var sel = window.getSelection();
                         sel.removeAllRanges();
@@ -349,17 +350,13 @@
                         buildLineList();
                     }
                     mouseup(e);
-                }
+                }*/
+                $("#canvas_text").show();
                 showLineImage(e);
             });
-            /*$("#line_{#{ line|get_item:"@id" }#}").on("focus", function() {
-                if ( window.location.href.indexOf('edit') >= 0 )
-                    $("#options_{#{ line|get_item:"@id" }#}").show();
+            $("#canvas_text").on("click", function(e) {
+                $("#canvas_text").hide();
             });
-            $("#line_{#{ line|get_item:"@id" }#}").on("blur", function() {
-                if ( !$("#options_{#{ line|get_item:"@id" }#}").is(":hover") )
-                    $("#options_{#{ line|get_item:"@id" }#}").hide();
-            });*/
         </script>
     </div>
 </div>
