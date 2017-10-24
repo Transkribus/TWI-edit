@@ -27,7 +27,7 @@ function resizeContents() { // Call to perform necessary updates of contents and
    	var widthFactor = window.innerWidth/previousInnerWidth;
 	var oldWidth = initialWidth;
     previousInnerWidth = window.innerWidth;
-	initialWidth = $('#transcriptImage').width();
+	initialWidth = $('#transcriptImage').width() ? $('#transcriptImage').width() : window.innerWidth;
 	initialHeight = $('#transcriptImage').height();
 	naturalWidth = $('#transcriptImage').get(0).naturalWidth;
 	initialScale = initialWidth / naturalWidth;

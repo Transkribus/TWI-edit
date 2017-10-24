@@ -25,7 +25,7 @@ function keydown(e) {
 				e.preventDefault();
 				bufferedKeys += e.key;
 				getInput(); // we make sure that the contenteditable is updated asap
-				updateSelectionData(); // redundant? 
+				updateSelectionData(); // redundant?
 			} else { // we allow input into the contenteditable since we're not busy
 				bufferedKeys += e.key;
 				keyIsDown = true;
@@ -37,7 +37,7 @@ function keydown(e) {
 		}
 	}
 }
-function initializeCaretOffsetInPixels() { 
+function initializeCaretOffsetInPixels() {
 	var selection = window.getSelection();
 	if ( selection.anchorNode === null || selection.anchorNode.parentNode === null )
 		return;
@@ -49,7 +49,7 @@ function initializeCaretOffsetInPixels() {
 	caretOffsetInPixels = parentElement.offsetLeft + $(hiddenCopy).outerWidth();
 //	console.log("caret offset in pixels initialized to: " +  parentElement.offsetLeft + " + " + $(hiddenCopy).outerWidth() + " = " + caretOffsetInPixels + " and outer width: " + oldWidthForCaretCalc);
 	$(hiddenCopy).remove();
-	
+
 }
 function getInput() {
 	if (0 == bufferedKeys.length) // even if a keydown has emptied the buffer, a keyup might still bring us here unnecessarily
@@ -72,7 +72,7 @@ function getInput() {
 	// we get what's in the buffer BUT we don't get composite keys this way. However, in these cases the input has been really fast and there can't (!?) be any.
 	inputAction(bufferedKeys);
 	setSelectionData(lineId, startPos + bufferedKeys.length);
-	bufferedKeys = "";	
+	bufferedKeys = "";
 	keyIsDown = false; // we're not busy anymore
 }
 function keyup(e) { // TODO Refactor this. This now does more than before because we don't have keyPress and a different split between this and editAction might be better....
@@ -398,10 +398,10 @@ function restoreSelection() {
 		return;
 	var range = document.createRange();
 	var test = bElement[0].firstChild === null ? bElement[0] : bElement[0].firstChild;
-	
+
 	range.setStart(bElement[0].firstChild === null ? bElement[0] : bElement[0].firstChild, begCharCount - bElement.attr("spanoffset"));
 	range.setEnd(eElement[0].firstChild === null ? eElement[0] : eElement[0].firstChild, endCharCount - eElement.attr("spanoffset"));
-	
+
 	var sel = window.getSelection();
 	eElement.focus();
 	sel.removeAllRanges();
