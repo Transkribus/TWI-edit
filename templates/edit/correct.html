@@ -290,20 +290,20 @@
                     keydown(e);
                 else
                     e.preventDefault();
-                /*$("#canvas_text").hide();*/
-                /*var c = document.getElementById("#canvas_text");
+                $("#canvas_text").show();
+                var c = document.getElementById("#canvas_text");
                 if ( c !== null && c !== undefined ) {
                     ctx.fillStyle = "rgba(0, 0, 0, 0.15)";
                     ctx.fillRect(0, 0, ctx.canvas.width, ctx.canvas.height);
                     ctx.save();
-                }*/
+                }
             });
             $("#text").on("keyup", function(e) {
                 if ( window.location.href.indexOf("edit") >= 0 )
                     keyup(e);
                 else
                     e.preventDefault();
-                /*showLineImage(e);*/
+                showLineImage(e);
             });
             $("#text").on("paste", function(e) {
                 if ( window.location.href.indexOf("edit") >= 0 )
@@ -323,7 +323,7 @@
                 else
                     e.preventDefault();
             });
-            $("#text").on("click", "li", function(e) {
+            $("#text").on("mouseenter", "li", function(e) {
                 $("#canvas_text").show();
                 var c = document.getElementById("#canvas_text");
                 if ( c !== null && c !== undefined ) {
@@ -331,17 +331,16 @@
                     ctx.fillRect(0, 0, ctx.canvas.width, ctx.canvas.height);
                     ctx.save();
                 }
-                showLineImage(e);
             });
-            $(".interface-t").on("mouseleave", function(e) {
+            $("#text").on("mouseleave", "li", function(e) {
                 $("#canvas_text").hide();
             });
-            /*$("#text").on("mouseover", "li", function(e) {
+            $("#text").on("mouseover", "li", function(e) {
                 showLineImage(e);
-            });*/
+            });
             $("#text").on("mouseup", "li", function(e) {
                 var lineId = e.currentTarget.id.substring(5);
-                /*if ( window.location.href.indexOf("edit") >= 0 ) {
+                if ( window.location.href.indexOf("edit") >= 0 ) {
                     if ( currentLineId !== lineId ) {
                         var sel = window.getSelection();
                         sel.removeAllRanges();
@@ -351,13 +350,17 @@
                         buildLineList();
                     }
                     mouseup(e);
-                }*/
-                $("#canvas_text").show();
+                }
                 showLineImage(e);
             });
-            $("#canvas_text").on("click", function(e) {
-                $("#canvas_text").hide();
+            /*$("#line_{#{ line|get_item:"@id" }#}").on("focus", function() {
+                if ( window.location.href.indexOf('edit') >= 0 )
+                    $("#options_{#{ line|get_item:"@id" }#}").show();
             });
+            $("#line_{#{ line|get_item:"@id" }#}").on("blur", function() {
+                if ( !$("#options_{#{ line|get_item:"@id" }#}").is(":hover") )
+                    $("#options_{#{ line|get_item:"@id" }#}").hide();
+            });*/
         </script>
     </div>
 </div>
@@ -450,15 +453,11 @@
     		pathWithoutPage = pathWithoutPage.replace('view', 'edit');
     		var newButtonText = "{% trans 'View' %}";
     		$('[contenteditable="false"]').attr("contenteditable", "true");
-            $("#toggleInterface_sbs").addClass("disabled");
-            $("#toggleInterface_t").addClass("disabled");
     	}else{
     		var newURL = window.location.href.replace('edit', 'view');
     		pathWithoutPage = pathWithoutPage.replace('edit', 'view');
     		var newButtonText = "{% trans 'Edit' %}";
     		$('[contenteditable="true"]').attr("contenteditable", "false");
-            $("#toggleInterface_sbs").removeClass("disabled");
-            $("#toggleInterface_t").removeClass("disabled");
     	}
 
     	window.history.pushState(null, document.title, newURL);
@@ -641,7 +640,6 @@
    		checkPageNumberInput();
 	});
     function changeInterface(target) {
-        var oldLineId = currentLineId;
         currentLineId = null;
 
         if ( target === "i" ) {
@@ -662,10 +660,11 @@
             $(".fit-width").removeClass("disabled");
             $(".fit-height").removeClass("disabled");
             {% if lines %}
-                if ( hasEditPermission("{{ role }}") && "{{ pageStatus }}" !== "GT" ) {
+                if ( hasEditPermission("{{ role }}") ) {
                     $("#editToggle").removeClass("disabled");
                     $("a[data-target='#saveChanges']").removeClass("disabled");
-                    $("#page_status").removeClass("disabled");
+                    if ( "{{ pageStatus }}" !== "GT" )
+                        $("#page_status").removeClass("disabled");
                 }
             {% endif %}
         }
@@ -684,10 +683,11 @@
             $(".fit-width").removeClass("disabled");
             $(".fit-height").removeClass("disabled");
             {% if lines %}
-                if ( hasEditPermission("{{ role }}") && "{{ pageStatus }}" !== "GT" )  {
+                if ( hasEditPermission("{{ role }}") )  {
                     $("#editToggle").removeClass("disabled");
                     $("a[data-target='#saveChanges']").removeClass("disabled");
-                    $("#page_status").removeClass("disabled");
+                    if ( "{{ pageStatus }}" !== "GT" )
+                        $("#page_status").removeClass("disabled");
                 }
             {% endif %}
         }
@@ -709,16 +709,15 @@
             $(".zoom-out").removeClass("disabled");
             $(".fit-width").removeClass("disabled");
             $(".fit-height").removeClass("disabled");
-            $("#editToggle").addClass("disabled");
-            $("a[data-target='#saveChanges']").addClass("disabled");
-            $("#page_status").addClass("disabled");
             {% if lines %}
-                /*if ( hasEditPermission("{{ role }}") && "{{ pageStatus }}" !== "GT" )  {
+                if ( hasEditPermission("{{ role }}") )  {
                     $("#editToggle").removeClass("disabled");
                     $("a[data-target='#saveChanges']").removeClass("disabled");
-                    $("#page_status").removeClass("disabled");
-                }*/
+                    if ( "{{ pageStatus }}" !== "GT" )
+                        $("#page_status").removeClass("disabled");
+                }
             {% endif %}
+            return;
         }
         else if ( target === "t" ) {
             ifc = "t";
@@ -734,15 +733,13 @@
             $(".zoom-out").addClass("disabled");
             $(".fit-width").addClass("disabled");
             $(".fit-height").addClass("disabled");
-            $("#editToggle").addClass("disabled");
-            $("a[data-target='#saveChanges']").addClass("disabled");
-            $("#page_status").addClass("disabled");
             {% if lines %}
-                /*if ( hasEditPermission("{{ role }}") && "{{ pageStatus }}" !== "GT" )  {
+                if ( hasEditPermission("{{ role }}") )  {
                     $("#editToggle").removeClass("disabled");
                     $("a[data-target='#saveChanges']").removeClass("disabled");
-                    $("#page_status").removeClass("disabled");
-                }*/
+                    if ( "{{ pageStatus }}" !== "GT" )
+                        $("#page_status").removeClass("disabled");
+                }
             {% endif %}
         }
         else {
@@ -778,11 +775,8 @@
                 $("line_" + obj[0]).html("");
             }
         });
-
-        currentLineId = oldLineId;
-        if ( window.location.href.indexOf("view") === -1 && "i" === ifc )
-            updateDialog(currentLineId);
         updateCanvas();
+        currentLineId = null;
         buildLineList();
         {# TODO Handle failures here or are we happy with the current solution? #}
     }
@@ -897,10 +891,11 @@
         $(".last-page").removeClass("disabled");
         $("a[aria-controls='thumbDiv']").removeClass("disabled");
         {% if lines %}
-            if ( hasEditPermission("{{ role }}") && "{{ pageStatus }}" !== "GT" )  {
+            if ( hasEditPermission("{{ role }}") )  {
                 $("#editToggle").removeClass("disabled");
                 $("a[data-target='#saveChanges']").removeClass("disabled");
-                $("#page_status").removeClass("disabled");
+                if ( "{{ pageStatus }}" !== "GT" )
+                    $("#page_status").removeClass("disabled");
             }
         {% endif %}
          refreshOriginalVersion();

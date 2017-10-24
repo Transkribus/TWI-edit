@@ -1,7 +1,8 @@
 var undoArray = [];
 var ctrlKey = false, metaKey = false, altKey = false;
 var caretOffsetInPixels = null;
-var saveCaretPixelOffset = false;
+var savedCaretOffsetInPixels = null;
+var oldWidthForCaretCalc;
 var selectionData = [];
 var contentLineFontSize = parseInt($('.line-list').css("font-size"));
 var wasDead = false;
@@ -15,7 +16,6 @@ var message_timeout;
 // TODO Check which.
 
 function keydown(e) {
-	console.log("key DOWN key: " + e.key);
 	keyDown = e.key; // needed to ensure that keys are processed in the right order and resolve issues with some not triggering this at all
 	if (e.which == 17 || e.which == 112 || e.which == 111) { // we handle CTRL like this because of one of the weirdest things I've ever come across. Any one of these (i.e. also F1 and divide) can be triggered when pressing CTRL.
 		ctrlKey = true;
@@ -25,7 +25,7 @@ function keydown(e) {
 				e.preventDefault();
 				bufferedKeys += e.key;
 				getInput(); // we make sure that the contenteditable is updated asap
-				updateSelectionData(); // redundant?
+				updateSelectionData(); // redundant? 
 			} else { // we allow input into the contenteditable since we're not busy
 				bufferedKeys += e.key;
 				keyIsDown = true;
@@ -37,13 +37,29 @@ function keydown(e) {
 		}
 	}
 }
+function initializeCaretOffsetInPixels() { 
+	var selection = window.getSelection();
+	if ( selection.anchorNode === null || selection.anchorNode.parentNode === null )
+		return;
+	var parentElement = selection.anchorNode.parentElement;
+	var hiddenCopy = $(parentElement).clone();
+	oldWidthForCaretCalc = $(parentElement).outerWidth();
+	$(hiddenCopy).text($(hiddenCopy).text().substr(0, selection.anchorOffset));
+	$(hiddenCopy).appendTo(parentElement);
+	caretOffsetInPixels = parentElement.offsetLeft + $(hiddenCopy).outerWidth();
+//	console.log("caret offset in pixels initialized to: " +  parentElement.offsetLeft + " + " + $(hiddenCopy).outerWidth() + " = " + caretOffsetInPixels + " and outer width: " + oldWidthForCaretCalc);
+	$(hiddenCopy).remove();
+	
+}
 function getInput() {
 	if (0 == bufferedKeys.length) // even if a keydown has emptied the buffer, a keyup might still bring us here unnecessarily
 		return;
-
 	var lineId = selectionData[0][0];
 	var newContent =  $("[id='text_" + lineId+ "']").text();
 	var inputLength = newContent.length - contentArray[getIndexFromLineId(selectionData[0][0])][1].length;
+	var newWidth = $("[id='text_" + lineId+ "']").outerWidth();
+	caretOffsetInPixels += newWidth - oldWidthForCaretCalc;
+	oldWidthForCaretCalc = newWidth;
 	var startPos = selectionData[0][1];
 	var endPos = startPos  + inputLength;
 	// TODO Make inputAction update selectionData? At least in these two cases it would make sense:
@@ -56,11 +72,10 @@ function getInput() {
 	// we get what's in the buffer BUT we don't get composite keys this way. However, in these cases the input has been really fast and there can't (!?) be any.
 	inputAction(bufferedKeys);
 	setSelectionData(lineId, startPos + bufferedKeys.length);
-	bufferedKeys = "";
+	bufferedKeys = "";	
 	keyIsDown = false; // we're not busy anymore
 }
 function keyup(e) { // TODO Refactor this. This now does more than before because we don't have keyPress and a different split between this and editAction might be better....
-	console.log("key UP key: " + e.key);
 	if (ctrlKey) { // see above why we do this
 		e.preventDefault(); // TODO what about cut and copy?
 		if (e.which == 17 || e.which == 112 || e.which == 111) // the weird behaviour
@@ -80,6 +95,7 @@ function keyup(e) { // TODO Refactor this. This now does more than before becaus
 }
 function mouseup(e) {
 	updateSelectionData();
+	initializeCaretOffsetInPixels() ;
 }
 function paste(e) {
 	e.preventDefault();
@@ -97,10 +113,11 @@ function cut(e) {
 function lineEditAction(editedLineId, startOffset, endOffset, textInjection) { // if no text injection is given, we just update the tags and assume that the input went straight to the "contenteditable", if startOffset > endOffset the action is a deletion (possibly followed by an injection into the same offset)
 	var contentDelta;
 	var injectionDelta = 0;
+	savedCaretOffsetInPixels = null;
 	if (arguments.length == 4) // this could set endOffset so that any given value is ignored because it makes no sense to consider that parameter in this case
 		injectionDelta = textInjection.length;
 	contentDelta = endOffset - startOffset + injectionDelta;
-	$("[tagLineId='" + editedLineId + "']").each(function () {
+	$("[tagLineId='" + editedLineId + "']:visible").each(function () {
 		var tagLength = parseInt($(this).attr("tagLength"));
 		if (tagLength) { // spans with set tagLengths are Transkribus tags
 			var tagOffset = parseInt($(this).attr("offset"));
@@ -170,16 +187,36 @@ function editAction(event) {
 		    		event.preventDefault();
 	    			typewriterPrevious(); // ...the expected behaviour is identical to this
 	    		} // otherwise we can let the caret simply move as normal
-			} else if (event.key == "ArrowDown" && ("i" === ifc || "t" === ifc)) {
+			} else if ((event.key == "ArrowDown" || event.key == "Enter") && ("i" === ifc || "t" === ifc)) {
 	    		if (getIndexFromLineId(editedLineId) == (getIndexFromLineId(currentLineId) + surroundingCount)) { // if there's no line left in the dialog to go to...
 	    			event.preventDefault();
 	    			typewriterNext(); // ...the expected behaviour is identical to this
 	    		} // otherwise we can let the caret simply move as normal
-	    	} else if (event.key == "Home") // In some cases the "parent" is the LI which doesn't yield the right offset in updateSelection
+	    	} else if (event.key == "Home") {// In some cases the "parent" is the LI which doesn't yield the right offset in updateSelection
 	    		selectionData = [[selectionData[0][0], 0, 0]];
-	    	else if (event.key == "End") { // same thing
+	    		savedCaretOffsetInPixels = null;
+	    		restoreSelection();
+	    		initializeCaretOffsetInPixels();
+	    	} else if (event.key == "End") { // same thing
 	    		var lineLength = contentArray[getIndexFromLineId(editedLineId)][1].length;
 	    		selectionData = [[selectionData[0][0], lineLength, lineLength]];
+	    		savedCaretOffsetInPixels = null;
+	    		restoreSelection();
+	    		initializeCaretOffsetInPixels();
+	    	} else if (event.key == "ArrowLeft"){
+	    		event.preventDefault();
+	    		var newIndex = Math.max(selectionData[0][1] - 1, 0);
+	    		selectionData = [[selectionData[0][0], newIndex, newIndex]];
+	    		savedCaretOffsetInPixels = null;
+	    		restoreSelection();
+	    		initializeCaretOffsetInPixels();
+	    	} else if (event.key == "ArrowRight"){
+	    		event.preventDefault();
+	    		var newIndex = Math.min(selectionData[0][1] + 1, contentArray[getIndexFromLineId(editedLineId)][1].length);
+	    		selectionData = [[selectionData[0][0], newIndex, newIndex]];
+	    		savedCaretOffsetInPixels = null;
+	    		restoreSelection();
+	    		initializeCaretOffsetInPixels();
 	    	}
 	    	return;
 	    }
@@ -207,6 +244,7 @@ function editAction(event) {
 			selectionData = [[editedLineId, endOffset, endOffset]];
 	}
 	buildLineList();
+	initializeCaretOffsetInPixels();
 }
 function undoAction() {
 	for (var i = 0; i < undoArray.length; i++) {
@@ -219,7 +257,7 @@ function undoAction() {
 function inputAction(text) { // TODO This can and should be sped up now that it's used a lot. And renamed.
 	text = text.replace(" ", "\u00A0");
 	if (!changed)
-		setMessage(transUnsavedChanges, 'warning', false);
+		setMessage(transUnsavedChanges);
 	changed = true;
 	var lines = text.split("\n");
 	if ( selectionData === undefined || selectionData[0] === undefined )
@@ -299,10 +337,6 @@ function setSelectionData(lineId, startOffset, endOffset) { // set the selection
 	selectionData = [[lineId, startOffset, endOffset]];
 }
 function updateSelectionData() { // call after user inputs to put selection information into a more usable format in a 2D array [[lineId, selection start offset, selection end offset], [...]]
-	if (!saveCaretPixelOffset) // unless the previous call was a "typewriter step"...
-		caretOffsetInPixels = null; // ...we forget the old offset
-	else
-		saveCaretPixelOffset = false; // we don't reset the offset this time (but will do next time unless told otherwise)
 	var selection = window.getSelection();
 	if ( selection.anchorNode === null || selection.anchorNode.parentNode === null )
 		return;
@@ -338,6 +372,7 @@ function updateSelectionData() { // call after user inputs to put selection info
 	}
 }
 function restoreSelection() {
+	//console.log("restoring selection");
 	if (selectionData.length === 0) { // the stuff below is necessary to restore the caret
 		var range = document.createRange();
 		var sel = window.getSelection();
@@ -349,12 +384,12 @@ function restoreSelection() {
 	var begCharCount = selectionData[0][1];
 	var endCharCount = selectionData[selectionData.length - 1][2];
 	var bElement, eElement;
-	$("[tagLineId='" + selectionData[0][0] + "']").each(function () { // line where the selection begins
+	$("[tagLineId='" + selectionData[0][0] + "']:visible").each(function () { // line where the selection begins
 		if ($(this).attr("spanoffset") > begCharCount)
 			return false; // bElement now = the span before the intended caret position
 		bElement = $(this);
 	});
-	$("[tagLineId='" + selectionData[selectionData.length - 1][0] + "']").each(function () { // line where the selection ends
+	$("[tagLineId='" + selectionData[selectionData.length - 1][0] + "']:visible").each(function () { // line where the selection ends
 		if ($(this).attr("spanoffset") > endCharCount)
 			return false; // eElement now = the span before the intended caret position
 		eElement = $(this);
@@ -363,12 +398,14 @@ function restoreSelection() {
 		return;
 	var range = document.createRange();
 	var test = bElement[0].firstChild === null ? bElement[0] : bElement[0].firstChild;
+	
 	range.setStart(bElement[0].firstChild === null ? bElement[0] : bElement[0].firstChild, begCharCount - bElement.attr("spanoffset"));
 	range.setEnd(eElement[0].firstChild === null ? eElement[0] : eElement[0].firstChild, endCharCount - eElement.attr("spanoffset"));
+	
 	var sel = window.getSelection();
+	eElement.focus();
 	sel.removeAllRanges();
 	sel.addRange(range);
-	eElement.focus(); // TODO Remove unless this solves the problem with loss of focus.
 }
 function pixelsToCharOffset(element, pixels) { // returns the character index within the element which best corresponds to the no. of pixels given
 	var hiddenCopy = $(element).clone();
@@ -448,7 +485,7 @@ function getLineLiWithTags(tagLineId, idPrefix) { // generates a line with spans
 		var backgroundHeight = lineY + bottomPadding;
 		// generate lines with spans showing the tags...
 		var tagStack = [];
-		var tagString = '<li value="' + lineNo + '" spanOffset="0" class="tag-menu ' + (window.location.href.indexOf("view") >= 0 ? 'context-menu-disabled' : '') + '" id="' + prefix + '_' + tagLineId + '" spellcheck="false"' + highlightCurrent
+		var tagString = '<li value="' + lineNo + '" spanOffset="0" class="tag-menu" id="' + prefix + '_' + tagLineId + '" spellcheck="false"' + highlightCurrent
 									+ '><div style="padding-bottom: ' + bottomPadding + 'px; ' + 'min-height: ' + backgroundHeight + 'px;">';
 		var rangeBegin;
 		var keepOpenStack = [];
@@ -536,7 +573,7 @@ function getLineLiWithTags(tagLineId, idPrefix) { // generates a line with spans
 		tagString += '<span tagLineId="' + tagLineId + '" spanOffset="' + rangeBegin + '">' + remainder + '</span></div></li>';
 		return tagString;
 	} else
-		return '<li value="' + lineNo + '" class="tag-menu ' + (window.location.href.indexOf("view") >= 0 ? 'context-menu-disabled' : '') + '" id="' + prefix + '_' + tagLineId + '" spellcheck="false"' + highlightCurrent + '><div style="min-height: ' + backgroundHeight + 'px;"><span tagLineId="' + tagLineId + '" spanOffset="0">' + lineUnicode + '</span></div></li>';
+		return '<li value="' + lineNo + '" class="tag-menu" id="' + prefix + '_' + tagLineId + '" spellcheck="false"' + highlightCurrent + '><div style="min-height: ' + backgroundHeight + 'px;"><span tagLineId="' + tagLineId + '" spanOffset="0">' + lineUnicode + '</span></div></li>';
 }
 
 // utils
@@ -560,7 +597,7 @@ function contenteditableToArray(lineId, overwriteText) { // converts an editable
 		contentArray[lineIndex][1] = $("#text_" + lineId).text().replace(/\u200B/g,''); // remove the zero width space!!!
 }
 function buildLineList() {
-	console.log("building line list!");
+	//console.log("building line list!");
 	var index;
 	if ( $(".transcript-div").is(":visible") && currentLineId !== undefined && correctModal.isOpen()) { // TODO A better test? This works but sbs below also has transcript-div :visible...
 		var currentIdx = getIndexFromLineId(currentLineId);
@@ -606,19 +643,9 @@ function resizeText(delta) {
 }
 function typewriterMove(newLineId, caretLineId) {
 	if (newLineId != null && selectionData !== undefined && selectionData[0] !== undefined ) {
-		if (null === caretOffsetInPixels) { // if we don't have a stored offset in pixels, we calculate it, otherwise we use it
-			// get the relative caret offset in pixels...
-			var selection = window.getSelection();
-			if ( selection.anchorNode === null || selection.anchorNode.parentNode === null )
-				return;
-			var parentElement = selection.anchorNode.parentElement;
-			var hiddenCopy = $(parentElement).clone();
-			$(hiddenCopy).text($(hiddenCopy).text().substr(0, selection.anchorOffset));
-			$(hiddenCopy).appendTo(parentElement);
-			caretOffsetInPixels = parentElement.offsetLeft + $(hiddenCopy).outerWidth();
-			$(hiddenCopy).remove();
-		}
-		saveCaretPixelOffset = true; // set this since if the very first user action after this is also a "typewriter step" we will use the same offset
+		currentLineId = newLineId;
+		if (null === savedCaretOffsetInPixels)
+			savedCaretOffsetInPixels = caretOffsetInPixels;
 		// TODO Move the caret down even when we cannot make the lines move anymore?
 		// TODO Remove this if our users approve of the new behaviour.
 		//typewriterStep(newLineId, (contentArray[Math.min(getIndexFromLineId(newLineId), contentArray.length - 1)][2][5]) - Math.round(contentArray[Math.min(getIndexFromLineId(currentLineId), contentArray.length - 1)][2][5]));
@@ -626,8 +653,8 @@ function typewriterMove(newLineId, caretLineId) {
 		updateCanvas();
 		// get the closest span offset on the new line
 		var span, spanOffset;
-		$("[tagLineId=" + caretLineId + "]").each(function() {
-			if (this.offsetLeft < caretOffsetInPixels) {
+		$("[tagLineId=" + caretLineId + "]:visible").each(function() {
+			if (this.offsetLeft < savedCaretOffsetInPixels) {
 				span = this;
 				spanOffset = this.offsetLeft;
 			}
@@ -642,7 +669,7 @@ function typewriterMove(newLineId, caretLineId) {
 			$(hiddenCopy).appendTo(span);
 			cB = $(hiddenCopy).outerWidth();
 			$(hiddenCopy).remove();
-			if ((cB + cA) / 2 > (caretOffsetInPixels - spanOffset)) // we want the offset which is closest to this
+			if ((cB + cA) / 2 > (savedCaretOffsetInPixels - spanOffset)) // we want the offset which is closest to this
 				break;
 			cA = cB;
 		}

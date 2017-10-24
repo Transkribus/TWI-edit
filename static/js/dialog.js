@@ -84,6 +84,7 @@ function updateDialog(lineId) { // This function can be called without a line ID
 		$("#correctModal").css("left",  dialogX + "px");
 		$("#correctModal").css("top",  dialogY + "px");
 		updateDocking(); // We restore the dialog to a docked state, if it was docked when closed
+		initializeCaretOffsetInPixels();
 	} else {
 		var oldDeltaX = contentArray[getIndexFromLineId(currentLineId)][2][0] * initialScale * zoomFactor - accumExtraX - $("#correctModal").offset().left;
 		var oldDeltaY = contentArray[getIndexFromLineId(currentLineId)][2][1] * initialScale * zoomFactor - accumExtraY - $("#correctModal").offset().top;
