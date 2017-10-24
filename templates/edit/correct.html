@@ -213,11 +213,14 @@
 							e.preventDefault();
 					});
 					$("#line_{{ line|get_item:"@id" }}").on("mouseup", function(e) {
+                        console.log("line mouseup", "{{ line|get_item:"@id" }}");
 						if ( window.location.href.indexOf('edit') >= 0 ) {
+                            console.log("is edit");
 							if ( currentLineId !== "{{ line|get_item:"@id" }}" ) {
-								var sel = window.getSelection();
+                                console.log(currentLineId, "{{ line|get_item:"@id" }}");
+								/*var sel = window.getSelection();
 								sel.removeAllRanges();
-								selectionData = [["{{ line|get_item:"@id" }}", 0, 0]];
+								selectionData = [["{{ line|get_item:"@id" }}", 0, 0]];*/
 								currentLineId = "{{ line|get_item:"@id" }}";
 								updateCanvas();
 								buildLineList();
@@ -660,11 +663,10 @@
             $(".fit-width").removeClass("disabled");
             $(".fit-height").removeClass("disabled");
             {% if lines %}
-                if ( hasEditPermission("{{ role }}") ) {
+                if ( hasEditPermission("{{ role }}") && "{{ pageStatus }}" !== "GT" ) {
                     $("#editToggle").removeClass("disabled");
                     $("a[data-target='#saveChanges']").removeClass("disabled");
-                    if ( "{{ pageStatus }}" !== "GT" )
-                        $("#page_status").removeClass("disabled");
+                    $("#page_status").removeClass("disabled");
                 }
             {% endif %}
         }
@@ -683,11 +685,10 @@
             $(".fit-width").removeClass("disabled");
             $(".fit-height").removeClass("disabled");
             {% if lines %}
-                if ( hasEditPermission("{{ role }}") )  {
+                if ( hasEditPermission("{{ role }}") && "{{ pageStatus }}" !== "GT" )  {
                     $("#editToggle").removeClass("disabled");
                     $("a[data-target='#saveChanges']").removeClass("disabled");
-                    if ( "{{ pageStatus }}" !== "GT" )
-                        $("#page_status").removeClass("disabled");
+                    $("#page_status").removeClass("disabled");
                 }
             {% endif %}
         }
@@ -710,11 +711,10 @@
             $(".fit-width").removeClass("disabled");
             $(".fit-height").removeClass("disabled");
             {% if lines %}
-                if ( hasEditPermission("{{ role }}") )  {
+                if ( hasEditPermission("{{ role }}") && "{{ pageStatus }}" !== "GT" )  {
                     $("#editToggle").removeClass("disabled");
                     $("a[data-target='#saveChanges']").removeClass("disabled");
-                    if ( "{{ pageStatus }}" !== "GT" )
-                        $("#page_status").removeClass("disabled");
+                    $("#page_status").removeClass("disabled");
                 }
             {% endif %}
             return;
@@ -734,11 +734,10 @@
             $(".fit-width").addClass("disabled");
             $(".fit-height").addClass("disabled");
             {% if lines %}
-                if ( hasEditPermission("{{ role }}") )  {
+                if ( hasEditPermission("{{ role }}") && "{{ pageStatus }}" !== "GT" )  {
                     $("#editToggle").removeClass("disabled");
                     $("a[data-target='#saveChanges']").removeClass("disabled");
-                    if ( "{{ pageStatus }}" !== "GT" )
-                        $("#page_status").removeClass("disabled");
+                    $("#page_status").removeClass("disabled");
                 }
             {% endif %}
         }
