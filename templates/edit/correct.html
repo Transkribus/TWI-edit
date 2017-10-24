@@ -214,15 +214,11 @@
 					});
 					$("#line_{{ line|get_item:"@id" }}").on("mouseup", function(e) {
 						if ( window.location.href.indexOf('edit') >= 0 ) {
-							if ( currentLineId !== "{{ line|get_item:"@id" }}" ) {
-								var sel = window.getSelection();
-								sel.removeAllRanges();
-								selectionData = [["{{ line|get_item:"@id" }}", 0, 0]];
+							if ( currentLineId !== "{{ line|get_item:"@id" }}" )
 								currentLineId = "{{ line|get_item:"@id" }}";
-								updateCanvas();
-								buildLineList();
-							}
 							mouseup(e);
+                            updateCanvas();
+                            buildLineList();
 						}
 					});
 					$("#line_{{ line|get_item:"@id" }}").on("paste", function(e) {
@@ -767,6 +763,7 @@
             }
             if ( $(".interface-lbl").is(":visible") ) {
                 currentLineId = obj[0];
+                buildLineList();
             }
             if ( $(".interface-t").is(":visible") ) {
                 $("line_" + obj[0]).html("");
@@ -890,11 +887,10 @@
         $(".last-page").removeClass("disabled");
         $("a[aria-controls='thumbDiv']").removeClass("disabled");
         {% if lines %}
-            if ( hasEditPermission("{{ role }}") )  {
+            if ( hasEditPermission("{{ role }}") || "{{ pageStatus }}" !== "GT" )  {
                 $("#editToggle").removeClass("disabled");
                 $("a[data-target='#saveChanges']").removeClass("disabled");
-                if ( "{{ pageStatus }}" !== "GT" )
-                    $("#page_status").removeClass("disabled");
+                $("#page_status").removeClass("disabled");
             }
         {% endif %}
          refreshOriginalVersion();
