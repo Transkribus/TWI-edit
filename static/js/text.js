@@ -485,7 +485,7 @@ function getLineLiWithTags(tagLineId, idPrefix) { // generates a line with spans
 		var backgroundHeight = lineY + bottomPadding;
 		// generate lines with spans showing the tags...
 		var tagStack = [];
-		var tagString = '<li value="' + lineNo + '" spanOffset="0" class="tag-menu" id="' + prefix + '_' + tagLineId + '" spellcheck="false"' + highlightCurrent
+		var tagString = '<li value="' + lineNo + '" spanOffset="0" class="tag-menu ' + (window.location.href.indexOf("view") >= 0 ? 'context-menu-disabled' : '') + '" id="' + prefix + '_' + tagLineId + '" spellcheck="false"' + highlightCurrent
 									+ '><div style="padding-bottom: ' + bottomPadding + 'px; ' + 'min-height: ' + backgroundHeight + 'px;">';
 		var rangeBegin;
 		var keepOpenStack = [];
@@ -573,7 +573,7 @@ function getLineLiWithTags(tagLineId, idPrefix) { // generates a line with spans
 		tagString += '<span tagLineId="' + tagLineId + '" spanOffset="' + rangeBegin + '">' + remainder + '</span></div></li>';
 		return tagString;
 	} else
-		return '<li value="' + lineNo + '" class="tag-menu" id="' + prefix + '_' + tagLineId + '" spellcheck="false"' + highlightCurrent + '><div style="min-height: ' + backgroundHeight + 'px;"><span tagLineId="' + tagLineId + '" spanOffset="0">' + lineUnicode + '</span></div></li>';
+		return '<li value="' + lineNo + '" class="tag-menu ' + (window.location.href.indexOf("view") >= 0 ? 'context-menu-disabled' : '') + '" id="' + prefix + '_' + tagLineId + '" spellcheck="false"' + highlightCurrent + '><div style="min-height: ' + backgroundHeight + 'px;"><span tagLineId="' + tagLineId + '" spanOffset="0">' + lineUnicode + '</span></div></li>';
 }
 
 // utils
@@ -616,7 +616,7 @@ function buildLineList() {
 			index++;
 		}
 	}
-	if ("sbs" === ifc) {
+	if ( $("#compareText").is(":visible") ) {
 		if ($("#your").is(":visible"))
 			for (index = 1; index <= contentArray.length - 1; index++)
 				$("#yourVersion").append(getLineLiWithTags(contentArray[index][0]));

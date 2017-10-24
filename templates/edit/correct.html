@@ -213,14 +213,11 @@
 							e.preventDefault();
 					});
 					$("#line_{{ line|get_item:"@id" }}").on("mouseup", function(e) {
-                        console.log("line mouseup", "{{ line|get_item:"@id" }}");
 						if ( window.location.href.indexOf('edit') >= 0 ) {
-                            console.log("is edit");
 							if ( currentLineId !== "{{ line|get_item:"@id" }}" ) {
-                                console.log(currentLineId, "{{ line|get_item:"@id" }}");
-								/*var sel = window.getSelection();
+								var sel = window.getSelection();
 								sel.removeAllRanges();
-								selectionData = [["{{ line|get_item:"@id" }}", 0, 0]];*/
+								selectionData = [["{{ line|get_item:"@id" }}", 0, 0]];
 								currentLineId = "{{ line|get_item:"@id" }}";
 								updateCanvas();
 								buildLineList();
@@ -643,6 +640,7 @@
    		checkPageNumberInput();
 	});
     function changeInterface(target) {
+        var oldLineId = currentLineId;
         currentLineId = null;
 
         if ( target === "i" ) {
@@ -774,8 +772,10 @@
                 $("line_" + obj[0]).html("");
             }
         });
+        currentLineId = oldLineId;
+        if ( window.location.href.indexOf("view") === -1 && "i" === ifc )
+            updateDialog(currentLineId);
         updateCanvas();
-        currentLineId = null;
         buildLineList();
         {# TODO Handle failures here or are we happy with the current solution? #}
     }
