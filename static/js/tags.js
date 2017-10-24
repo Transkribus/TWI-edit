@@ -53,7 +53,7 @@ function toggleTag(toggleTag) { // sets/removes the tag depending on whether the
 	if (!removeTag(toggleTag)) // if the tag can be removed, we do that...
 		applyTag(toggleTag);// ...but otherwise we apply it
 	if (!changed)
-		setMessage(transUnsavedChanges);
+		setMessage(transUnsavedChanges, 'warning', false);
 	changed = true;
 }
 function removeTag(removeTag, everywhere) { // Removes the given tag from the selection and everywhere, if the second parameter is true. Returns true if removals were made, otherwise false.
@@ -219,6 +219,8 @@ function getSortedCustomTagArray(tagLineIndex, filterTag) { // returns an array 
 function contextMenuOpenable(contextMenuEvent) { // ensures that the caret is also moved when the user clicks the right mouse button unless the tag menu should be opened to set tags to a new selection, sets the contextMenuOk flag
 	if ("" != selectionData && (selectionData.length > 1 || (selectionData[0][1] != selectionData[0][2]))) // have we got a non-zero length selection? if so, the user wants to set tags to the selection and we thus don't move the caret
 		return true;
+	if ( window.location.href.indexOf("view") >= 0 )
+		return false;
 	var line;
 	$("[id^='text_']").each(function() { // first find the line on which the click was
 		var y = 0, testElement = this;

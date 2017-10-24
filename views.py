@@ -67,12 +67,11 @@ def proofread(request, collId, docId, page, transcriptId=None):# TODO Decide whe
                     line.find('{http://schema.primaresearch.org/PAGE/gts/pagecontent/2013-07-15}TextEquiv').find('{http://schema.primaresearch.org/PAGE/gts/pagecontent/2013-07-15}Unicode').text = modified_text
                 regionTextEquiv += modified_text +"\r\n"
             text_region.find('{http://schema.primaresearch.org/PAGE/gts/pagecontent/2013-07-15}TextEquiv').find('{http://schema.primaresearch.org/PAGE/gts/pagecontent/2013-07-15}Unicode').text = regionTextEquiv
-        t.save_transcript(request, ElementTree.tostring(transcript_root), collId, docId, page)
+        t.save_transcript(request, ElementTree.tostring(transcript_root), collId, docId, page, transcriptId)
         current_transcript = t.current_transcript(request, collId, docId, page)# We want the updated transcript now.
         if isinstance(current_transcript,HttpResponse):
             return apps.utils.views.error_view(request,current_transcript)
-        success_message = str(_("Transcript saved!"))
-        return HttpResponse("<div class='alert alert-success'>" + success_message + "</div>", content_type="text/plain")
+        return HttpResponse(str(_("Transcript saved!")), content_type="text/plain")
     else:
         regions=transcript.get("PcGts").get("Page").get("TextRegion");
 
@@ -152,8 +151,12 @@ def correct(request, collId, docId, page=None, transcriptId=None):# TODO Decide 
                     modified_text = modified_content.get("Unicode")
                     regionTextEquiv += modified_text +"\r\n"
                     line.find('{http://schema.primaresearch.org/PAGE/gts/pagecontent/2013-07-15}TextEquiv').find('{http://schema.primaresearch.org/PAGE/gts/pagecontent/2013-07-15}Unicode').text = modified_text
-                text_region.find('{http://schema.primaresearch.org/PAGE/gts/pagecontent/2013-07-15}TextEquiv').find('{http://schema.primaresearch.org/PAGE/gts/pagecontent/2013-07-15}Unicode').text = regionTextEquiv
-            t.save_transcript(request, ElementTree.tostring(transcript_root), collId, docId, page)
+                #RM not sure what this bit is for but it was triggering a can't find() on noneType
+                #error so best to check the fing we are calling find() on is not None
+                text_equiv = text_region.find('{http://schema.primaresearch.org/PAGE/gts/pagecontent/2013-07-15}TextEquiv')
+                if text_equiv:
+                    text_equiv.find('{http://schema.primaresearch.org/PAGE/gts/pagecontent/2013-07-15}Unicode').text = regionTextEquiv
+            t.save_transcript(request, ElementTree.tostring(transcript_root), collId, docId, page, transcriptId)
             current_transcript = t.current_transcript(request, collId, docId, page)# We want the updated transcript now.
             #RM add some error catching (though somewhat suboptimal)
             if isinstance(current_transcript,HttpResponse):
@@ -219,6 +222,15 @@ def correct(request, collId, docId, page=None, transcriptId=None):# TODO Decide 
         for thumb_page in pages:
             thumb_urls.append(escape(thumb_page.get("thumbUrl")).replace("&amp;", "&"))# The JavaScript must get the strings like this.
 
+        pageStatus = document.get('pageList').get('pages')[int(page) - 1].get("tsList").get('transcripts')[0].get('status')
+        if pageStatus == 'GT' and 'edit' in request.path:
+            t_log('Redirect user back to view mode since page status is GT. [from: %s to: %s]' % (request.get_full_path(), request.get_full_path().replace('edit', 'view')))
+            return HttpResponseRedirect(request.get_full_path().replace('edit', 'view'))
+        i = request.GET.get('i') if request.GET.get('i') else 'i'
+        if i == 'sbs' or i == 't' and 'edit' in request.path:
+            t_log('Redirect user back to view mode since interface "sbs" and "t" do not support edit. [from: %s to: %s]' % (request.get_full_path(), request.get_full_path().replace('edit', 'view')))
+            return HttpResponseRedirect(request.get_full_path().replace('edit', 'view'))
+
         tags = [
             {"name": "abbrev", "color": "FF0000"},
             {"name": "date", "color": "0000FF"},
@@ -231,7 +243,7 @@ def correct(request, collId, docId, page=None, transcriptId=None):# TODO Decide 
         #RM defined the dict for all the stuff going to the view so...
         view_data = {
                  'imageUrl': document.get('pageList').get('pages')[int(page) - 1].get("url"),
-                 'pageStatus': document.get('pageList').get('pages')[int(page) - 1].get("tsList").get('transcripts')[0].get('status'),
+                 'pageStatus': pageStatus,
                  'lines': lineList,
                  'thumbArray': "['" + "', '".join(thumb_urls) + "']",
                  'collId': collId,
@@ -240,7 +252,7 @@ def correct(request, collId, docId, page=None, transcriptId=None):# TODO Decide 
                  'title': document.get('md').get('title'),
                  'pageNo': page,
                  'tags': tags,
-                 'i': request.GET.get('i') if request.GET.get('i') else 'i',
+                 'i': i,
                  'role': role,
 		         'metadata' : document.get('md'),
                  #'regionData': regionData,

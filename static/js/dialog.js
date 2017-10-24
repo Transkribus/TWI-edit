@@ -60,6 +60,8 @@ function updateDialog(lineId) { // This function can be called without a line ID
 		if (1 == arguments.length) // can this happen anymore?
 			currentLineId = lineId;
 		var lineIdx = getIndexFromLineId(currentLineId);
+		if ( contentArray[lineIdx] === undefined )
+			return;
 		var endOfLine = contentArray[lineIdx][1].length;
 		setSelectionData(currentLineId, endOfLine, endOfLine);
 		correctModal.open();

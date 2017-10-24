@@ -9,6 +9,7 @@ var wasDead = false;
 var keyDown;
 var bufferedKeys = "";
 var keyIsDown = false;
+var message_timeout;
 // these vars must be initialized when importing this JavaScript
 // surroundingCount, currentLineId, view, changed
 // these JavaScripts must also be imported
@@ -704,10 +705,16 @@ function typewriterStep(newLineId, delta) { // TODO Remove this function unless 
 	if ( prev )
 		$("#options_" + prev).hide();
 }
-function setMessage(message, type) {
+function setMessage(message, type, timeout=true) {
+	clearTimeout(message_timeout);
 	type = type || "warning";
 	$("#message").removeClass("btn-muted btn-primary btn-success btn-info btn-warning btn-danger");
 	$("#message").html(message);
 	$("#message").addClass("btn-" + type);
 	$("#message").show();
+	if ( timeout )
+		message_timeout = setTimeout(function() {
+			$("#message").html("");
+			$("#message").hide();
+		}, 5000);
 }
