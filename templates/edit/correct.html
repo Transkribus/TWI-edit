@@ -48,6 +48,7 @@
 	var isDragged = false;
 	var resizeTimeout;
     var pageStatus = "{{ pageStatus }}";
+    var pageStatusNotAllowedTrans = "{% trans "You can not change the page status." %}";
 	var zoomFactor = 1;
 	var ifc = "{{ i }}";
 	var tagItems = {
@@ -213,15 +214,11 @@
 					});
 					$("#line_{{ line|get_item:"@id" }}").on("mouseup", function(e) {
 						if ( window.location.href.indexOf('edit') >= 0 ) {
-							if ( currentLineId !== "{{ line|get_item:"@id" }}" ) {
-								var sel = window.getSelection();
-								sel.removeAllRanges();
-								selectionData = [["{{ line|get_item:"@id" }}", 0, 0]];
+							if ( currentLineId !== "{{ line|get_item:"@id" }}" )
 								currentLineId = "{{ line|get_item:"@id" }}";
-								updateCanvas();
-								buildLineList();
-							}
 							mouseup(e);
+                            updateCanvas();
+                            buildLineList();
 						}
 					});
 					$("#line_{{ line|get_item:"@id" }}").on("paste", function(e) {
@@ -413,6 +410,7 @@
 
 	$("a[data-target='#saveChanges']").click(function(e) {
 		saveChanges(e);
+        setPageStatus("{{ role }}", "IN_PROGRESS", "{% trans "Page status: in progress" %}")
 	});
     $("a[data-target='#page_status']").click(function(e) {
         {# TODO Handle failures here or are we happy with the current solution? #}
@@ -420,31 +418,28 @@
             if ( pageStatus === "NEW" || pageStatus === "IN_PROGRESS" )
                 $.post(window.location.href, {status: "DONE", csrfmiddlewaretoken: "{{ csrf_token }}"}, function( data ) {
                     setMessage(data, "success");
-                    $("#page_status").html("{% trans "Page status: done" %}");
-                    pageStatus = "DONE";
+                    setPageStatus("{{ role }}", "DONE", "{% trans "Page status: done" %}")
                 });
             else if ( pageStatus === "DONE" )
                 $.post(window.location.href, {status: "IN_PROGRESS", csrfmiddlewaretoken: "{{ csrf_token }}"}, function( data ) {
                     setMessage(data, "success");
-                    $("#page_status").html("{% trans "Page status: in progress" %}");
-                    pageStatus = "IN_PROGRESS";
+                    setPageStatus("{{ role }}", "IN_PROGRESS", "{% trans "Page status: in progress" %}")
                 });
             else
-                setMessage("{% trans "You can not change the page status." %}", "danger");
+                setMessage(pageStatusNotAllowedTrans, "danger", false);
         }
         else if ( "{{ role }}" === "Editor" || "{{ role }}" === "Owner" || "{{ role }}" === "Admin" )
             $.post(window.location.href, {status: e.currentTarget.name, csrfmiddlewaretoken: "{{ csrf_token }}"}, function( data ) {
                 setMessage(data, "success");
                 if ( e.currentTarget.name === "IN_PROGRESS" )
-                    $("#page_status").html("{% trans "Page status: in progress" %}<span class=\"caret\"></span>");
+                    setPageStatus("{{ role }}", "IN_PROGRESS", "{% trans "Page status: in progress" %}")
                 else if ( e.currentTarget.name === "DONE" )
-                    $("#page_status").html("{% trans "Page status: done" %}<span class=\"caret\"></span>");
+                    setPageStatus("{{ role }}", "DONE", "{% trans "Page status: done" %}")
                 else if ( e.currentTarget.name === "FINAL" )
-                    $("#page_status").html("{% trans "Page status: final" %}<span class=\"caret\"></span>");
-                pageStatus = e.currentTarget.name;
+                    setPageStatus("{{ role }}", "FINAL", "{% trans "Page status: final" %}")
             });
         else
-            setMessage("{% trans "You can not change the page status." %}", "danger");
+            setMessage(pageStatusNotAllowedTrans, "danger", false);
 	});
 	$("a[data-target='#toggleEdit']").click(function(e) {
     	e.preventDefault();
@@ -641,6 +636,7 @@
    		checkPageNumberInput();
 	});
     function changeInterface(target) {
+        var oldLineId = currentLineId;
         currentLineId = null;
 
         if ( target === "i" ) {
@@ -661,11 +657,10 @@
             $(".fit-width").removeClass("disabled");
             $(".fit-height").removeClass("disabled");
             {% if lines %}
-                if ( hasEditPermission("{{ role }}") ) {
+                if ( hasEditPermission("{{ role }}") && "{{ pageStatus }}" !== "GT" ) {
                     $("#editToggle").removeClass("disabled");
                     $("a[data-target='#saveChanges']").removeClass("disabled");
-                    if ( "{{ pageStatus }}" !== "GT" )
-                        $("#page_status").removeClass("disabled");
+                    $("#page_status").removeClass("disabled");
                 }
             {% endif %}
         }
@@ -684,11 +679,10 @@
             $(".fit-width").removeClass("disabled");
             $(".fit-height").removeClass("disabled");
             {% if lines %}
-                if ( hasEditPermission("{{ role }}") )  {
+                if ( hasEditPermission("{{ role }}") && "{{ pageStatus }}" !== "GT" )  {
                     $("#editToggle").removeClass("disabled");
                     $("a[data-target='#saveChanges']").removeClass("disabled");
-                    if ( "{{ pageStatus }}" !== "GT" )
-                        $("#page_status").removeClass("disabled");
+                    $("#page_status").removeClass("disabled");
                 }
             {% endif %}
         }
@@ -711,12 +705,11 @@
             $(".fit-width").removeClass("disabled");
             $(".fit-height").removeClass("disabled");
             {% if lines %}
-                if ( hasEditPermission("{{ role }}") )  {
+                /*if ( hasEditPermission("{{ role }}") && "{{ pageStatus }}" !== "GT" )  {
                     $("#editToggle").removeClass("disabled");
                     $("a[data-target='#saveChanges']").removeClass("disabled");
-                    if ( "{{ pageStatus }}" !== "GT" )
-                        $("#page_status").removeClass("disabled");
-                }
+                    $("#page_status").removeClass("disabled");
+                }*/
             {% endif %}
             return;
         }
@@ -735,12 +728,11 @@
             $(".fit-width").addClass("disabled");
             $(".fit-height").addClass("disabled");
             {% if lines %}
-                if ( hasEditPermission("{{ role }}") )  {
+                /*if ( hasEditPermission("{{ role }}") && "{{ pageStatus }}" !== "GT" )  {
                     $("#editToggle").removeClass("disabled");
                     $("a[data-target='#saveChanges']").removeClass("disabled");
-                    if ( "{{ pageStatus }}" !== "GT" )
-                        $("#page_status").removeClass("disabled");
-                }
+                    $("#page_status").removeClass("disabled");
+                }*/
             {% endif %}
         }
         else {
@@ -771,13 +763,16 @@
             }
             if ( $(".interface-lbl").is(":visible") ) {
                 currentLineId = obj[0];
+                buildLineList();
             }
             if ( $(".interface-t").is(":visible") ) {
                 $("line_" + obj[0]).html("");
             }
         });
+        currentLineId = oldLineId;
+        if ( window.location.href.indexOf("view") === -1 && "i" === ifc )
+            updateDialog(currentLineId);
         updateCanvas();
-        currentLineId = null;
         buildLineList();
         {# TODO Handle failures here or are we happy with the current solution? #}
     }
@@ -809,7 +804,7 @@
 		toggleTag($(e.target).prop("name").substr(19)); // "context-menu-input-".length is 19
 	});
 	$(window).on("load", function() {
-		initialWidth = $('#transcriptImage').width();
+		initialWidth = $('#transcriptImage').width() ? $('#transcriptImage').width() : window.innerWidth;
 		initialHeight = $('#transcriptImage').height();
 		naturalWidth = $('#transcriptImage').get(0).naturalWidth;
         $("#canvas_text").width(window.innerWidth - 50);
@@ -892,11 +887,10 @@
         $(".last-page").removeClass("disabled");
         $("a[aria-controls='thumbDiv']").removeClass("disabled");
         {% if lines %}
-            if ( hasEditPermission("{{ role }}") )  {
+            if ( hasEditPermission("{{ role }}") || "{{ pageStatus }}" !== "GT" )  {
                 $("#editToggle").removeClass("disabled");
                 $("a[data-target='#saveChanges']").removeClass("disabled");
-                if ( "{{ pageStatus }}" !== "GT" )
-                    $("#page_status").removeClass("disabled");
+                $("#page_status").removeClass("disabled");
             }
         {% endif %}
          refreshOriginalVersion();
@@ -927,6 +921,7 @@
             if ( String.fromCharCode(e.which).toLowerCase() === "s" ) {
                 e.preventDefault();
                 saveChanges(e);
+                setPageStatus("{{ role }}", "IN_PROGRESS", "{% trans "Page status: in progress" %}")
             }
             else if ( e.charCode === 0 )
                 ctrlKey = true;

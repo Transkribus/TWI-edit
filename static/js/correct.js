@@ -27,7 +27,7 @@ function resizeContents() { // Call to perform necessary updates of contents and
    	var widthFactor = window.innerWidth/previousInnerWidth;
 	var oldWidth = initialWidth;
     previousInnerWidth = window.innerWidth;
-	initialWidth = $('#transcriptImage').width();
+	initialWidth = $('#transcriptImage').width() ? $('#transcriptImage').width() : window.innerWidth;
 	initialHeight = $('#transcriptImage').height();
 	naturalWidth = $('#transcriptImage').get(0).naturalWidth;
 	initialScale = initialWidth / naturalWidth;
@@ -67,4 +67,16 @@ function saveChanges(e) {
 }
 function hasEditPermission(role) {
 	return role === "Editor" || role === "Owner" || role === "Admin" || role === "CrowdTranscriber" || role === "Transcriber"
+}
+function setPageStatus(role, newStatus, newStatusTrans) {
+	if ( role === "CrowdTranscriber" || role === "Transcriber" ) {
+        $("#page_status").html(newStatusTrans);
+        pageStatus = newStatus;
+    }
+    else if ( "{{ role }}" === "Editor" || "{{ role }}" === "Owner" || "{{ role }}" === "Admin" ) {
+        $("#page_status").html(newStatusTrans + "<span class=\"caret\"></span>");
+        pageStatus = newStatus;
+    }
+    else
+        setMessage(pageStatusNotAllowedTrans, "danger");
 }
