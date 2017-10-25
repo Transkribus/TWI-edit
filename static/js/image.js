@@ -185,10 +185,10 @@ function highlightLine(lineId) { // highlights a single line (use when moving th
 }
 function showLineImage(e) {
     if ( e.type.indexOf("mouse") >= 0 ) {
-        if ( window.innerHeight - (e.clientY + 190) <= 0 )
-            $("#canvas_text").css("top", e.clientY - 190);
+        if ( window.innerHeight - (e.clientY + 180) <= 0 )
+            $("#canvas_text").css("top", e.clientY - 180);
         else
-            $("#canvas_text").css("top", e.clientY + 20);
+            $("#canvas_text").css("top", e.clientY + 10);
     }
     else if ( e.type.indexOf("key") >= 0 && currentLineId !== null && currentLineId !== undefined ) {
         var top = $("#text_" + currentLineId).offset().top - $(window).scrollTop();

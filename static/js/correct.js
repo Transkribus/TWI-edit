@@ -60,7 +60,7 @@ function saveChanges(e) {
 		e.preventDefault();
 	setMessage(transSavingChanges);
 	$.post(window.location.href, {content: getContent(), csrfmiddlewaretoken: csrf_token}, function( data ) {
-		setMessage(data, 'success');
+		setMessage(data);
 		changed = false;
 	});
 	// TODO Handle failures here or are we happy with the current solution?

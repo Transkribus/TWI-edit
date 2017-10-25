@@ -9,7 +9,6 @@ var wasDead = false;
 var keyDown;
 var bufferedKeys = "";
 var keyIsDown = false;
-var message_timeout;
 // these vars must be initialized when importing this JavaScript
 // surroundingCount, currentLineId, view, changed
 // these JavaScripts must also be imported
@@ -39,6 +38,7 @@ function keydown(e) {
 }
 function initializeCaretOffsetInPixels() { 
 	var selection = window.getSelection();
+	console.log("trying to initialize caret offset in pixels");
 	if ( selection.anchorNode === null || selection.anchorNode.parentNode === null )
 		return;
 	var parentElement = selection.anchorNode.parentElement;
@@ -47,7 +47,7 @@ function initializeCaretOffsetInPixels() {
 	$(hiddenCopy).text($(hiddenCopy).text().substr(0, selection.anchorOffset));
 	$(hiddenCopy).appendTo(parentElement);
 	caretOffsetInPixels = parentElement.offsetLeft + $(hiddenCopy).outerWidth();
-//	console.log("caret offset in pixels initialized to: " +  parentElement.offsetLeft + " + " + $(hiddenCopy).outerWidth() + " = " + caretOffsetInPixels + " and outer width: " + oldWidthForCaretCalc);
+	console.log("caret offset in pixels initialized to: " +  parentElement.offsetLeft + " + " + $(hiddenCopy).outerWidth() + " = " + caretOffsetInPixels + " and outer width: " + oldWidthForCaretCalc);
 	$(hiddenCopy).remove();
 	
 }
@@ -70,9 +70,12 @@ function getInput() {
 		setSelectionData(lineId, endPos);
 	}
 	// we get what's in the buffer BUT we don't get composite keys this way. However, in these cases the input has been really fast and there can't (!?) be any.
-	inputAction(bufferedKeys);
-	setSelectionData(lineId, startPos + bufferedKeys.length);
-	bufferedKeys = "";	
+	var bkl = bufferedKeys.length;
+	if (bkl > 0) {
+		inputAction(bufferedKeys);
+		setSelectionData(lineId, startPos + bkl);
+		bufferedKeys = "";
+	}
 	keyIsDown = false; // we're not busy anymore
 }
 function keyup(e) { // TODO Refactor this. This now does more than before because we don't have keyPress and a different split between this and editAction might be better....
@@ -160,6 +163,7 @@ function editAction(event) {
 	undoArray.push(contentArray[getIndexFromLineId(editedLineId)].slice());
 	// TODO Rename the vars? start and end are not intuitive names when removing text end = the caret position at the END OF THE ACTION (i.e. a smaller offset than start = the caret position AT THE START OF THE ACTION)
 	if (selectionData.length ==1) { // does everything happen on just one line?
+		// TODO Remove. This never happens with the new buffered input handling
 		if (event.key.length == 1) { // a regular character?
 			event.preventDefault();
 			lineEditAction(editedLineId, startOffset, endOffset, event.key);
@@ -372,7 +376,7 @@ function updateSelectionData() { // call after user inputs to put selection info
 	}
 }
 function restoreSelection() {
-	//console.log("restoring selection");
+	console.log("restoring selection");
 	if (selectionData.length === 0) { // the stuff below is necessary to restore the caret
 		var range = document.createRange();
 		var sel = window.getSelection();
@@ -398,14 +402,12 @@ function restoreSelection() {
 		return;
 	var range = document.createRange();
 	var test = bElement[0].firstChild === null ? bElement[0] : bElement[0].firstChild;
-	
 	range.setStart(bElement[0].firstChild === null ? bElement[0] : bElement[0].firstChild, begCharCount - bElement.attr("spanoffset"));
 	range.setEnd(eElement[0].firstChild === null ? eElement[0] : eElement[0].firstChild, endCharCount - eElement.attr("spanoffset"));
-	
 	var sel = window.getSelection();
-	eElement.focus();
 	sel.removeAllRanges();
 	sel.addRange(range);
+	eElement.focus(); // TODO Remove unless this solves the problem with loss of focus.
 }
 function pixelsToCharOffset(element, pixels) { // returns the character index within the element which best corresponds to the no. of pixels given
 	var hiddenCopy = $(element).clone();
@@ -580,7 +582,7 @@ function getLineLiWithTags(tagLineId, idPrefix) { // generates a line with spans
 function contenteditableToArray(lineId, overwriteText) { // converts an editable line with tags as spans line into the original format, i.e. array with the text and custom attribute content. Optionally text content can be given.
 	var lineIndex = getIndexFromLineId(lineId);
 	var tagStack = []; // 2d array with tags:  [[tag, offset, length], ...]
-	$("[tagLineId='" + lineId + "']").each(function () { // spans = tags
+	$("[tagLineId='" + lineId + "']:visible").each(function () { // spans = tags
 		var tag = $(this).attr("tag");
 		if (tag)
 			tagStack.push([tag, $(this).attr("offset"), $(this).attr("tagLength")]);
@@ -597,7 +599,7 @@ function contenteditableToArray(lineId, overwriteText) { // converts an editable
 		contentArray[lineIndex][1] = $("#text_" + lineId).text().replace(/\u200B/g,''); // remove the zero width space!!!
 }
 function buildLineList() {
-	//console.log("building line list!");
+	console.log("building line list!");
 	var index;
 	if ( $(".transcript-div").is(":visible") && currentLineId !== undefined && correctModal.isOpen()) { // TODO A better test? This works but sbs below also has transcript-div :visible...
 		var currentIdx = getIndexFromLineId(currentLineId);
