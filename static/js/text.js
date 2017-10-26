@@ -644,12 +644,9 @@ function resizeText(delta) {
 }
 function typewriterMove(newLineId, caretLineId) {
 	if (newLineId != null && selectionData !== undefined && selectionData[0] !== undefined ) {
-		currentLineId = newLineId;
 		if (null === savedCaretOffsetInPixels)
 			savedCaretOffsetInPixels = caretOffsetInPixels;
 		// TODO Move the caret down even when we cannot make the lines move anymore?
-		// TODO Remove this if our users approve of the new behaviour.
-		//typewriterStep(newLineId, (contentArray[Math.min(getIndexFromLineId(newLineId), contentArray.length - 1)][2][5]) - Math.round(contentArray[Math.min(getIndexFromLineId(currentLineId), contentArray.length - 1)][2][5]));
 		updateDialog(newLineId);
 		updateCanvas();
 		// get the closest span offset on the new line
@@ -688,23 +685,6 @@ function typewriterPrevious() {
 	if ( ifc === "lbl" )
 		$("#options_" + currentLineId).hide();
 	typewriterMove(getPreviousLineId(currentLineId), getPreviousLineId(selectionData[0][0])); // the caret will "remain in place" and the lines shifted around it
-	/* TODO Remove this old stuff when the new behaviour is ok.
-	if (newLineId != null)
-		typewriterStep(newLineId, Math.round(contentArray[Math.min(getIndexFromLineId(newLineId), contentArray.length - 1)][2][5]) - Math.round(contentArray[Math.min(getIndexFromLineId(currentLineId), contentArray.length - 1)][2][5]));
-	*/
-}
-function typewriterStep(newLineId, delta) { // TODO Remove this function unless the line by line interface still needs it. If our users prefer the new image moving behaviour, this is redundant.
-	accumExtraY += delta * initialScale * zoomFactor;
-	$( ".transcript-map-div" ).css("transform",  "translate(" + -accumExtraX +"px, " + -accumExtraY+ "px) scale(" + zoomFactor + ")");// Note, the CSS is set to "transform-origin: 0px 0px"
-	currentLineId = newLineId;
-	updateCanvas();
-	buildLineList();
-
-	// Line by line interface
-	$("#line_" + newLineId).focus();
-	var prev = getPreviousLineId(newLineId);
-	if ( prev )
-		$("#options_" + prev).hide();
 }
 function setMessage(message, type, timeout=true) {
 	clearTimeout(message_timeout);
