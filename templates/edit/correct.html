@@ -704,6 +704,9 @@
             $(".zoom-out").removeClass("disabled");
             $(".fit-width").removeClass("disabled");
             $(".fit-height").removeClass("disabled");
+            $("#editToggle").addClass("disabled");
+            $("a[data-target='#saveChanges']").addClass("disabled");
+            $("#page_status").addClass("disabled");
             {% if lines %}
                 /*if ( hasEditPermission("{{ role }}") && "{{ pageStatus }}" !== "GT" )  {
                     $("#editToggle").removeClass("disabled");
@@ -727,6 +730,9 @@
             $(".zoom-out").addClass("disabled");
             $(".fit-width").addClass("disabled");
             $(".fit-height").addClass("disabled");
+            $("#editToggle").addClass("disabled");
+            $("a[data-target='#saveChanges']").addClass("disabled");
+            $("#page_status").addClass("disabled");
             {% if lines %}
                 /*if ( hasEditPermission("{{ role }}") && "{{ pageStatus }}" !== "GT" )  {
                     $("#editToggle").removeClass("disabled");
