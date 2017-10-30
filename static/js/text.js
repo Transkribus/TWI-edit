@@ -27,9 +27,13 @@ function keydown(e) {
 				getInput(); // we make sure that the contenteditable is updated asap
 				updateSelectionData(); // redundant? 
 			} else { // we allow input into the contenteditable since we're not busy
+				if (selectionData.length >1 || (selectionData[0][1] != selectionData[0][2])) { // if something is selected, we delete that
+					eraseSelected();
+					buildLineList();
+				 } else
+					updateSelectionData(); // redundant?
 				bufferedKeys += e.key;
 				keyIsDown = true;
-				updateSelectionData();
 			}
 		} else {
 			updateSelectionData();
@@ -108,10 +112,41 @@ function drop(e) {
 	// Nobody needs to do this and this breaks things.
 	e.preventDefault();
 }
-function cut(e) {
-	eraseSelection(); // TODO This!
+function cut(e) { // TODO This!
+	eraseSelected();
 }
-
+function eraseSelected() {
+	if (selectionData.length == 1) {
+		var startOffset = selectionData[0][2];
+		var endOffset = selectionData[0][1];
+		var deleteFromId = selectionData[0][0];
+		undoArray.push(contentArray[getIndexFromLineId(deleteFromId)].slice());
+		lineEditAction(deleteFromId, startOffset, endOffset);
+		setSelectionData(deleteFromId, endOffset);
+	} else {
+		var startFromId = selectionData[0][0];
+		var deleteFromId = startFromId;
+		var startFromIndex = getIndexFromLineId(deleteFromId);
+		var deleteFromIndex = startFromIndex;
+		undoArray.push(contentArray[deleteFromIndex].slice());
+		lineEditAction(deleteFromId, contentArray[deleteFromIndex][1].length, selectionData[0][1]);
+		var c = 1;
+		var lastButOne = selectionData.length - 1;
+		deleteFromId = getNextLineId(deleteFromId);
+		deleteFromIndex = getIndexFromLineId(deleteFromId);
+		while (c < lastButOne) {
+			undoArray.push(contentArray[deleteFromIndex].slice());
+			lineEditAction(deleteFromId, contentArray[deleteFromIndex][1].length, 0);
+			deleteFromId = getNextLineId(deleteFromId);
+			deleteFromIndex = getIndexFromLineId(deleteFromId);
+			c++;
+		}
+		undoArray.push(contentArray[deleteFromIndex].slice());
+		lineEditAction(deleteFromId, selectionData[c][2], 0);
+		setSelectionData(startFromId, startFromIndex);
+	}
+}
+// TODO Rewrite a lot. We no longer use textInjection with the new input handling...
 function lineEditAction(editedLineId, startOffset, endOffset, textInjection) { // if no text injection is given, we just update the tags and assume that the input went straight to the "contenteditable", if startOffset > endOffset the action is a deletion (possibly followed by an injection into the same offset)
 	var contentDelta;
 	var injectionDelta = 0;
@@ -129,7 +164,11 @@ function lineEditAction(editedLineId, startOffset, endOffset, textInjection) { /
 				$(this).attr("offset", endOffset);
 				$(this).attr("tagLength", tagLength - startOffset + tagOffset);
 			} else if ((tagOffset + tagLength) > endOffset) {
-				$(this).attr("tagLength", Math.max(tagLength + contentDelta, endOffset - tagOffset));
+				var tL = Math.max(tagLength + contentDelta, endOffset - tagOffset);
+				if (tL <= 0) // remove the tag altogether?
+					$(this).remove();
+				else
+					$(this).attr("tagLength", Math.max(tagLength + contentDelta, endOffset - tagOffset));
 			}
 		}
 	});
@@ -375,7 +414,6 @@ function updateSelectionData() { // call after user inputs to put selection info
 	}
 }
 function restoreSelection() {
-	console.log("restoring selection");
 	if (selectionData.length === 0) { // the stuff below is necessary to restore the caret
 		var range = document.createRange();
 		var sel = window.getSelection();
@@ -460,7 +498,7 @@ function getLineLiWithTags(tagLineId, idPrefix) { // generates a line with spans
 				tagGfxStack.push(tag.tag);
 		});
 		// sort the stack and generate a graphical representation for each tag type (placement depends on order and total # of tags)
-		tagGfxStack.sort()
+		tagGfxStack.sort();
 		var gapTag = false;
 		nonHeightTags = 0;
 		tagGfxStack.forEach(function (gfxTag) { // we use initialWidth here and below since it's definitely long enough, except for the "gap" tag
