@@ -449,11 +449,15 @@
     		pathWithoutPage = pathWithoutPage.replace('view', 'edit');
     		var newButtonText = "{% trans 'View' %}";
     		$('[contenteditable="false"]').attr("contenteditable", "true");
+            $("#toggleInterface_sbs").addClass("disabled");
+            $("#toggleInterface_t").addClass("disabled");
     	}else{
     		var newURL = window.location.href.replace('edit', 'view');
     		pathWithoutPage = pathWithoutPage.replace('edit', 'view');
     		var newButtonText = "{% trans 'Edit' %}";
     		$('[contenteditable="true"]').attr("contenteditable", "false");
+            $("#toggleInterface_sbs").removeClass("disabled");
+            $("#toggleInterface_t").removeClass("disabled");
     	}
 
     	window.history.pushState(null, document.title, newURL);
