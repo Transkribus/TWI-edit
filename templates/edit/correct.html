@@ -815,7 +815,7 @@
 		toggleTag($(e.target).prop("name").substr(19)); // "context-menu-input-".length is 19
 	});
 	$(window).on("load", function() {
-		initialWidth = $('#transcriptImage').width();
+		initialWidth = $('#transcriptImage').width() ? $('#transcriptImage').width() : window.innerWidth;
 		initialHeight = $('#transcriptImage').height();
 		naturalWidth = $('#transcriptImage').get(0).naturalWidth;
         $("#canvas_text").width(window.innerWidth - 50);
