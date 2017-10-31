@@ -42,6 +42,7 @@ function resizeContents() { // Call to perform necessary updates of contents and
 		updateDialog();
 		updateDocking();
 	}
+    $(".transcript-div").height(window.innerHeight - 200);
 }
 function getContent() { // "JSON.stringifies" (verbing a noun) contentArray and also strips out content which does not need to be submitted.
 	var lengthMinusOne = contentArray.length - 1;
