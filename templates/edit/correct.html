@@ -663,7 +663,11 @@
                     $("#editToggle").removeClass("disabled");
                     $("a[data-target='#saveChanges']").removeClass("disabled");
                     $("#page_status").removeClass("disabled");
-                }
+                }else{
+                    $("#editToggle").addClass("disabled");
+                    $("a[data-target='#saveChanges']").addClass("disabled");
+                    $("#page_status").addClass("disabled");
+		}
             {% endif %}
         }
         else if ( target === "lbl" ) {
@@ -685,7 +689,11 @@
                     $("#editToggle").removeClass("disabled");
                     $("a[data-target='#saveChanges']").removeClass("disabled");
                     $("#page_status").removeClass("disabled");
-                }
+                }else{
+                    $("#editToggle").addClass("disabled");
+                    $("a[data-target='#saveChanges']").addClass("disabled");
+                    $("#page_status").addClass("disabled");
+		}
             {% endif %}
         }
         else if ( target === "sbs" ) {
@@ -714,7 +722,11 @@
                     $("#editToggle").removeClass("disabled");
                     $("a[data-target='#saveChanges']").removeClass("disabled");
                     $("#page_status").removeClass("disabled");
-                }*/
+                }else{
+                    $("#editToggle").addClass("disabled");
+                    $("a[data-target='#saveChanges']").addClass("disabled");
+                    $("#page_status").addClass("disabled");
+		}*/
             {% endif %}
             return;
         }
@@ -740,7 +752,11 @@
                     $("#editToggle").removeClass("disabled");
                     $("a[data-target='#saveChanges']").removeClass("disabled");
                     $("#page_status").removeClass("disabled");
-                }*/
+                }else{
+                    $("#editToggle").addClass("disabled");
+                    $("a[data-target='#saveChanges']").addClass("disabled");
+                    $("#page_status").addClass("disabled");
+		}*/
             {% endif %}
         }
         else {
