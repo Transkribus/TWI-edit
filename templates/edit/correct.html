@@ -760,6 +760,11 @@
             {% endif %}
         }
 
+        if ( window.location.href.indexOf("view") === -1 ) {
+            $("#toggleInterface_sbs").addClass("disabled");
+            $("#toggleInterface_t").addClass("disabled");
+        }
+
         if ( correctModal !== undefined && correctModal.isOpen() )
             hideModal();
 
