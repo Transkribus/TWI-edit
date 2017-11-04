@@ -11,46 +11,18 @@
 
 {% block content %}
 
-<link rel="stylesheet" href="https://swisnl.github.io/jQuery-contextMenu/css/screen.css" type="text/css"/>
-<link href="{% static "css/correct.css" %}" rel="stylesheet">
-<link href="{% static "css/gijgo.min.css" %}" rel="stylesheet">
-<!-- <link rel="stylesheet" href="https://swisnl.github.io/jQuery-contextMenu/css/theme.css" type="text/css"/>-->
-<link rel="stylesheet" href="https://swisnl.github.io/jQuery-contextMenu/css/theme-fixes.css" type="text/css"/>
-<link href="https://swisnl.github.io/jQuery-contextMenu/dist/jquery.contextMenu.css" rel="stylesheet" type="text/css" />
-
-<script src="{% static "js/correct.js" %}"></script>
-<script src="{% static "js/thumbs.js" %}"></script>
-<script src="{% static "js/image.js" %}"></script>
-<script src="{% static "js/tags.js" %}"></script>
-<script src="{% static "js/dialog.js" %}"></script>
-<script src="{% static "js/text.js" %}"></script>
-<script src="{% static "js/diff.js" %}"></script>
-<script src="{% static "js/proofread.js" %}"></script>
-<script src="https://swisnl.github.io/jQuery-contextMenu/dist/jquery.contextMenu.js" type="text/javascript"></script>
-<!--<script src="https://swisnl.github.io/jQuery-contextMenu/dist/jquery.ui.position.min.js" type="text/javascript"></script>-->
-<script src="https://swisnl.github.io/jQuery-contextMenu/js/main.js" type="text/javascript"></script>
 <!-- gijgo js can't be included here, it must come after everything else -->
 <script>
-	var contentArray= [[0, '', [0, 0, 0, 0, 0, 0, 0, 0], 0, '']
-		{% for line in lines %}
-			,['{{ line|get_item:"@id"}}', '{{line|get_item:"Unicode"|default_if_none:""}}', [{{line|get_item:"crop"|coords_for_imagemap}}], {{line|get_item:"regionWidth"}}, "{{line|get_item:"@custom"}}"]
-		{% endfor %}
-	];
-	// TODO Clean...
-	var thumbArray = {{ thumbArray | safe }}; {# We assume that this is safe because each url is escape()d in the for loop in the view #}
-	 {# var regionData = {{ regionData | safe }}; We don't need this yet, after all, but lets leave it here for now.  #}
+	var d = {{ json_from_view|safe }};
+	var thumbArray = d.thumbArray;
+        var contentArray = d.contentArray;
+	var ifc = d.i;
+	var pageStatus = d.pageStatus
 	var csrf_token = "{{ csrf_token }}";
 	var transUnsavedChanges = "{% trans "You have unsaved changes." %}";
 	var transSavingChanges = "{% trans "Saving changes..." %}";
-	var dialogBeingResized = false; {# a "semaphore" to avoid false resize events (resizing the dialog triggers such events and we only want those triggered by the window) #}
-	var canOpenContextMenu = false;
-	var ignoreLeave = false;
-	var isDragged = false;
-	var resizeTimeout;
-    var pageStatus = "{{ pageStatus }}";
-    var pageStatusNotAllowedTrans = "{% trans "You can not change the page status." %}";
-	var zoomFactor = 1;
-	var ifc = "{{ i }}";
+    	var pageStatusNotAllowedTrans = "{% trans "You can not change the page status." %}";
+	
 	var tagItems = {
 		{% for tag in tags %}"{{tag.name}}": {name: "<span href=\"#\" style=\"color: #{{tag.color}};\">{{tag.name}}</span>", type: "checkbox", isHtmlName: true} {% if not forloop.last %}, {% endif %}
 		{% endfor %}
@@ -63,7 +35,6 @@
         {% for line in lines %}"{{ line|get_item:"@id" }}": {"x": 0, "y": 0, "factor": 1}, {% endfor %}
     };
 </script>
-
 <div class="top-div col-md-12">
     <div class="row row-centered fix_scroll_top">
         <div class="col-md-12">
