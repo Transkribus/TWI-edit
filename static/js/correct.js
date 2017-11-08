@@ -24,7 +24,6 @@ function calculateAreas() {
 	});
 }
 function resizeContents() { // Call to perform necessary updates of contents and variables whenever the GUI size is changed
-   	var widthFactor = window.innerWidth/previousInnerWidth;
 	var oldWidth = initialWidth;
     previousInnerWidth = window.innerWidth;
 	initialWidth = $('#transcriptImage').width() ? $('#transcriptImage').width() : window.innerWidth;
@@ -38,9 +37,15 @@ function resizeContents() { // Call to perform necessary updates of contents and
 	calculateAreas();
 	generateThumbGrid();
 	updateCanvas();
+	// If the dialog is open, position it as before in relation the highlighted area but according to the current window size = new scale...
 	if ( correctModal !== undefined && correctModal.isOpen() ) {
-		updateDialog();
-		updateDocking();
+		dialogHighlightDX *= initialWidth / oldWidth;
+		dialogHighlightDY *= initialWidth / oldWidth;
+		dialogX = -accumExtraX + contentArray[getIndexFromLineId(currentLineId)][2][0] * initialScale * zoomFactor + dialogHighlightDX;
+		dialogY = -accumExtraY + $(".transcript-div").offset().top + contentArray[getIndexFromLineId(currentLineId)][2][1] * initialScale * zoomFactor + dialogHighlightDY;
+		$("#correctModal").css("left",  dialogX + "px");
+		$("#correctModal").css("top",  dialogY + "px");
+		updateDialog(); // TODO Remove. should be redundant.
 	}
     $(".transcript-div").height(window.innerHeight - 200);
 }

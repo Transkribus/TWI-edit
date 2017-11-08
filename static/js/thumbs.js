@@ -96,5 +96,6 @@ function checkPageNumberInput() { // Tries to parse input to see if it's a valid
 }
 function gotoPage(page) {
 	page = Math.max(Math.min(page, thumbArray.length), 1);
-	window.location.assign(pathWithoutPage + page + '?tco=' + thumbCountOffset + "&i=" + ifc);// TODO Consider tco in situations in which the page to which we go isn't visible, set an appropriate value? If tco = NaN or outside...
+	var dL = "&dL=" + (currentLineId ? currentLineId : + restoreDialogLine);
+	window.location.assign(pathWithoutPage + page + '?tco=' + thumbCountOffset + "&i=" + ifc + dL);// TODO Consider tco in situations in which the page to which we go isn't visible, set an appropriate value? If tco = NaN or outside...
 }

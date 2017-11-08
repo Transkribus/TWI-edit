@@ -4,7 +4,8 @@ var dialogAbsoluteMinWidth = null;
 var dialogAbsoluteMinHeight = null;
 var docked = false;
 var dockedHeight = 250;// TODO Decide how to calculate this.
-
+var restoreDialogLine;
+var dialogHighlightDX, dialogHighlightDY; 
 // these vars must be initialized when importing this JavaScript
 // initialScale;
 // previousInnerWidth = window.innerWidth;
@@ -15,7 +16,8 @@ var dockedHeight = 250;// TODO Decide how to calculate this.
 // TODO Check which...?
 
 function hideDialog() {
-	saveDialogProperties();
+	if (!docked) // we're only interested in the user-modifiable properties since we have a docking variable
+		saveDialogProperties();
 	correctModal.close();
 }
 function updateDocking(dock) { // docks (true) / undocks (false) the dialog. When not specified, docking status remains unchanged and just the dialog position and size gets updated
@@ -50,8 +52,6 @@ function updateDockingStatus(dock) { // Toggles the docking status and the docki
 }
 function saveDialogProperties() { // Saves the undocked dialog properties...
 	$("#correctModal").css("position", "absolute");
-	dialogX = $("#correctModal").offset().left;
-	dialogY = $("#correctModal").offset().top;
 	dialogWidth = $("#correctModal").width(); // TODO Search width vs. outerWidth
 	dialogHeight = $("#correctModal").height();
 }
@@ -85,8 +85,11 @@ function updateDialog(lineId) { // This function can be called without a line ID
 		$("#correctModal").css("top",  dialogY + "px");
 		updateDocking(); // We restore the dialog to a docked state, if it was docked when closed
 		initializeCaretOffsetInPixels();
+		dialogHighlightDX = dialogX + accumExtraX - contentArray[getIndexFromLineId(currentLineId)][2][0] * initialScale * zoomFactor;
+		dialogHighlightDY = dialogY + accumExtraY - $(".transcript-div").offset().top - contentArray[getIndexFromLineId(currentLineId)][2][1] * initialScale * zoomFactor;// + $(".transcript-map-div").css("top");
 	} else {
-		var oldDeltaX = contentArray[getIndexFromLineId(currentLineId)][2][0] * initialScale * zoomFactor - accumExtraX - $("#correctModal").offset().left;
+		correctModal.open(); // TODO Redundantify correctModal.open() here. It's here for restoring the dialog after "visits" to other views...
+		var oldDeltaX = contentArray[getIndexFromLineId(currentLineId)][2][0] * initialScale * zoomFactor - accumExtraX - $("#correctModal").offset().left;// TODO Replace with dialogX and dialogY?
 		var oldDeltaY = contentArray[getIndexFromLineId(currentLineId)][2][1] * initialScale * zoomFactor - accumExtraY - $("#correctModal").offset().top;
 		if (1 == arguments.length)
 			currentLineId = lineId;
@@ -94,6 +97,7 @@ function updateDialog(lineId) { // This function can be called without a line ID
 		accumExtraX = contentArray[getIndexFromLineId(currentLineId)][2][0] * initialScale * zoomFactor - $("#correctModal").offset().left - oldDeltaX;
 		accumExtraY = contentArray[getIndexFromLineId(currentLineId)][2][1] * initialScale * zoomFactor - $("#correctModal").offset().top - oldDeltaY;
 		$( ".transcript-map-div" ).css("transform",  "translate(" + -accumExtraX +"px, " + -accumExtraY+ "px) scale(" + zoomFactor + ")");// Note, the CSS is set to "transform-origin: 0px 0px"
+		updateDocking();
 		buildLineList();
 	}
 }
