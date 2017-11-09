@@ -302,7 +302,7 @@ def save(request, transcriptId, transcript_url) :
     if isinstance(t,HttpResponse) :
         return error_view(request,t)
 
-   if 'content' in request.POST:
+    if 'content' in request.POST:
 
         # The content posted from the save action
         content = json.loads(request.POST.get('content'))
