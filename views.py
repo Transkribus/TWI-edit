@@ -1,4 +1,5 @@
 import settings
+import apps.edit.settings as app_settings
 import logging
 import json
 
@@ -8,19 +9,9 @@ from django.shortcuts import render
 from django.contrib.auth.decorators import login_required
 from django.utils.html import escape
 
-from apps.utils.utils import crop, t_log, crop_as_imagemap
+from apps.utils.utils import get_ts_session, crop, t_log, crop_as_imagemap
+from apps.utils.views import error_view
 
-import apps.edit.settings
-
-#permissions stuff
-#Who can edit
-can_edit = ['Editor', 'Owner', 'Admin','CrowdTranscriber','Transcriber']
-#Who can view
-can_view = ['Editor', 'Owner', 'Admin','CrowdTranscriber','Transcriber', 'Reader']
-#Who can set a page status
-status_change = {'New' : can_edit, 'InProgress': can_edit, 'Done' : can_edit, 'Final' : ['Editor', 'Owner', 'Admin']}
-#Which interfaces are available for edit / view
-interfaces = {'edit' : ['i', 'lbl'] , 'view' : ['i', 'lbl', 'sbs', 't' ]}
 
 #Tags config... maybe css classes would be more appropriate?
 tags = [
@@ -44,7 +35,7 @@ tags = [
 def document_view(request, collId=None, docId=None, pageNr=None, transcriptId=None):
 
     ############################
-    # First let's get sh*t straight
+    # First let's get stuff straight
     ############################
     # Would be nice if we didn't need the collId but "Transkribus says no"
     if collId is None :
@@ -70,7 +61,7 @@ def document_view(request, collId=None, docId=None, pageNr=None, transcriptId=No
     role = get_role(request,collId)
 
     # Now check to see if no-one is try to sneak an edit when they shouldn't
-    if 'edit' in request.path and role not in can_edit :
+    if 'edit' in request.path and role not in settings.CAN_EDIT :
         t_log('Redirect user due to insufficient role access. [from: %s to: %s]' % (request.get_full_path(), request.get_full_path().replace('edit', 'view')))
         return HttpResponseRedirect(request.get_full_path().replace('edit', 'view'))
     
@@ -78,27 +69,30 @@ def document_view(request, collId=None, docId=None, pageNr=None, transcriptId=No
     # We should get this data now so we can test whether we need to continue with processing
     dd = document_data(request,collId,docId,pageNr)
 
-    # We don not allow the editing of a page that has been set as Ground Truth
+    # We don not allow the editing of *any* page that has been set as Ground Truth (we dont' care who you are!!)
     if dd.get("pageStatus") == 'GT' and mode == 'edit' :
         t_log('Redirect user back to view mode since page status is GT. [from: %s to: %s]' % (request.get_full_path(), request.get_full_path().replace('edit', 'view')))
         #TODO display messgae??
         return HttpResponseRedirect(request.get_full_path().replace('edit', 'view'))
     
-    # We will disable some of the interfaces for editing until they are ready (ahem)
-    if i == 'sbs' or i == 't' and mode == 'edit':
-        t_log('Redirect user back to view mode since interface "sbs" and "t" do not support edit. [from: %s to: %s]' % (request.get_full_path(), request.get_full_path().replace('edit', 'view')))
+    # We check to see if the requetsed interface is available for the request mode
+    if i not in app_settings.INTERFACES[mode] :
+        #The elephant in the room here being that we are assuming one way
+        t_log('Unsupported intrerface/mode combo... [from: %s to: %s]' % (request.get_full_path(), request.get_full_path().replace('edit', 'view')))
         return HttpResponseRedirect(request.get_full_path().replace('edit', 'view'))
 
     ############################################################################
-    # OK, sh*t's straight, now we can get busy with the transkribus data....
+    # OK, stuff's straight, now we can get busy with the transkribus data....
     ############################################################################
     # Get the transkribus session instance
-    t = request.user.tsdata.t
-    
+    t = get_ts_session(request) 
+    if isinstance(t,HttpResponse) :
+        return error_view(request,t)
+
     #First we use this call to get a bit of metadata on what the "curent" transcript is for this page (inc. the transcript id)
     curr_ts_md = t.current_ts_md_for_page(request, collId, docId, pageNr)
     if isinstance(curr_ts_md,HttpResponse):
-        return apps.utils.views.error_view(request,curr_ts_md)
+        return error_view(request,curr_ts_md)
 
     # Now set some vars bae on the metadata for the curent transcript for this page
     transcriptId = curr_ts_md.get("tsId")
@@ -121,7 +115,7 @@ def document_view(request, collId=None, docId=None, pageNr=None, transcriptId=No
     ###################################################################
     transcript = t.transcript(request, transcriptId, transcript_url)
     if isinstance(transcript,HttpResponse):
-        return apps.utils.views.error_view(request,transcript)
+        return error_view(request,transcript)
     
     # Get the text regions   
     regions = transcript.get("PcGts").get("Page").get("TextRegion");
@@ -148,9 +142,15 @@ def document_view(request, collId=None, docId=None, pageNr=None, transcriptId=No
     contentArray = [[0, '', [0,0,0,0,0,0,0,0], 0, '']]
     contentArray.extend([[line.get('@id'), line.get("Unicode"), crop_as_imagemap(line.get("crop")), line.get("regionWidth"), line.get("@custom")] for line in lineList])
 
+    # accumExtra I'll be honest I have no idea what it is for... but we can make 
+    # it here and pass it in rather than constructing json strings in the template
+    accumExtra = dict([(line.get("@id"),{"x": 0, "y": 0, "factor": 1}) for line in lineList])
+    
     return render(request, 'edit/correct.html', {
              'imageUrl': dd.get("imageUrl"),
              'pageStatus': dd.get("pageStatus"),
+	     'role' : role,
+	     'mode' : mode,
              'lines': lineList,
 	     'thumbArray': json.dumps(dd.get("thumbArray")),
              'collId': collId,
@@ -169,9 +169,12 @@ def document_view(request, collId=None, docId=None, pageNr=None, transcriptId=No
 	     'json_from_view' : json.dumps({
 		     'imageUrl': dd.get("imageUrl"),
 		     'pageStatus': dd.get("pageStatus"),
+		     'role' : role,
+		     'mode' : mode,
 		     'lines': lineList,
 		     'thumbArray': dd.get("thumbArray"),
 		     'contentArray' : contentArray,
+		     'accumExtra' : accumExtra,
 		     'collId': collId,
 		     'collName': dd.get("collName"),
 		     'docId': docId,
@@ -193,6 +196,7 @@ def regions_to_lines(regions) :
 
     #so we have a list (in to which will go the lines
     lineList = []
+    if regions is None : return lineList
     # We loop through each region 
     for region in regions:
 
@@ -239,11 +243,13 @@ def regions_to_lines(regions) :
 ####################################################
 def document_data(request, collId, docId, pageNr) : 
     
-    t = request.user.tsdata.t
+    t = get_ts_session(request) 
+    if isinstance(t,HttpResponse) :
+        return error_view(request,t)
 
     document = t.document(request, collId, docId, -1)
     if isinstance(document,HttpResponse):
-        return apps.utils.views.error_view(request,document)
+        return error_view(request,document)
 
     # Get all the pages for the document (this will be used for the thumbnail ribbon
     pages = document.get('pageList').get('pages')
@@ -272,24 +278,31 @@ def document_data(request, collId, docId, pageNr) :
 # for the current collection
 ##############################
 def get_role(request,collId) :
-    t = request.user.tsdata.t
-
+    
+    t = get_ts_session(request) 
+    if isinstance(t,HttpResponse) :
+        return error_view(request,t)
+    
     collections = t.collections(request)
     if isinstance(collections,HttpResponse):
-        return apps.utils.views.error_view(request,collections)
+        return error_view(request,collections)
 
     for collection in collections:
         if collection.get('colId') == int(collId) :
              return collection.get('role')
-
+ 
 ###############################################
 # save the transcript (or report on status).
 # The assumption here is that we have a POST 
 # request from an ajax call
 ###############################################
 def save(request, transcriptId, transcript_url) : 
-    t = request.user.tsdata.t
-    if 'content' in request.POST:
+
+    t = get_ts_session(request) 
+    if isinstance(t,HttpResponse) :
+        return error_view(request,t)
+
+   if 'content' in request.POST:
 
         # The content posted from the save action
         content = json.loads(request.POST.get('content'))
@@ -297,7 +310,7 @@ def save(request, transcriptId, transcript_url) :
         # The page XML (As xml not transformed into a dict)
         transcript_xml = t.transcript_xml(request, transcriptId, transcript_url)
         if isinstance(transcript_xml,HttpResponse):
-            return apps.utils.views.error_view(request,transcript_xml)
+            return error_view(request,transcript_xml)
 
         # Get the document root for the transcirpt
         transcript_root = ElementTree.fromstring(transcript_xml)

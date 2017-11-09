@@ -13,16 +13,29 @@
 
 <!-- gijgo js can't be included here, it must come after everything else -->
 <script>
+	//We will get *all* the data that javascript needs from this json
 	var d = {{ json_from_view|safe }};
+	
+	//For ease of transition we can set a few vars here... but preerence would be access direct from d
 	var thumbArray = d.thumbArray;
         var contentArray = d.contentArray;
+        var accumExtra = d.accumExtra;	
 	var ifc = d.i;
-	var pageStatus = d.pageStatus
+	var pageStatus = d.pageStatus;
+	var role = d.role;	
+	
+	//csrf_token is a django default template tag
 	var csrf_token = "{{ csrf_token }}";
+
+	//Translation for javascript phrases # todo use javascrip/json catalog (allows pluralisation processing too)
 	var transUnsavedChanges = "{% trans "You have unsaved changes." %}";
 	var transSavingChanges = "{% trans "Saving changes..." %}";
     	var pageStatusNotAllowedTrans = "{% trans "You can not change the page status." %}";
 	
+	//I don't think that django needs to know about tags at all.
+	//I suggest defining an array of tags and css clases with a 
+	//derivative name that we cn use to set colours an so on
+	//TODO we can define a tag menu function to build the menu with jquery...
 	var tagItems = {
 		{% for tag in tags %}"{{tag.name}}": {name: "<span href=\"#\" style=\"color: #{{tag.color}};\">{{tag.name}}</span>", type: "checkbox", isHtmlName: true} {% if not forloop.last %}, {% endif %}
 		{% endfor %}
@@ -31,9 +44,7 @@
 		{% for tag in tags %}"{{tag.name}}": "{{tag.color}}" {% if not forloop.last %}, {% endif %}
 		{% endfor %}
 	};
-    var accumExtra = {
-        {% for line in lines %}"{{ line|get_item:"@id" }}": {"x": 0, "y": 0, "factor": 1}, {% endfor %}
-    };
+
 </script>
 <div class="top-div col-md-12">
     <div class="row row-centered fix_scroll_top">
@@ -60,9 +71,13 @@
                     <a class="btn btn-sm btn-default disabled" data-toggle="collapse" href="#thumbDiv" aria-expanded="false" aria-controls="thumbDiv"><span class="glyphicon glyphicon-th-large" title="{% trans "Thumb overview" %}"></span></a>
                 </div>
                 <div class="btn-group">
-                    <a id="editToggle" class="btn btn-sm btn-primary disabled" data-target="#toggleEdit">{% if "view" in request.path %}{% trans "Edit" %}{% else %}{% trans "View" %}{% endif %}</a>
+{%comment%}                    <a id="editToggle" class="btn btn-sm btn-primary disabled" data-target="#toggleEdit">{% if "view" in request.path %}{% trans "Edit" %}{% else %}{% trans "View" %}{% endif %}</a> {%endcomment%}
+                    <a id="editToggle" class="btn btn-sm btn-primary disabled">{% trans mode|opposite %}</a>
+ 
                 </div>
                 {% if lines %}
+{%comment%}
+
                     <div class="btn-group">
                         {% if role == "Editor" or role == "Owner" or role == "Admin" %}
                             <div class="btn-group btn-group-sm editControls" {% if "view" in request.path %}style="display: none;"{% endif %}>
@@ -98,6 +113,33 @@
                             </a>
                         {% endif %}
                         <a href="#" class="btn btn-sm btn-primary editControls disabled" data-target="#saveChanges" {% if "view" in request.path %}style="display: none;"{% endif %}>{% trans "Save changes" %}</a>
+                        <span id="message" class="btn btn-sm"></span>
+                    </div>
+{%endcomment%}
+                    <div class="btn-group">
+{%comment%} 
+We select the workflow based on the role and the display is 
+determined by the number of items in the status list
+returned by get_workflow_stauses
+{%endcomment%}
+			{% if role|get_workflow_statuses|length > 2 %}
+                            <div class="btn-group btn-group-sm editControls" {% if mode == "view" %}style="display: none;"{% endif %}>
+                                <a id="page_status_select" type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown">
+				    {% trans "Page status : "%}{% trans pageStatus %} 
+                                    <span class="caret"></span>
+                                </a>
+                                <ul class="dropdown-menu" role="menu">
+				    {% for status in role|get_workflow_statuses %}
+                                    	<li><a href="#" name="{{status}}" data-target="#page_status">{% trans status %}</a></li>
+				    {% endfor %}
+                               </ul>
+                            </div>
+                        {% else %}
+                            <a id="page_status_toggle" class="btn btn-sm btn-default editControls" {% if mode == "view" %}style="display: none;"{% endif %} data-target="#page_status">
+    				{% trans "Page status** : "%}{% trans pageStatus %} 
+                            </a>
+                        {% endif %}
+                        <a href="#" class="btn btn-sm btn-primary editControls disabled" {% if mode == "view" %}style="display: none;"{% endif %} data-target="#saveChanges" >{% trans "Save changes" %}</a>
                         <span id="message" class="btn btn-sm"></span>
                     </div>
                 {% else %}
@@ -410,48 +452,60 @@
         else
             setMessage(pageStatusNotAllowedTrans, "danger", false);
 	});
-	$("a[data-target='#toggleEdit']").click(function(e) {
-    	e.preventDefault();
+//	$("a[data-target='#toggleEdit']").click(function(e) {
+	// Toggle the mode from edit to view
+        // What needs to happen:
+	// - url changes to new mode
+	// - button text changes to the old mode
+	// - check mode status for interfaces
+	// - contenteditable is turned off/on
+	// - load of other stuff...
+	$("a#editToggle").click(function(e) {
+	    	e.preventDefault();
 
-    	if(window.location.href.indexOf("view") != -1) {
-    		var newURL = window.location.href.replace('view', 'edit');
-    		pathWithoutPage = pathWithoutPage.replace('view', 'edit');
-    		var newButtonText = "{% trans 'View' %}";
-    		$('[contenteditable="false"]').attr("contenteditable", "true");
-            $("#toggleInterface_sbs").addClass("disabled");
-            $("#toggleInterface_t").addClass("disabled");
-    	}else{
-    		var newURL = window.location.href.replace('edit', 'view');
-    		pathWithoutPage = pathWithoutPage.replace('edit', 'view');
-    		var newButtonText = "{% trans 'Edit' %}";
-    		$('[contenteditable="true"]').attr("contenteditable", "false");
-            $("#toggleInterface_sbs").removeClass("disabled");
-            $("#toggleInterface_t").removeClass("disabled");
-    	}
+    		if(window.location.href.indexOf("view") != -1) {
+			var newURL = window.location.href.replace('view', 'edit');
+			console.log("VIEW TO EDIT");
+			pathWithoutPage = pathWithoutPage.replace('view', 'edit');
+			var newButtonText = "{% trans 'View' %}";
+			$('[contenteditable="false"]').attr("contenteditable", "true");
+		    $("#toggleInterface_sbs").addClass("disabled");
+		    $("#toggleInterface_t").addClass("disabled");
+		}else{
 
-    	window.history.pushState(null, document.title, newURL);
-    	if ( correctModal !== undefined && correctModal.isOpen() )
-			correctModal.close();
+			var newURL = window.location.href.replace('edit', 'view');
+			console.log("EDIT TO VIEW");
 
-    	$(".editControls").toggle();
-    	$("#editToggle").html(newButtonText);
-    	$("area").css("cursor", "pointer");
-        if ( window.location.href.indexOf("view") === -1 && "i" === ifc )
-            updateDialog({% if lines %}"{{ lines|index:0|get_item:"@id" }}"{% endif %});
-        updateCanvas();
-        if ( $(".interface-lbl").is(":visible") ) {
-            contentArray.forEach(function(obj, i) {
-                drawLineImage(obj[0], obj[2]);
-                if ( $(".lines-div").is(":visible") ) {
-                    currentLineId = obj[0];
-                    buildLineList();
-                }
-            });
-        }
-        if ( $(".interface-t").is(":visible") ) {
-            $("#text").html("");
-            buildLineList();
-        }
+			pathWithoutPage = pathWithoutPage.replace('edit', 'view');
+			var newButtonText = "{% trans 'Edit' %}";
+			$('[contenteditable="true"]').attr("contenteditable", "false");
+		    $("#toggleInterface_sbs").removeClass("disabled");
+		    $("#toggleInterface_t").removeClass("disabled");
+		}
+
+		window.history.pushState(null, document.title, newURL);
+		if ( correctModal !== undefined && correctModal.isOpen() )
+				correctModal.close();
+
+		$(".editControls").toggle();
+		$("#editToggle").html(newButtonText);
+		$("area").css("cursor", "pointer");
+		if ( window.location.href.indexOf("view") === -1 && "i" === ifc )
+		    updateDialog({% if lines %}"{{ lines|index:0|get_item:"@id" }}"{% endif %});
+		updateCanvas();
+		if ( $(".interface-lbl").is(":visible") ) {
+		    contentArray.forEach(function(obj, i) {
+			drawLineImage(obj[0], obj[2]);
+			if ( $(".lines-div").is(":visible") ) {
+			    currentLineId = obj[0];
+			    buildLineList();
+			}
+		    });
+		}
+		if ( $(".interface-t").is(":visible") ) {
+		    $("#text").html("");
+		    buildLineList();
+		}
 	});
 	$("a[data-target='#toggleInterface']").click(function(e) {
     	e.preventDefault();
