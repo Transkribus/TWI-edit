@@ -2,6 +2,7 @@ import settings
 import apps.edit.settings as app_settings
 import logging
 import json
+from  xml.etree import ElementTree
 
 from django.http import HttpResponse, HttpResponseRedirect, JsonResponse
 from django.utils.translation import ugettext_lazy as _
@@ -102,7 +103,7 @@ def document_view(request, collId=None, docId=None, pageNr=None, transcriptId=No
     # Right then this is a POST request, lets do that processing in another method
     ###############################################################################
     if request.method == 'POST':# This is by JQuery...
-        return save(request, transcriptId, trnscript_url)
+        return save(request, transcriptId, transcript_url, collId, docId, pageNr)
  
     #############################################################################
     # If it is a GET request then we can do that processing... right here!
@@ -296,7 +297,7 @@ def get_role(request,collId) :
 # The assumption here is that we have a POST 
 # request from an ajax call
 ###############################################
-def save(request, transcriptId, transcript_url) : 
+def save(request, transcriptId, transcript_url, collId, docId, pageNr) : 
 
     t = get_ts_session(request) 
     if isinstance(t,HttpResponse) :
@@ -339,17 +340,18 @@ def save(request, transcriptId, transcript_url) :
                 text_equiv.find('{'+namespace+'}Unicode').text = regionTextEquiv
         
         # Loop done we can send the new XML to transkribus
-        t.save_transcript(request, ElementTree.tostring(transcript_root), collId, docId, page, transcriptId)
-        #TODO save_transcript should retun any errors like almost all the other calls 
+        t_log("SAVING : %s" % ElementTree.tostring(transcript_root), logging.WARN)
+        status_code = t.save_transcript(request, ElementTree.tostring(transcript_root), collId, docId, pageNr, transcriptId)
+        # save_transcript now returns a status code, TODO react appropriately to status_code
 
         # Reload the updated content from transkribus (this is umportant to bring in the tsId)
-        current_transcript = t.current_transcript(request, collId, docId, page)
+        current_transcript = t.current_transcript(request, collId, docId, pageNr)
         if isinstance(current_transcript,HttpResponse):
             # We have an error message!
             t_log("current_transcript request has failed... %s" % current_transcript)
             return HttpResponse(str(_("Transcript NOT saved")), content_type="text/plain")
         
-        # Report success
+        # Report success?!?
         success_message = str(_("Transcript saved!"))
         return HttpResponse(success_message, content_type="text/plain")
 
@@ -357,7 +359,7 @@ def save(request, transcriptId, transcript_url) :
     # We are just updating the status here
     ###################################### 
     elif 'status' in request.POST:
-        t.save_page_status(request, request.POST.get('status'), collId, docId, page, transcriptId)
+        t.save_page_status(request, request.POST.get('status'), collId, docId, pageNr, transcriptId)
         #TODO save_page_status should retun any errors like almost all the other calls 
         success_message = str(_("Page status changed!"))
         return HttpResponse(success_message, content_type="text/plain")

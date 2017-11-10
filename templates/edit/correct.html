@@ -423,9 +423,20 @@ returned by get_workflow_stauses
 		saveChanges(e);
         setPageStatus("{{ role }}", "IN_PROGRESS", "{% trans "Page status: in progress" %}")
 	});
-    $("a[data-target='#page_status']").click(function(e) {
+    $("a[data-target='#page_status_select']").click(function(e) {
         {# TODO Handle failures here or are we happy with the current solution? #}
-        if ( "{{ role }}" === "CrowdTranscriber" || "{{ role }}" === "Transcriber" ) {
+           $.post(window.location.href, {status: e.currentTarget.name, csrfmiddlewaretoken: "{{ csrf_token }}"}, function( data ) {
+                setMessage(data, "success");
+                if ( e.currentTarget.name === "IN_PROGRESS" )
+                    setPageStatus("{{ role }}", "IN_PROGRESS", "{% trans "Page status: in progress" %}")
+                else if ( e.currentTarget.name === "DONE" )
+                    setPageStatus("{{ role }}", "DONE", "{% trans "Page status: done" %}")
+                else if ( e.currentTarget.name === "FINAL" )
+                    setPageStatus("{{ role }}", "FINAL", "{% trans "Page status: final" %}")
+            });
+	});
+	$("a[data-target='#page_status_toggle']").click(function(e) {
+        {# TODO Handle failures here or are we happy with the current solution? #}
             if ( pageStatus === "NEW" || pageStatus === "IN_PROGRESS" )
                 $.post(window.location.href, {status: "DONE", csrfmiddlewaretoken: "{{ csrf_token }}"}, function( data ) {
                     setMessage(data, "success");
@@ -438,20 +449,8 @@ returned by get_workflow_stauses
                 });
             else
                 setMessage(pageStatusNotAllowedTrans, "danger", false);
-        }
-        else if ( "{{ role }}" === "Editor" || "{{ role }}" === "Owner" || "{{ role }}" === "Admin" )
-            $.post(window.location.href, {status: e.currentTarget.name, csrfmiddlewaretoken: "{{ csrf_token }}"}, function( data ) {
-                setMessage(data, "success");
-                if ( e.currentTarget.name === "IN_PROGRESS" )
-                    setPageStatus("{{ role }}", "IN_PROGRESS", "{% trans "Page status: in progress" %}")
-                else if ( e.currentTarget.name === "DONE" )
-                    setPageStatus("{{ role }}", "DONE", "{% trans "Page status: done" %}")
-                else if ( e.currentTarget.name === "FINAL" )
-                    setPageStatus("{{ role }}", "FINAL", "{% trans "Page status: final" %}")
-            });
-        else
-            setMessage(pageStatusNotAllowedTrans, "danger", false);
 	});
+
 //	$("a[data-target='#toggleEdit']").click(function(e) {
 	// Toggle the mode from edit to view
         // What needs to happen:
