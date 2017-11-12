@@ -75,76 +75,40 @@
                     <a id="editToggle" class="btn btn-sm btn-primary disabled">{% trans mode|opposite %}</a>
  
                 </div>
-                {% if lines %}
-{%comment%}
-
-                    <div class="btn-group">
-                        {% if role == "Editor" or role == "Owner" or role == "Admin" %}
-                            <div class="btn-group btn-group-sm editControls" {% if "view" in request.path %}style="display: none;"{% endif %}>
-                                <a id="page_status" type="button" class="btn btn-default dropdown-toggle disabled" data-toggle="dropdown">
-                                    {% if pageStatus == "NEW" or pageStatus == "IN_PROGRESS" %}
-                                        {% trans "Page status: in progress" %}
-                                    {% elif pageStatus == "DONE" %}
-                                        {% trans "Page status: done" %}
-                                    {% elif pageStatus == "FINAL" %}
-                                        {% trans "Page status: final" %}
-                                    {% elif pageStatus == "GT" %}
-                                        {% trans "Page status: ground truth" %}
-                                    {% endif %}
-                                    <span class="caret"></span>
-                                </a>
-                                <ul class="dropdown-menu" role="menu">
-                                    <li><a href="#" name="IN_PROGRESS" data-target="#page_status">{% trans "In Progress" %}</a></li>
-                                    <li><a href="#" name="DONE" data-target="#page_status">{% trans "Done" %}</a></li>
-                                    <li><a href="#" name="FINAL" data-target="#page_status">{% trans "Final" %}</a></li>
-                                </ul>
-                            </div>
-                        {% else %}
-                            <a id="page_status" class="btn btn-sm btn-default disabled editControls" {% if "view" in request.path %}style="display: none;"{% endif %} data-target="#page_status">
-                                {% if pageStatus == "NEW" or pageStatus == "IN_PROGRESS" %}
-                                    {% trans "Page status: in progress" %}
-                                {% elif pageStatus == "DONE" %}
-                                    {% trans "Page status: done" %}
-                                {% elif pageStatus == "FINAL" %}
-                                    {% trans "Page status: final" %}
-                                {% elif pageStatus == "GT" %}
-                                    {% trans "Page status: ground truth" %}
-                                {% endif %}
-                            </a>
-                        {% endif %}
-                        <a href="#" class="btn btn-sm btn-primary editControls disabled" data-target="#saveChanges" {% if "view" in request.path %}style="display: none;"{% endif %}>{% trans "Save changes" %}</a>
-                        <span id="message" class="btn btn-sm"></span>
-                    </div>
-{%endcomment%}
-                    <div class="btn-group">
 {%comment%} 
-We select the workflow based on the role and the display is 
-determined by the number of items in the status list
-returned by get_workflow_stauses
+If there are lines to edit, we select the workflow based on the role and the display is 
+determined by the number of items in the status list returned by get_workflow_stauses
 {%endcomment%}
+
+                {% if lines %}
+		<div class="btn-group">
 			{% if role|get_workflow_statuses|length > 2 %}
                             <div class="btn-group btn-group-sm editControls" {% if mode == "view" %}style="display: none;"{% endif %}>
-                                <a id="page_status_select" type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown">
-				    {% trans "Page status : "%}{% trans pageStatus %} 
+                                <a id="page_status" type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown" data-value="{{pageStatus}}">
+				    {% trans "Page status : "%}<span id="page_status_label">{% trans pageStatus %}</span> 
                                     <span class="caret"></span>
                                 </a>
                                 <ul class="dropdown-menu" role="menu">
 				    {% for status in role|get_workflow_statuses %}
-                                    	<li><a href="#" name="{{status}}" data-target="#page_status">{% trans status %}</a></li>
+                                    	<li><a href="#" name="{{status}}" data-value="{%trans status %}" data-target="#page_status">{% trans status %}</a></li>
 				    {% endfor %}
                                </ul>
                             </div>
-                        {% else %}
-                            <a id="page_status_toggle" class="btn btn-sm btn-default editControls" {% if mode == "view" %}style="display: none;"{% endif %} data-target="#page_status">
-    				{% trans "Page status** : "%}{% trans pageStatus %} 
-                            </a>
+                        {% elif role|get_workflow_statuses|length == 2 %}
+			<button id="page_status" type="button" class="btn btn-sm btn-default editControls" data-toggle="button" aria-pressed="false" autocomplete="off" data-value="{{pageStatus}}" {% for status in role|get_workflow_statuses %} data-status-{{forloop.counter0}}="{{status}}" data-status-label-{{forloop.counter0}}="{%trans status %}" {% endfor %} {% if mode == "view" %}style="display: none;"{% endif %}>
+				{% trans "Page status: "%}<span id="page_status_label">{% trans pageStatus %}</span>
+			</button>
+			{% else %}
+				<button type="button" class="btn btn-sm btn-default editControls disabled">
+					{% trans "Page status: "%}{% trans pageStatus %} 
+				</button>
                         {% endif %}
                         <a href="#" class="btn btn-sm btn-primary editControls disabled" {% if mode == "view" %}style="display: none;"{% endif %} data-target="#saveChanges" >{% trans "Save changes" %}</a>
                         <span id="message" class="btn btn-sm"></span>
                     </div>
                 {% else %}
                     <div class="btn-group">
-                        <span class="btn btn-sm btn-default">{% trans "This page lacks segmentation and cannot be edited. Please use TranskribusX to create a segmentation first." %}</span>
+                        <span class="btn btn-sm btn-default">{% trans "This page lacks segmentation and cannot be edited. Please use TranskribusX segment the page into lines first." %}</span>
                     </div>
                 {% endif %}
             </div>
@@ -421,35 +385,40 @@ returned by get_workflow_stauses
 
 	$("a[data-target='#saveChanges']").click(function(e) {
 		saveChanges(e);
-        setPageStatus("{{ role }}", "IN_PROGRESS", "{% trans "Page status: in progress" %}")
+        	setPageStatus("IN_PROGRESS", "{% trans "IN_PROGRESS" %}")
 	});
-    $("a[data-target='#page_status_select']").click(function(e) {
-        {# TODO Handle failures here or are we happy with the current solution? #}
-           $.post(window.location.href, {status: e.currentTarget.name, csrfmiddlewaretoken: "{{ csrf_token }}"}, function( data ) {
-                setMessage(data, "success");
-                if ( e.currentTarget.name === "IN_PROGRESS" )
-                    setPageStatus("{{ role }}", "IN_PROGRESS", "{% trans "Page status: in progress" %}")
-                else if ( e.currentTarget.name === "DONE" )
-                    setPageStatus("{{ role }}", "DONE", "{% trans "Page status: done" %}")
-                else if ( e.currentTarget.name === "FINAL" )
-                    setPageStatus("{{ role }}", "FINAL", "{% trans "Page status: final" %}")
-            });
-	});
-	$("a[data-target='#page_status_toggle']").click(function(e) {
-        {# TODO Handle failures here or are we happy with the current solution? #}
-            if ( pageStatus === "NEW" || pageStatus === "IN_PROGRESS" )
-                $.post(window.location.href, {status: "DONE", csrfmiddlewaretoken: "{{ csrf_token }}"}, function( data ) {
-                    setMessage(data, "success");
-                    setPageStatus("{{ role }}", "DONE", "{% trans "Page status: done" %}")
-                });
-            else if ( pageStatus === "DONE" )
-                $.post(window.location.href, {status: "IN_PROGRESS", csrfmiddlewaretoken: "{{ csrf_token }}"}, function( data ) {
-                    setMessage(data, "success");
-                    setPageStatus("{{ role }}", "IN_PROGRESS", "{% trans "Page status: in progress" %}")
-                });
-            else
-                setMessage(pageStatusNotAllowedTrans, "danger", false);
-	});
+
+	/* Toggle page status */
+	$("button#page_status").on("click", function(e) {
+		newStatus = $(this).data("status-0");
+		newStatusLabel = $(this).data("status-label-0");
+		if($(this).data("value") === $(this).data("status-0")){
+			newStatus = $(this).data("status-1")
+			newStatusLabel = $(this).data("status-label-1")
+		}
+		setPageStatus(newStatus,newStatusLabel);
+       	});
+	/* Select page status */
+	$("a[data-target='#page_status']").on("click", function(e) {
+		newStatus = e.currentTarget.name;
+		newStatusLabel = $(e.currentTarget).data("value");
+		setPageStatus(newStatus,newStatusLabel);
+       	});
+	/* Set page Status */
+	function setPageStatus(newStatus, newStatusLabel){
+		$.post(window.location.href, {status : newStatus, csrfmiddlewaretoken: csrf_token }, function(response){
+			$("#page_status_label").html(newStatusLabel);
+			$("#page_status").data("value",newStatus);
+			d.pageStatus = newStatus;
+			setMessage(response, "success");
+		}).fail(function(jqXHR, textStatus, error){
+  			setMessage(error, "warning");
+		    	console.log( "Fail: ",jqXHR, textStatus, error);
+		});
+	}
+
+// RM dont' think we need this
+//        setMessage(pageStatusNotAllowedTrans, "danger", false);
 
 //	$("a[data-target='#toggleEdit']").click(function(e) {
 	// Toggle the mode from edit to view

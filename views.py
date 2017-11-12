@@ -62,7 +62,7 @@ def document_view(request, collId=None, docId=None, pageNr=None, transcriptId=No
     role = get_role(request,collId)
 
     # Now check to see if no-one is try to sneak an edit when they shouldn't
-    if 'edit' in request.path and role not in settings.CAN_EDIT :
+    if mode == 'edit' and role not in settings.CAN_EDIT :
         t_log('Redirect user due to insufficient role access. [from: %s to: %s]' % (request.get_full_path(), request.get_full_path().replace('edit', 'view')))
         return HttpResponseRedirect(request.get_full_path().replace('edit', 'view'))
     
@@ -248,7 +248,7 @@ def document_data(request, collId, docId, pageNr) :
     if isinstance(t,HttpResponse) :
         return error_view(request,t)
 
-    document = t.document(request, collId, docId, -1)
+    document = t.document(request, collId, docId, -1,ignore_cache=True)
     if isinstance(document,HttpResponse):
         return error_view(request,document)
 

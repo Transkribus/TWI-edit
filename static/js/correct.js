@@ -69,6 +69,7 @@ function saveChanges(e) {
 function hasEditPermission(role) {
 	return role === "Editor" || role === "Owner" || role === "Admin" || role === "CrowdTranscriber" || role === "Transcriber"
 }
+/*
 function setPageStatus(role, newStatus, newStatusTrans) {
 	if ( role === "CrowdTranscriber" || role === "Transcriber" ) {
         $("#page_status").html(newStatusTrans);
@@ -81,3 +82,4 @@ function setPageStatus(role, newStatus, newStatusTrans) {
     else
         setMessage(pageStatusNotAllowedTrans, "danger");
 }
+*/
