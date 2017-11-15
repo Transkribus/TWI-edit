@@ -142,7 +142,7 @@ def document_view(request, collId=None, docId=None, pageNr=None, transcriptId=No
     #Let's do the contentArray donkey work here rather than the template
     contentArray = [[0, '', [0,0,0,0,0,0,0,0], 0, '']]
     contentArray.extend([[line.get('@id'), line.get("Unicode"), crop_as_imagemap(line.get("crop")), line.get("regionWidth"), line.get("@custom")] for line in lineList])
-
+    
     # accumExtra I'll be honest I have no idea what it is for... but we can make 
     # it here and pass it in rather than constructing json strings in the template
     accumExtra = dict([(line.get("@id"),{"x": 0, "y": 0, "factor": 1}) for line in lineList])
@@ -214,7 +214,6 @@ def regions_to_lines(regions) :
 
         # Loop through the lines and enhance the metadata available
         for line in lines:
-
             # Tell the line the width of the region
             line['regionWidth'] = crop(region.get("Coords").get("@points"), 1).get('w')
 
@@ -226,12 +225,11 @@ def regions_to_lines(regions) :
             line['crop'] = crop(line.get("Coords").get("@points"))
 
             #If there exists line.textEquive.Unicode, replace white space NBSP (for some reason that I'm sure will become apparent
-            if "textEquiv" in line and "Unicode" in line.get("textEquiv") : 
-                line['Unicode'] = unicode.replace(" ", "\u00A0")
+            if "TextEquiv" in line and "Unicode" in line.get("TextEquiv") : 
+                line['Unicode'] = line.get("TextEquiv").get("Unicode").replace(" ", "\u00A0")
             else :
                 line['Unicode'] = ""
-
-                
+ 
             # I'm 99% sure that append is what is needed here rather than extend([list]) 
             # https://stackoverflow.com/questions/252703/difference-between-append-vs-extend-list-methods-in-python 
             lineList.append(line)
