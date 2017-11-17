@@ -1,5 +1,4 @@
 import settings
-import apps.edit.settings as app_settings
 import logging
 import json
 from  xml.etree import ElementTree
@@ -77,7 +76,7 @@ def document_view(request, collId=None, docId=None, pageNr=None, transcriptId=No
         return HttpResponseRedirect(request.get_full_path().replace('edit', 'view'))
     
     # We check to see if the requetsed interface is available for the request mode
-    if i not in app_settings.INTERFACES[mode] :
+    if mode not in settings.INTERFACES[i] :
         #The elephant in the room here being that we are assuming one way
         t_log('Unsupported intrerface/mode combo... [from: %s to: %s]' % (request.get_full_path(), request.get_full_path().replace('edit', 'view')))
         return HttpResponseRedirect(request.get_full_path().replace('edit', 'view'))
@@ -225,7 +224,7 @@ def regions_to_lines(regions) :
             line['crop'] = crop(line.get("Coords").get("@points"))
 
             #If there exists line.textEquive.Unicode, replace white space NBSP (for some reason that I'm sure will become apparent
-            if "TextEquiv" in line and "Unicode" in line.get("TextEquiv") : 
+            if "TextEquiv" in line and line.get("TextEquiv") is not None and "Unicode" in line.get("TextEquiv") and line.get("TextEquiv").get("Unicode") is not None : 
                 line['Unicode'] = line.get("TextEquiv").get("Unicode").replace(" ", "\u00A0")
             else :
                 line['Unicode'] = ""

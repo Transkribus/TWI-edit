@@ -47,210 +47,124 @@
 
 </script>
 <div class="top-div col-md-12">
+    {# Include control #} 
     <div class="row row-centered fix_scroll_top">
-        <div class="col-md-12">
-            <div class="btn-toolbar btn-toolbar-centered" role="toolbar">
-                <div class="btn-group btn-toggle">
-                    <a id="toggleInterface_i" class="btn btn-sm btn-primary active disabled" data-target="#toggleInterface">{% trans "Image" %}</a>
-                    <a id="toggleInterface_lbl" class="btn btn-sm btn-default disabled" data-target="#toggleInterface">{% trans "Line by line" %}</a>
-                    <a id="toggleInterface_sbs" class="btn btn-sm btn-default disabled" data-target="#toggleInterface">{% trans "Side by side" %}</a>
-                    <a id="toggleInterface_t" class="btn btn-sm btn-default disabled" data-target="#toggleInterface">{% trans "Text" %}</a>
-                </div>
-                <div class="btn-group">
-                    <a class="zoom-in btn btn-sm btn-default disabled" href="#" title="{% trans "Zoom In" %}"><span class="glyphicon glyphicon-zoom-in"></span></a>
-                    <a class="zoom-out btn btn-sm btn-default disabled" href="#" title="{% trans "Zoom Out" %}"><span class="glyphicon glyphicon-zoom-out"></span></a>
-                    <a class="fit-width btn btn-sm btn-default disabled" href="#" title="{% trans "Fit Width" %}"><span class="glyphicon glyphicon-resize-horizontal"></span></a>
-                    <a class="fit-height btn btn-sm btn-default disabled" href="#" title="{% trans "Fit Height" %}"><span class="glyphicon glyphicon-resize-vertical"></span></a>
-                </div>
-                <div class="btn-group">
-                    <a class="first-page btn btn-sm btn-default disabled" href="#" title="{% trans "First page" %}"><span class="glyphicon glyphicon-step-backward"></span></a>
-                    <a class="previous-page btn btn-sm btn-default disabled" href="#" title="{% trans "Previous page" %}"><span class="glyphicon glyphicon-triangle-left"></span></a>
-                    <input type="text" class="btn btn-sm btn-default disabled" id="pageNumber">
-                    <a class="next-page btn btn-sm btn-default disabled" href="#" title="{% trans "Next page" %}"><span class="glyphicon glyphicon-triangle-right"></span></a>
-                    <a class="last-page btn btn-sm btn-default disabled" href="#" title="{% trans "Last page" %}"><span class="glyphicon glyphicon-step-forward"></span></a>
-                    <a class="btn btn-sm btn-default disabled" data-toggle="collapse" href="#thumbDiv" aria-expanded="false" aria-controls="thumbDiv"><span class="glyphicon glyphicon-th-large" title="{% trans "Thumb overview" %}"></span></a>
-                </div>
-                <div class="btn-group">
-{%comment%}                    <a id="editToggle" class="btn btn-sm btn-primary disabled" data-target="#toggleEdit">{% if "view" in request.path %}{% trans "Edit" %}{% else %}{% trans "View" %}{% endif %}</a> {%endcomment%}
-                    <a id="editToggle" class="btn btn-sm btn-primary disabled">{% trans mode|opposite %}</a>
- 
-                </div>
-{%comment%} 
-If there are lines to edit, we select the workflow based on the role and the display is 
-determined by the number of items in the status list returned by get_workflow_stauses
-{%endcomment%}
+    		{% include "edit/control.html" %}
+    </div>
 
-                {% if lines %}
-		<div class="btn-group">
-			{% if role|get_workflow_statuses|length > 2 %}
-                            <div class="btn-group btn-group-sm editControls" {% if mode == "view" %}style="display: none;"{% endif %}>
-                                <a id="page_status" type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown" data-value="{{pageStatus}}">
-				    {% trans "Page status : "%}<span id="page_status_label">{% trans pageStatus %}</span> 
-                                    <span class="caret"></span>
-                                </a>
-                                <ul class="dropdown-menu" role="menu">
-				    {% for status in role|get_workflow_statuses %}
-                                    	<li><a href="#" name="{{status}}" data-value="{%trans status %}" data-target="#page_status">{% trans status %}</a></li>
-				    {% endfor %}
-                               </ul>
-                            </div>
-                        {% elif role|get_workflow_statuses|length == 2 %}
-			<button id="page_status" type="button" class="btn btn-sm btn-default editControls" data-toggle="button" aria-pressed="false" autocomplete="off" data-value="{{pageStatus}}" {% for status in role|get_workflow_statuses %} data-status-{{forloop.counter0}}="{{status}}" data-status-label-{{forloop.counter0}}="{%trans status %}" {% endfor %} {% if mode == "view" %}style="display: none;"{% endif %}>
-				{% trans "Page status: "%}<span id="page_status_label">{% trans pageStatus %}</span>
-			</button>
-			{% else %}
-				<button type="button" class="btn btn-sm btn-default editControls disabled">
-					{% trans "Page status: "%}{% trans pageStatus %} 
-				</button>
-                        {% endif %}
-                        <a href="#" class="btn btn-sm btn-primary editControls disabled" {% if mode == "view" %}style="display: none;"{% endif %} data-target="#saveChanges" >{% trans "Save changes" %}</a>
-                        <span id="message" class="btn btn-sm"></span>
-                    </div>
-                {% else %}
-                    <div class="btn-group">
-                        <span class="btn btn-sm btn-default">{% trans "This page lacks segmentation and cannot be edited. Please use TranskribusX segment the page into lines first." %}</span>
-                    </div>
-                {% endif %}
-            </div>
-        </div>
-    </div>
-	<div class="collapse" id="thumbDiv" style="background-color: black;">
-		<div>
-			<table>
-				<tr id="thumbTR">
-					{# The lovely JavaScript generates a thumbnail bar for navigation and inserts it here. #}
-				</tr>
-			</table>
-		</div>
-    </div>
     <div class="row row-centered">
-    	<div class="col-lg-6" id="compareText" style="display:none;">
-    		{% include "edit/proofread.html" %}
+        {# Include "Side by side" #}
+   	<div class="col-lg-6" id="compareText" style="display:none;">
+    		{% include "edit/side-by-side.html" %}
     	</div>
-		<div class="transcript-div col-lg-12" style="display:none;">
-			<div class="transcript-map-div">
-				<map name="transcriptMap" id="transcriptMap">
-					{% for line in lines %}
-							<area line-key="{{ line|get_item:"@id"}}" id="{{ line|get_item:"@id"}}"  href="{{ line|get_item:"@id"}}"  shape="poly"  style="cursor: default;">
-					{% endfor %}
-				</map>
-				<canvas id="transcriptCanvas" style="position: absolute; z-index: 998; pointer-events: none;"></canvas>
-				<img src="{{ imageUrl }}" usemap="#transcriptMap" id="transcriptImage" class="transcript-img" style="z-index: 999;">
-			</div>
+
+        {# The full image canvas, map for lines and img #}
+	<div class="transcript-div col-lg-12" style="display:none;">
+		<div class="transcript-map-div">
+			<map name="transcriptMap" id="transcriptMap">
+				{% for line in lines %}
+					<area line-key="{{ line|get_item:"@id"}}" id="{{ line|get_item:"@id"}}"  href="{{ line|get_item:"@id"}}"  shape="poly"  style="cursor: default;">
+				{% endfor %}
+			</map>
+			<canvas id="transcriptCanvas" style="position: absolute; z-index: 998; pointer-events: none;"></canvas>
+			<img src="{{ imageUrl }}" usemap="#transcriptMap" id="transcriptImage" class="transcript-img" style="z-index: 999;"/>
 		</div>
 	</div>
-	<div class="interface-lbl" style="padding-left: 15px; display: none;">
-        <script type="text/javascript">
-            function drawLineImage(lineId, coordinates) {
-                var c = document.getElementById("canvas_" + lineId)
-                if ( c !== null && c !== undefined ) {
-                    var ctx = c.getContext("2d");
-                    var image = document.getElementById("transcriptImage");
-                    var coords = coordinates.toString().split(',');
-                    var width = coords[2] - coords[0];
-                    var height = coords[5] - coords[1];
-                    c.height = height;
-                    c.width = width;
-                    ctx.canvas.width = Math.min(window.innerWidth - 70, Math.max(width, 250));
-                    $("#line_" + lineId).width(Math.min(window.innerWidth - 70, Math.max(width, 250)));
-                    $("#options_" + lineId).width(Math.min(window.innerWidth - 70, Math.max(width, 250)));
-                    $("#canvas_wrapper_" + lineId).height(height);
-                    $("#canvas_wrapper_" + lineId).width(Math.min(window.innerWidth - 70, Math.max(width, 250)));
-                    ctx.drawImage(image, coords[0], coords[1], width, height, 0, 0, Math.min(window.innerWidth - 70, Math.max(width, 250)), height);
-                    ctx.save();
-                }
-            }
-        </script>
-		{% for line in lines %}
-			<div lineId="{{ line|get_item:"@id" }}" style="margin-bottom: 10px;">
-                <div id="canvas_wrapper_{{ line|get_item:"@id" }}" class="line-div" style="border: 1px solid #d3d3d3; width: 800px; height: 100px;">
-    				<canvas id="canvas_{{ line|get_item:"@id" }}" width="800" height="100">
-    					{% trans "Your browser does not support the HTML5 canvas tag." %}
-    				</canvas>
-                </div>
-				<ol id="line_{{ line|get_item:"@id" }}" class="line-list" contenteditable="false" style="margin-top: 3px; margin-bottom: 0;">
-				</ol>
-				<div id="options_{{ line|get_item:"@id" }}" class="option-box">
-					{% include "edit/option_box.html" %}
-				</div>
-				<script type="text/javascript">
-				    $(function() {
-				    	drawLineImage("{{ line|get_item:"@id" }}", "{{ line|get_item:"crop"|coords_for_imagemap }}");
-				    });
-				    $("#line_{{ line|get_item:"@id" }}").on("keydown", function(e) {
-				    	if ( window.location.href.indexOf('edit') >= 0 )
-							keydown(e);
-						else
-							e.preventDefault();
-					});
-					$("#line_{{ line|get_item:"@id" }}").on("keyup", function(e) {
-						if ( window.location.href.indexOf('edit') >= 0 )
-							keyup(e);
-						else
-							e.preventDefault();
-					});
-					$("#line_{{ line|get_item:"@id" }}").on("mouseup", function(e) {
-						if ( window.location.href.indexOf('edit') >= 0 ) {
-							if ( currentLineId !== "{{ line|get_item:"@id" }}" )
-								currentLineId = "{{ line|get_item:"@id" }}";
-							mouseup(e);
-                            updateCanvas();
-                            buildLineList();
-						}
-					});
-					$("#line_{{ line|get_item:"@id" }}").on("paste", function(e) {
-						if ( window.location.href.indexOf('edit') >= 0 )
-							paste(e);
-						else
-							e.preventDefault();
-					});
-					$("#line_{{ line|get_item:"@id" }}").on("drop", function(e) {
-						if ( window.location.href.indexOf('edit') >= 0 )
-							drop(e);
-						else
-							e.preventDefault();
-					});
-					$("#line_{{ line|get_item:"@id" }}").on("cut", function(e) {
-						if ( window.location.href.indexOf('edit') >= 0 )
-							cut(e);
-						else
-							e.preventDefault();
-					});
-					$("#line_{{ line|get_item:"@id" }}").on("focus", function() {
-						if ( window.location.href.indexOf('edit') >= 0 )
-							$("#options_{{ line|get_item:"@id" }}").show();
-					});
-					$("#line_{{ line|get_item:"@id" }}").on("blur", function() {
-						if ( !$("#options_{{ line|get_item:"@id" }}").is(":hover") || currentLineId !== "{{ line|get_item:"@id" }}" )
-							$("#options_{{ line|get_item:"@id" }}").hide();
-					});
-                    $("#canvas_{{ line|get_item:"@id" }}").draggable({
-                        stop: function(e, ui) {
-                            {# We prefer to keep it simple and let accumExtra* contain the offsets regardless of how they were created (i.e. also when the user has dragged the image): #}
-                            accumExtra["{{ line|get_item:"@id" }}"]["x"] -= ui.position.left;
-                            accumExtra["{{ line|get_item:"@id" }}"]["y"] -= ui.position.top;
-                            $("#canvas_{{ line|get_item:"@id" }}").css("top", "0px");
-                            $("#canvas_{{ line|get_item:"@id" }}").css("left", "0px");
-                            $("#canvas_{{ line|get_item:"@id" }}").css("transform", "translate(" + -accumExtra["{{ line|get_item:"@id" }}"]["x"] +"px, " + -accumExtra["{{ line|get_item:"@id" }}"]["y"]+ "px) scale(" + accumExtra["{{ line|get_item:"@id" }}"]["factor"] + ")");// Note, the CSS is set to "transform-origin: 0px 0px"
-                        }
-                    });
-                    $("#canvas_wrapper_{{ line|get_item:"@id" }}").on("mousewheel DOMMouseScroll", function(e) {
-                        if ( ctrlKey ) {
-                            e.preventDefault();
-                            var mouseZoom;
-                            if ( e.originalEvent.detail > 0 || e.originalEvent.wheelDelta < 0 )
-                                mouseZoom = -20;
-                            else
-                                mouseZoom = 20;
-                            setZoom(mouseZoom, e.originalEvent.pageX - $("#canvas_wrapper_{{ line|get_item:"@id" }}").offset().left, e.originalEvent.pageY - $("#canvas_wrapper_{{ line|get_item:"@id" }}").offset().top);
-                        }
-                    });
-				</script>
-			</div>
-		{% empty %}
-			<p>{% trans "The page contains no lines." %}</p>
-		{% endfor %}
-	</div>
+    </div>
+
+    {# Line by line interface #}
+    <div class="interface-lbl" style="padding-left: 15px; display: none;">
+	{% for line in lines %}
+	    <div lineId="{{ line|get_item:"@id" }}" style="margin-bottom: 10px;">
+		<div id="canvas_wrapper_{{ line|get_item:"@id" }}" class="line-div" style="border: 1px solid #d3d3d3; width: 800px; height: 100px;">
+		    <canvas id="canvas_{{ line|get_item:"@id" }}" width="800" height="100">
+			{% trans "Your browser does not support the HTML5 canvas tag." %}
+		    </canvas>
+		</div>
+		<ol id="line_{{ line|get_item:"@id" }}" class="line-list" contenteditable="false" style="margin-top: 3px; margin-bottom: 0;"></ol>
+		<div id="options_{{ line|get_item:"@id" }}" class="option-box">
+			{% include "edit/option_box.html" %}
+		</div>
+		<script type="text/javascript">
+		    $(function() {
+			drawLineImage("{{ line|get_item:"@id" }}", "{{ line|get_item:"crop"|coords_for_imagemap }}");
+		    });
+		    $("#line_{{ line|get_item:"@id" }}").on("keydown", function(e) {
+			if ( window.location.href.indexOf('edit') >= 0 )
+				keydown(e);
+			else
+				e.preventDefault();
+		    });
+		    $("#line_{{ line|get_item:"@id" }}").on("keyup", function(e) {
+			if ( window.location.href.indexOf('edit') >= 0 )
+				keyup(e);
+			else
+				e.preventDefault();
+		    });
+		    $("#line_{{ line|get_item:"@id" }}").on("mouseup", function(e) {
+			if ( window.location.href.indexOf('edit') >= 0 ) {
+		 		if ( currentLineId !== "{{ line|get_item:"@id" }}" )
+					currentLineId = "{{ line|get_item:"@id" }}";
+				mouseup(e);
+		    		updateCanvas();
+		    		buildLineList();
+			}
+		    });
+		    $("#line_{{ line|get_item:"@id" }}").on("paste", function(e) {
+			if ( window.location.href.indexOf('edit') >= 0 )
+				paste(e);
+			else
+				e.preventDefault();
+		    });
+		    $("#line_{{ line|get_item:"@id" }}").on("drop", function(e) {
+		 	if ( window.location.href.indexOf('edit') >= 0 )
+				drop(e);
+			else
+				e.preventDefault();
+		    });
+		    $("#line_{{ line|get_item:"@id" }}").on("cut", function(e) {
+			if ( window.location.href.indexOf('edit') >= 0 )
+				cut(e);
+			else
+				e.preventDefault();
+		    });
+		    $("#line_{{ line|get_item:"@id" }}").on("focus", function() {
+			if ( window.location.href.indexOf('edit') >= 0 )
+				$("#options_{{ line|get_item:"@id" }}").show();
+		    });
+		    $("#line_{{ line|get_item:"@id" }}").on("blur", function() {
+			if ( !$("#options_{{ line|get_item:"@id" }}").is(":hover") || currentLineId !== "{{ line|get_item:"@id" }}" )
+				$("#options_{{ line|get_item:"@id" }}").hide();
+			});
+	    	    $("#canvas_{{ line|get_item:"@id" }}").draggable({
+			stop: function(e, ui) {
+				{# We prefer to keep it simple and let accumExtra* contain the offsets regardless of how they were created (i.e. also when the user has dragged the image): #}
+				accumExtra["{{ line|get_item:"@id" }}"]["x"] -= ui.position.left;
+				accumExtra["{{ line|get_item:"@id" }}"]["y"] -= ui.position.top;
+				$("#canvas_{{ line|get_item:"@id" }}").css("top", "0px");
+				$("#canvas_{{ line|get_item:"@id" }}").css("left", "0px");
+				$("#canvas_{{ line|get_item:"@id" }}").css("transform", "translate(" + -accumExtra["{{ line|get_item:"@id" }}"]["x"] +"px, " + -accumExtra["{{ line|get_item:"@id" }}"]["y"]+ "px) scale(" + accumExtra["{{ line|get_item:"@id" }}"]["factor"] + ")");// Note, the CSS is set to "transform-origin: 0px 0px"
+		    	}
+	    	    });
+	    	    $("#canvas_wrapper_{{ line|get_item:"@id" }}").on("mousewheel DOMMouseScroll", function(e) {
+			if ( ctrlKey ) {
+			    e.preventDefault();
+			    var mouseZoom;
+			    if ( e.originalEvent.detail > 0 || e.originalEvent.wheelDelta < 0 )
+				mouseZoom = -20;
+			    else
+				mouseZoom = 20;
+			    setZoom(mouseZoom, e.originalEvent.pageX - $("#canvas_wrapper_{{ line|get_item:"@id" }}").offset().left, e.originalEvent.pageY - $("#canvas_wrapper_{{ line|get_item:"@id" }}").offset().top);
+			}
+		    });
+		</script>
+	    </div>
+	{% empty %}
+		<p>{% trans "The page contains no lines." %}</p>
+	{% endfor %}
+    </div>
+
+    {# Text only interface #}
     <div class="interface-t" style="padding-left: 15px; padding-right: 15px; display: none;">
         <ol id="text" class="line-list" contenteditable="false" style="margin-top: 3px; margin-bottom: 0;">
         </ol>
@@ -335,6 +249,7 @@ determined by the number of items in the status list returned by get_workflow_st
         </script>
     </div>
 </div>
+
 {% include "edit/correct_modal.html" %}
 
 

@@ -183,7 +183,8 @@ function getSortedCustomTagArray(tagLineIndex, filterTag) { // returns an array 
 	}
 	var custom = (contentArray[tagLineIndex][4] + ' ').replace(/\s+/g, '').split('}');
 	var customTagArray = [];
-	if ("None" != custom) {
+	// Now that we deliver contentArray from the view as JSON using json.dumps, "None" becomes "null"
+	if ("null" != custom) {
 		custom.forEach(function(attribute) { // turn "tags" into something closer to actual tags (=spans)
 			attribute = attribute.split('{');
 			if ("" != attribute && "readingOrder" != attribute[0] && attribute[1].indexOf("offset:") != -1 && attribute[1].indexOf(";length:") != -1) { // we have no use for readingOrder for now...

@@ -1,0 +1,79 @@
+{% load i18n %}
+
+{# This tempalte holds all the the page control functions #}
+<div class="col-md-12">
+    <div class="btn-toolbar btn-toolbar-centered" role="toolbar">
+	{# Interfaces from settings #}
+	<div class="btn-group btn-toggle">
+	    {% for interface in mode|get_interfaces %}
+		    <a id="toggleInterface_{{interface}}" class="btn btn-sm btn-primary active disabled" data-target="#toggleInterface">{% trans interface %}</a>
+		{% endfor %}
+	</div>
+	{# Zooming #}
+	<div class="btn-group">
+	    <a class="zoom-in btn btn-sm btn-default disabled" href="#" title="{% trans "Zoom In" %}"><span class="glyphicon glyphicon-zoom-in"></span></a>
+	    <a class="zoom-out btn btn-sm btn-default disabled" href="#" title="{% trans "Zoom Out" %}"><span class="glyphicon glyphicon-zoom-out"></span></a>
+	    <a class="fit-width btn btn-sm btn-default disabled" href="#" title="{% trans "Fit Width" %}"><span class="glyphicon glyphicon-resize-horizontal"></span></a>
+	    <a class="fit-height btn btn-sm btn-default disabled" href="#" title="{% trans "Fit Height" %}"><span class="glyphicon glyphicon-resize-vertical"></span></a>
+	</div>
+	{# page nav #}
+	<div class="btn-group">
+	    <a class="first-page btn btn-sm btn-default disabled" href="#" title="{% trans "First page" %}"><span class="glyphicon glyphicon-step-backward"></span></a>
+	    <a class="previous-page btn btn-sm btn-default disabled" href="#" title="{% trans "Previous page" %}"><span class="glyphicon glyphicon-triangle-left"></span></a>
+	    <input type="text" class="btn btn-sm btn-default disabled" id="pageNumber">
+	    <a class="next-page btn btn-sm btn-default disabled" href="#" title="{% trans "Next page" %}"><span class="glyphicon glyphicon-triangle-right"></span></a>
+	    <a class="last-page btn btn-sm btn-default disabled" href="#" title="{% trans "Last page" %}"><span class="glyphicon glyphicon-step-forward"></span></a>
+	    <a class="btn btn-sm btn-default disabled" data-toggle="collapse" href="#thumbDiv" aria-expanded="false" aria-controls="thumbDiv"><span class="glyphicon glyphicon-th-large" title="{% trans "Thumb overview" %}"></span></a>
+	</div>
+	{# mode switching #}
+	<div class="btn-group">
+	    <a id="editToggle" class="btn btn-sm btn-primary disabled">{% trans mode|opposite %}</a>
+
+	</div>
+
+	{# workflow / status #}
+
+	{% if lines %}
+	    <div class="btn-group">
+		{% if role|get_workflow_statuses|length > 2 %}
+		    <div class="btn-group btn-group-sm editControls" {% if mode == "view" %}style="display: none;"{% endif %}>
+			<a id="page_status" type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown" data-value="{{pageStatus}}">
+			    {% trans "Page status : "%}<span id="page_status_label">{% trans pageStatus %}</span> 
+			    <span class="caret"></span>
+			</a>
+			<ul class="dropdown-menu" role="menu">
+			    {% for status in role|get_workflow_statuses %}
+				<li><a href="#" name="{{status}}" data-value="{%trans status %}" data-target="#page_status">{% trans status %}</a></li>
+			    {% endfor %}
+		       </ul>
+		    </div>
+		{% elif role|get_workflow_statuses|length == 2 %}
+		<	button id="page_status" type="button" class="btn btn-sm btn-default editControls" data-toggle="button" aria-pressed="false" autocomplete="off" data-value="{{pageStatus}}" {% for status in role|get_workflow_statuses %} data-status-{{forloop.counter0}}="{{status}}" data-status-label-{{forloop.counter0}}="{%trans status %}" {% endfor %} {% if mode == "view" %}style="display: none;"{% endif %}>
+			{% trans "Page status: "%}<span id="page_status_label">{% trans pageStatus %}</span></button>
+		{% else %}
+			<button type="button" class="btn btn-sm btn-default editControls disabled">
+				{% trans "Page status: "%}{% trans pageStatus %} 
+			</button>
+		{% endif %}
+		<a href="#" class="btn btn-sm btn-primary editControls disabled" {% if mode == "view" %}style="display: none;"{% endif %} data-target="#saveChanges" >{% trans "Save changes" %}</a>
+		<span id="message" class="btn btn-sm"></span>
+	    </div>
+	{% else %}
+	    <div class="btn-group">
+		<span class="btn btn-sm btn-default">{% trans "This page lacks segmentation and cannot be edited. Please use TranskribusX segment the page into lines first." %}</span>
+	    </div>
+	{% endif %}
+    </div>
+</div>
+
+{# thumbnail ribbon for page nav #}
+<div class="collapse" id="thumbDiv" style="background-color: black;">
+	<div>
+		<table>
+			<tr id="thumbTR">
+				{# The lovely JavaScript generates a thumbnail bar for navigation and inserts it here. #}
+			</tr>
+		</table>
+	</div>
+</div>
+
