@@ -26,7 +26,6 @@
 <script src="{% static "js/text.js" %}"></script>
 <script src="{% static "js/diff.js" %}"></script>
 <script src="{% static "js/proofread.js" %}"></script>
-<script src="{% static "js/utils.js" %}"></script>
 <script src="https://swisnl.github.io/jQuery-contextMenu/dist/jquery.contextMenu.js" type="text/javascript"></script>
 <!--<script src="https://swisnl.github.io/jQuery-contextMenu/dist/jquery.ui.position.min.js" type="text/javascript"></script>-->
 <script src="https://swisnl.github.io/jQuery-contextMenu/js/main.js" type="text/javascript"></script>
@@ -538,16 +537,11 @@
 	$( ".scroll-down" ).on('click', function(e) {
 		scrollToNextTop();
 	});
-	$('#correctModal').on('keydown', function(e) {
-		keydown(e);
-	});
-	$('#correctModal').on('keyup', function(e) {
-		keyup(e);
-	});
 	$('#correctModal').on('mouseup', function(e) {
 		mouseup(e);
 	});
 	$("#correctModal").on("paste", function(e) {
+		e.preventDefault();
 		paste(e);
 	});
 	$("#correctModal").on("drop", function(e) {
@@ -638,9 +632,11 @@
 	$("#pageNumber").change(function() {
    		checkPageNumberInput();
 	});
+	
     function changeInterface(target) {
         var oldLineId = currentLineId;
         currentLineId = null;
+
         if ( target === "i" ) {
             ifc = "i";
             $("").html(""); {# the dialog height does not get calculated correctly unless we do this! #}
@@ -663,14 +659,12 @@
                     $("#editToggle").removeClass("disabled");
                     $("a[data-target='#saveChanges']").removeClass("disabled");
                     $("#page_status").removeClass("disabled");
-                } else {
+                }else{
                     $("#editToggle").addClass("disabled");
                     $("a[data-target='#saveChanges']").addClass("disabled");
                     $("#page_status").addClass("disabled");
-				}
+		}
             {% endif %}
-            if (restoreDialogLine)
-            	updateDialog();
         }
         else if ( target === "lbl" ) {
             ifc = "lbl";
@@ -724,11 +718,11 @@
                     $("#editToggle").removeClass("disabled");
                     $("a[data-target='#saveChanges']").removeClass("disabled");
                     $("#page_status").removeClass("disabled");
-                } else {
+                }else{
                     $("#editToggle").addClass("disabled");
                     $("a[data-target='#saveChanges']").addClass("disabled");
                     $("#page_status").addClass("disabled");
-				}*/
+		}*/
             {% endif %}
             return;
         }
@@ -754,11 +748,11 @@
                     $("#editToggle").removeClass("disabled");
                     $("a[data-target='#saveChanges']").removeClass("disabled");
                     $("#page_status").removeClass("disabled");
-                } else {
+                }else{
                     $("#editToggle").addClass("disabled");
                     $("a[data-target='#saveChanges']").addClass("disabled");
                     $("#page_status").addClass("disabled");
-				}*/
+		}*/
             {% endif %}
         }
         else {
@@ -840,23 +834,11 @@
 		naturalWidth = $('#transcriptImage').get(0).naturalWidth;
         $("#canvas_text").width(window.innerWidth - 50);
 		initialScale = initialWidth / naturalWidth;
-		pathWithoutPage = window.location.pathname.substring(0, window.location.pathname.lastIndexOf("/")) + "/"; 
+		pathWithoutPage = "{% url 'edit:correct' collId docId %}/";
 		pageNo = {{pageNo}};
 		var search = window.location.search + 'tco=0';// just to avoid NaN below
 		thumbCountOffset = parseInt(search.substring(search.indexOf('tco=') + 4)); // "tco=".length = 4
-		
-		// TODO Use getQueryVariable for *EVERYTHING* 
-		var restoreLine = getQueryVariable("dL"); // get the dialog line, if any, that was previously open in the edit box
-		if (restoreLine) {
-			restoreDialogLine = restoreLine; // save the line that was open, regardless of whether it exists on the current page
-			if (getIndexFromLineId(restoreDialogLine))
-				currentLineId = restoreDialogLine; // the line exists, we restore currentLineId
-			{% if lines %}
-			else // it doesn't exist so we set currentLineId to the first line of this document, if it exists, and thus the dialog can be opened, if that's what the user prefers
-				currentLineId = "{{ lines|index:0|get_item:"@id" }}";
-			{% endif %} 
-		}
-		
+
 		// If the current page isn't among the thumbs first shown, we change the offset to make it so
 		thumbCountOffset = Math.max(thumbCountOffset, -pageNo + 1);
 		thumbCountOffset = Math.min(thumbCountOffset, -pageNo + THUMBS_TO_SHOW);
@@ -875,14 +857,10 @@
 			autoOpen: false,
 		    uiLibrary: 'bootstrap',
             resizable: true,
-            opened: function(e) {
-            	restoreDialogLine = currentLineId;
-            },
 		    closed: function(e) {
 		        currentLineId = null;
 				updateCanvas();
 				ignoreLeave = false;
-				restoreDialogLine = null;
 		    },
     		resizeStart: function (e) {
     			dialogBeingResized = true;
@@ -910,10 +888,6 @@
     				$("#correctModal").css("top",  "0px");
     			if (($("#correctModal").offset().top + dialogHeight) > document.body.clientHeight)
     				$("#correctModal").css("top",  (window.innerHeight - dialogHeight) + "px");
-    			dialogX = parseInt(this.style.left, 10);
-				dialogY = parseInt(this.style.top, 10);
-				dialogHighlightDX = dialogX + accumExtraX - contentArray[getIndexFromLineId(currentLineId)][2][0] * initialScale * zoomFactor;
-				dialogHighlightDY = dialogY + accumExtraY - $(".transcript-div").offset().top - contentArray[getIndexFromLineId(currentLineId)][2][1] * initialScale * zoomFactor;// + $(".transcript-map-div").css("top");
     		},
     		resizeStop: function (e) {
     			dialogWidth = parseInt(this.style.width, 10); // saving this... TODO Ask if this is to be saved? User opinions vary...!?
@@ -947,7 +921,7 @@
          refreshOriginalVersion();
         $("#toggleInterface_" + ifc).click();// Change buttons
         changeInterface(ifc);
-     });
+    });
 	var fixmeTop = $(".fix_scroll_top").offset().top;
 	$(window).scroll(function() {
 		var currentScroll = $(window).scrollTop();

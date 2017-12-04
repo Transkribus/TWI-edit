@@ -5,42 +5,13 @@ var savedCaretOffsetInPixels = null;
 var oldWidthForCaretCalc;
 var selectionData = [];
 var contentLineFontSize = parseInt($('.line-list').css("font-size"));
-var wasDead = false;
-var keyDown;
-var bufferedKeys = "";
-var keyIsDown = false;
 var message_timeout;
 // these vars must be initialized when importing this JavaScript
 // surroundingCount, currentLineId, view, changed
 // these JavaScripts must also be imported
 // TODO Check which.
+// TODO Optimize by removing some unnecessary calls to getIndexFromLineId...
 
-function keydown(e) {
-	keyDown = e.key; // needed to ensure that keys are processed in the right order and resolve issues with some not triggering this at all
-	if (e.which == 17 || e.which == 112 || e.which == 111) { // we handle CTRL like this because of one of the weirdest things I've ever come across. Any one of these (i.e. also F1 and divide) can be triggered when pressing CTRL.
-		ctrlKey = true;
-	} else if (!ctrlKey) {
-		if (e.key.length == 1) {
-			if (keyIsDown) { // if we're already busy with a key, we buffer this (note: the caveat with this method is that composite characters lose their dead key composite but such fast entry should be impossible)
-				e.preventDefault();
-				bufferedKeys += e.key;
-				getInput(); // we make sure that the contenteditable is updated asap
-				updateSelectionData(); // redundant? 
-			} else { // we allow input into the contenteditable since we're not busy
-				if (selectionData.length >1 || (selectionData[0][1] != selectionData[0][2])) { // if something is selected, we delete that
-					eraseSelected();
-					buildLineList();
-				 } else
-					updateSelectionData(); // redundant?
-				bufferedKeys += e.key;
-				keyIsDown = true;
-			}
-		} else {
-			updateSelectionData();
-			editAction(e); // TODO preventDefault should perhaps be handled here instead of in editAction
-		}
-	}
-}
 function initializeCaretOffsetInPixels() { 
 	var selection = window.getSelection();
 	if ( selection.anchorNode === null || selection.anchorNode.parentNode === null )
@@ -52,141 +23,172 @@ function initializeCaretOffsetInPixels() {
 	$(hiddenCopy).appendTo(parentElement);
 	caretOffsetInPixels = parentElement.offsetLeft + $(hiddenCopy).outerWidth();
 	$(hiddenCopy).remove();
-	
-}
-function getInput() {
-	if (0 == bufferedKeys.length) // even if a keydown has emptied the buffer, a keyup might still bring us here unnecessarily
-		return;
-	var lineId = selectionData[0][0];
-	var newContent =  $("[id='text_" + lineId+ "']").text();
-	var inputLength = newContent.length - contentArray[getIndexFromLineId(selectionData[0][0])][1].length;
-	var newWidth = $("[id='text_" + lineId+ "']").outerWidth();
-	caretOffsetInPixels += newWidth - oldWidthForCaretCalc;
-	oldWidthForCaretCalc = newWidth;
-	var startPos = selectionData[0][1];
-	var endPos = startPos  + inputLength;
-	// TODO Make inputAction update selectionData? At least in these two cases it would make sense:
-	setSelectionData(lineId, startPos);
-	if (inputLength != 0) { // if the input has had a chance to get rendered, we read it from the contenteditable
-		inputAction(newContent.substring(startPos, endPos));
-		bufferedKeys = bufferedKeys.substring(inputLength);
-		setSelectionData(lineId, endPos);
-	}
-	// we get what's in the buffer BUT we don't get composite keys this way. However, in these cases the input has been really fast and there can't (!?) be any.
-	var bkl = bufferedKeys.length;
-	if (bkl > 0) {
-		inputAction(bufferedKeys);
-		setSelectionData(lineId, startPos + bkl);
-		bufferedKeys = "";
-	}
-	keyIsDown = false; // we're not busy anymore
-}
-function keyup(e) { // TODO Refactor this. This now does more than before because we don't have keyPress and a different split between this and editAction might be better....
-	if (ctrlKey) { // see above why we do this
-		e.preventDefault(); // TODO what about cut and copy?
-		if (e.which == 17 || e.which == 112 || e.which == 111) // the weird behaviour
-			ctrlKey = false;
-		if (e.key == "z" || e.key == "Z") // we respond to this
-			undoAction();
-		if ( (e.key == "v" || e.key == "V") && e.originalEvent.clipboardData !== undefined ) // and this
-			inputAction(e.originalEvent.clipboardData.getData('text'));
-	} else if (e.key.length == 1) { // the user has released the key
-		getInput();
-	} else if ("Dead" == e.key) {
-		wasDead = true;
-	} else {
-		wasDead = false;
-	}
-	keyDown = null; // we're done with the key, this ensures that we detect keys that come in the wrong order
 }
 function mouseup(e) {
 	updateSelectionData();
 	initializeCaretOffsetInPixels() ;
 }
-function paste(e) {
-	e.preventDefault();
-	updateSelectionData();
-	inputAction(e.originalEvent.clipboardData.getData('text'));
-}
 function drop(e) {
 	// Nobody needs to do this and this breaks things.
 	e.preventDefault();
 }
-function cut(e) { // TODO This!
+function cut(event) { 
+	console.log("calling cut");
+	// TODO This! Maybe with zeroclipboard?
 	eraseSelected();
 }
-function eraseSelected() {
-	if (selectionData.length == 1) {
-		var startOffset = selectionData[0][2];
-		var endOffset = selectionData[0][1];
-		var deleteFromId = selectionData[0][0];
-		undoArray.push(contentArray[getIndexFromLineId(deleteFromId)].slice());
-		lineEditAction(deleteFromId, startOffset, endOffset);
-		setSelectionData(deleteFromId, endOffset);
-	} else {
-		var startFromId = selectionData[0][0];
-		var deleteFromId = startFromId;
-		var startFromIndex = getIndexFromLineId(deleteFromId);
-		var deleteFromIndex = startFromIndex;
-		undoArray.push(contentArray[deleteFromIndex].slice());
-		lineEditAction(deleteFromId, contentArray[deleteFromIndex][1].length, selectionData[0][1]);
-		var c = 1;
-		var lastButOne = selectionData.length - 1;
-		deleteFromId = getNextLineId(deleteFromId);
-		deleteFromIndex = getIndexFromLineId(deleteFromId);
-		while (c < lastButOne) {
-			undoArray.push(contentArray[deleteFromIndex].slice());
-			lineEditAction(deleteFromId, contentArray[deleteFromIndex][1].length, 0);
-			deleteFromId = getNextLineId(deleteFromId);
-			deleteFromIndex = getIndexFromLineId(deleteFromId);
-			c++;
-		}
-		undoArray.push(contentArray[deleteFromIndex].slice());
-		lineEditAction(deleteFromId, selectionData[c][2], 0);
-		setSelectionData(startFromId, startFromIndex);
-	}
-}
-// TODO Rewrite a lot. We no longer use textInjection with the new input handling...
-function lineEditAction(editedLineId, startOffset, endOffset, textInjection) { // if no text injection is given, we just update the tags and assume that the input went straight to the "contenteditable", if startOffset > endOffset the action is a deletion (possibly followed by an injection into the same offset)
-	var contentDelta;
-	var injectionDelta = 0;
-	savedCaretOffsetInPixels = null;
-	if (arguments.length == 4) // this could set endOffset so that any given value is ignored because it makes no sense to consider that parameter in this case
-		injectionDelta = textInjection.length;
-	contentDelta = endOffset - startOffset + injectionDelta;
-	$("[tagLineId='" + editedLineId + "']:visible").each(function () {
-		var tagLength = parseInt($(this).attr("tagLength"));
-		if (tagLength) { // spans with set tagLengths are Transkribus tags
-			var tagOffset = parseInt($(this).attr("offset"));
-			if (startOffset <= tagOffset) { // tags after the edit
-				$(this).attr("offset", tagOffset + contentDelta);
-			} else if (tagOffset > endOffset && (tagOffset + tagLength) > startOffset) {
-				$(this).attr("offset", endOffset);
-				$(this).attr("tagLength", tagLength - startOffset + tagOffset);
-			} else if ((tagOffset + tagLength) > endOffset) {
-				var tL = Math.max(tagLength + contentDelta, endOffset - tagOffset);
-				if (tL <= 0) // remove the tag altogether?
-					$(this).remove();
-				else
-					$(this).attr("tagLength", Math.max(tagLength + contentDelta, endOffset - tagOffset));
+function paste(event) {
+	var text = event.originalEvent.clipboardData.getData('text');
+	if (null === text || text.length == 0 || selectionData === undefined || selectionData[0] === undefined ) // is it necessary to check selectionData?
+		return; // TODO Place the caret at the end of the current line in this situation!?
+	if (!changed)
+		setMessage(transUnsavedChanges);
+	changed = true;
+	if (selectionData.length > 1 || (selectionData[0][1] != selectionData[0][2])) // do we have to erase a selection first?
+		eraseSelected();
+	text = text.replace(" ", "\u00A0");
+	var lineIndex = getIndexFromLineId(selectionData[0][0])
+	var charOffset;
+	if (contentArray[lineIndex][1].length ==  selectionData[0][1]) { // we only attempt a multi-line paste, if we can do it to the end of the line and we ignore tags in that case
+		var textArray = text.split("\n");
+		for (var i = 0; i < textArray.length; i++) {
+			// TODO undoArray.push(contentArray[lineIndex].slice());
+			contentArray[lineIndex][1] += textArray[i];
+			if (++lineIndex >= contentArray.length || contentArray[lineIndex][1] != "") {
+				lineIndex--;
+				while (i < textArray.length) {
+					contentArray[lineIndex][1] += textArray[i];
+					i++;
+				}
+				charOffset = contentArray[lineIndex][1].length;
 			}
 		}
-	});
-	if (arguments.length == 4) { // injected, possibly with deletion?
-		var previousContent = contentArray[getIndexFromLineId(editedLineId)][1];
-		if (endOffset < startOffset)
-			contenteditableToArray(editedLineId, previousContent.substring(0, endOffset) + textInjection + previousContent.substring(startOffset, previousContent.length));
-		else
-			contenteditableToArray(editedLineId, previousContent.substring(0, endOffset) + textInjection + previousContent.substring(endOffset, previousContent.length));
-	} else if (contentDelta < 0) {
-		var previousContent = contentArray[getIndexFromLineId(editedLineId)][1];
-		contenteditableToArray(editedLineId, previousContent.substring(0, endOffset) + previousContent.substring(startOffset, previousContent.length)); // deletions require overwrites
-	} else
-		contenteditableToArray(editedLineId);
+	} else {
+		// TODO undoArray.push(contentArray[lineIndex].slice());
+		text = text.replace("\n", "\u00A0");
+		// update tags
+		var customString = contentArray[lineIndex][4] + ' ';
+		var custom = customString.replace(/\s+/g, '').split('}');
+		var newCustom = customString.match(/readingOrder {index:\d+;}/);
+		var contentDelta = text.length;
+		// TODO undoArray.push(contentArray[lineIndex].slice()); // TODO Speed this up?
+		contentArray[lineIndex][4] = newCustom;
+		if ("None" != custom) {
+			custom.forEach(function(attribute) { 
+				attribute = attribute.split('{');
+				if ("" != attribute && "readingOrder" != attribute[0] && attribute[1].indexOf("offset:") != -1 && attribute[1].indexOf(";length:") != -1) { // we have no use for readingOrder for now...
+					var split = attribute[1].split("offset:")[1].split(";length:");
+					var tagOffset = parseInt(split[0]);
+					var tagLength = parseInt(split[1]); // parseInt doesn't care about what comes after the first int (but we do and hence append it below to preserve whatever it is)
+					if (selectionData[0][1] <= tagOffset) { // this tag is after the pasted input
+						contentArray[lineIndex][4] += ' ' + attribute[0] + ' ' + '{offset: ' + (tagOffset + contentDelta) + ';length: ' + tagLength + split[1].substring(split[1].indexOf(";")) + '}';
+					} else if (selectionData[0][1] < (tagOffset + tagLength)) { // the input is within this tag
+						contentArray[lineIndex][4] += ' ' + attribute[0] + ' ' + '{offset: ' + tagOffset + ';length: ' + (tagLength + contentDelta) + split[1].substring(split[1].indexOf(";")) + '}';
+					} else { // tags before the edit
+						contentArray[lineIndex][4] += ' ' + attribute[0] + ' ' + ' {offset: ' + tagOffset + ';length: ' + tagLength + split[1].substring(split[1].indexOf(";")) + '}';
+					}
+				}
+			});
+		}
+		var lineUnicode = contentArray[lineIndex][1]; 
+		contentArray[lineIndex][1] = lineUnicode.substring(0, selectionData[0][1]) + text + lineUnicode.substring(selectionData[0][1]);
+		charOffset = selectionData[0][1] + text.length;
+	}
+	selectionData = [[contentArray[lineIndex][0], charOffset, charOffset]];
+	buildLineList(); // TODO Update a lot less!
 }
-// TODO Include pasteAction's multi-line handling here instead, this handles multiple lines in other situations as well...
+function inputChar(char) {
+	if ( selectionData === undefined || selectionData[0] === undefined )
+		return; // TODO Place the caret at the end of the current line in this situation!?
+	if (!changed)
+		setMessage(transUnsavedChanges);
+	changed = true;
+	if (selectionData.length > 1 || (selectionData[0][1] != selectionData[0][2])) // do we have to erase a selection first?
+		eraseSelected();
+	if (" " === char)
+		char = "\u00A0";
+	// update tags
+	var editedLineId = selectionData[0][0];
+	var charOffset = selectionData[0][1];
+	var lineIndex = getIndexFromLineId(editedLineId);
+	var customString = contentArray[lineIndex][4] + ' ';
+	var custom = customString.replace(/\s+/g, '').split('}');
+	var newCustom = customString.match(/readingOrder {index:\d+;}/);
+	// TODO undoArray.push(contentArray[lineIndex].slice()); // TODO Speed this up?
+	contentArray[lineIndex][4] = newCustom;
+	if ("None" != custom) {
+		custom.forEach(function(attribute) { 
+			attribute = attribute.split('{');
+			if ("" != attribute && "readingOrder" != attribute[0] && attribute[1].indexOf("offset:") != -1 && attribute[1].indexOf(";length:") != -1) { // we have no use for readingOrder for now...
+				var split = attribute[1].split("offset:")[1].split(";length:");
+				var tagOffset = parseInt(split[0]);
+				var tagLength = parseInt(split[1]); // parseInt doesn't care about what comes after the first int (but we do and hence append it below to preserve whatever it is)
+				if (charOffset <= tagOffset) { // this tag is after the character input
+					contentArray[lineIndex][4] += ' ' + attribute[0] + ' ' + '{offset: ' + (tagOffset + 1) + ';length: ' + tagLength + split[1].substring(split[1].indexOf(";")) + '}';
+				} else if (charOffset < (tagOffset + tagLength)) { // the input is within this tag
+					contentArray[lineIndex][4] += ' ' + attribute[0] + ' ' + '{offset: ' + tagOffset + ';length: ' + (tagLength + 1) + split[1].substring(split[1].indexOf(";")) + '}';
+				} else { // tags before the edit
+					contentArray[lineIndex][4] += ' ' + attribute[0] + ' ' + ' {offset: ' + tagOffset + ';length: ' + tagLength + split[1].substring(split[1].indexOf(";")) + '}';
+				}
+			}
+		});
+	}
+	// update text
+	var lineUnicode = contentArray[lineIndex][1];
+	contentArray[lineIndex][1] = lineUnicode.substring(0, charOffset) + char + lineUnicode.substring(charOffset);
+	selectionData = [[editedLineId, ++charOffset, charOffset]];
+	buildLineList(); // TODO Update a lot less!
+}
+function eraseFrom(lineIndex, startOffset, endOffset) {
+	var contentDelta = startOffset - endOffset;
+	var customString = contentArray[lineIndex][4] + ' ';
+	var custom = customString.replace(/\s+/g, '').split('}');
+	contentArray[lineIndex][4] = customString.match(/readingOrder {index:\d+;}/);
+	//undoArray.push(contentArray[lineIndex].slice());
+	if ("None" != custom) {
+		custom.forEach(function(attribute) {
+			attribute = attribute.split('{');
+			if ("" != attribute && "readingOrder" != attribute[0] && attribute[1].indexOf("offset:") != -1 && attribute[1].indexOf(";length:") != -1) { // we have no use for readingOrder for now...
+				var split = attribute[1].split("offset:")[1].split(";length:");
+				var tagOffset = parseInt(split[0]);
+				var tagLength = parseInt(split[1]); // parseInt doesn't care about what comes after the first int (but we do and hence append it below to preserve whatever it is)
+				if (endOffset <= tagOffset) { // tags after the edit
+					contentArray[lineIndex][4] += ' ' + attribute[0] + ' ' + ' {offset: ' + (tagOffset + contentDelta) + ';length: ' + tagLength + split[1].substring(split[1].indexOf(";")) + '}';
+				} else if (tagOffset > startOffset && (tagOffset + tagLength) > endOffset) {
+					contentArray[lineIndex][4] += ' ' + attribute[0] + ' ' + ' {offset: ' + startOffset + ';length: ' + (tagLength - endOffset + tagOffset) + split[1].substring(split[1].indexOf(";")) + '}';
+				} else if ((tagOffset + tagLength) > startOffset) {
+					var tL = Math.max(tagLength + contentDelta, startOffset - tagOffset);
+					if (tL > 0) // part of the tag is still left?
+						contentArray[lineIndex][4] += ' ' + attribute[0] + ' ' + ' {offset: ' + tagOffset + ';length: ' + Math.max(tagLength + contentDelta, startOffset - tagOffset) + split[1].substring(split[1].indexOf(";")) + '}';
+				} else { // tags before the edit
+					contentArray[lineIndex][4] += ' ' + attribute[0] + ' ' + ' {offset: ' + tagOffset + ';length: ' + tagLength + split[1].substring(split[1].indexOf(";")) + '}';
+				}
+			}
+		});
+	}
+	// update text
+	var lineUnicode = contentArray[lineIndex][1];
+	contentArray[lineIndex][1] = lineUnicode.substring(0, startOffset) + lineUnicode.substring(endOffset);
+}
+function eraseSelected() {
+	var sdLength = selectionData.length;
+	var lineIndex = getIndexFromLineId(selectionData[0][0]);
+	if (sdLength == 1) {
+		eraseFrom(lineIndex, selectionData[0][1], selectionData[0][2]);
+	} else {
+		eraseFrom(lineIndex, selectionData[0][1], contentArray[lineIndex][1].length);
+		sdLength--;
+		for (var i = 1; i < sdLength; i++) {
+			lineIndex = getIndexFromLineId(selectionData[i][0]);
+			eraseFrom(lineIndex, selectionData[i][1], contentArray[lineIndex][1].length);
+		}
+		lineIndex = getIndexFromLineId(selectionData[sdLength][0]);
+		eraseFrom(lineIndex, 0, selectionData[sdLength][2]);
+	}
+	selectionData = [[selectionData[0][0], selectionData[0][1], selectionData[0][1]]]; 
+}
 function editAction(event) {
-	if (event.ctrlKey || event.altKey || event.metaKey) { // we must prevent any printable from being input in these cases....
+	if (event.ctrlKey || event.altKey || event.metaKey) {
 		if (event.key == "z" || event.key == "Z")
 			undoAction();
 		return;
@@ -194,99 +196,48 @@ function editAction(event) {
 	if ( selectionData == undefined || selectionData[0] === undefined ) {
 		return;
 	}
-    var editedLineId = selectionData[0][0];
-	var startOffset = selectionData[0][2];
-	var endOffset = selectionData[0][1]; // TODO Some cleanup? This is just for one line edits, changed in the else below...
-	undoArray = [];
-	undoArray.push(contentArray[getIndexFromLineId(editedLineId)].slice());
-	// TODO Rename the vars? start and end are not intuitive names when removing text end = the caret position at the END OF THE ACTION (i.e. a smaller offset than start = the caret position AT THE START OF THE ACTION)
-	if (selectionData.length ==1) { // does everything happen on just one line?
-		// TODO Remove. This never happens with the new buffered input handling
-		if (event.key.length == 1) { // a regular character?
-			event.preventDefault();
-			lineEditAction(editedLineId, startOffset, endOffset, event.key);
-			endOffset++; // we've moved one character and have to set the selection
-	    } else if (event.keyCode == 8) { // backspace?
-	    	event.preventDefault();
-	    	if (endOffset != startOffset) { // a selection to remove?
-	    		lineEditAction(editedLineId, startOffset, endOffset);
-	    	} else if (endOffset > 0) { // we create a one character selection (but don't remove linebreaks)
-	    		endOffset--;
-				lineEditAction(editedLineId, startOffset, endOffset);
-			}
-		} else if (event.keyCode == 46) { // delete?
-			event.preventDefault();
-			if (endOffset == startOffset && endOffset < contentArray[getIndexFromLineId(editedLineId)][1].length) // can we allow a deletion without removing a linebreak?
-	    		startOffset++; // pretend that the character in front of the caret was selected
-    		lineEditAction(editedLineId, startOffset, endOffset);
-	    } else if (event.keyCode == 13 || event.keyCode == 9) { // return key?
-	    	event.preventDefault();
-	        typewriterNext();
-	        return;
-	    } else {
-			if (event.key == "ArrowUp" && ("i" === ifc || "t" === ifc)) {
-	    		if (getIndexFromLineId(editedLineId) == (getIndexFromLineId(currentLineId) - surroundingCount)) { // if there's no line left in the dialog to go to...
-		    		event.preventDefault();
-	    			typewriterPrevious(); // ...the expected behaviour is identical to this
-	    		} // otherwise we can let the caret simply move as normal
-			} else if ((event.key == "ArrowDown" || event.key == "Enter") && ("i" === ifc || "t" === ifc)) {
-	    		if (getIndexFromLineId(editedLineId) == (getIndexFromLineId(currentLineId) + surroundingCount)) { // if there's no line left in the dialog to go to...
-	    			event.preventDefault();
-	    			typewriterNext(); // ...the expected behaviour is identical to this
-	    		} // otherwise we can let the caret simply move as normal
-	    	} else if (event.key == "Home") {// In some cases the "parent" is the LI which doesn't yield the right offset in updateSelection
-	    		selectionData = [[selectionData[0][0], 0, 0]];
-	    		savedCaretOffsetInPixels = null;
-	    		restoreSelection();
-	    		initializeCaretOffsetInPixels();
-	    	} else if (event.key == "End") { // same thing
-	    		var lineLength = contentArray[getIndexFromLineId(editedLineId)][1].length;
-	    		selectionData = [[selectionData[0][0], lineLength, lineLength]];
-	    		savedCaretOffsetInPixels = null;
-	    		restoreSelection();
-	    		initializeCaretOffsetInPixels();
-	    	} else if (event.key == "ArrowLeft"){
-	    		event.preventDefault();
-	    		var newIndex = Math.max(selectionData[0][1] - 1, 0);
-	    		selectionData = [[selectionData[0][0], newIndex, newIndex]];
-	    		savedCaretOffsetInPixels = null;
-	    		restoreSelection();
-	    		initializeCaretOffsetInPixels();
-	    	} else if (event.key == "ArrowRight"){
-	    		event.preventDefault();
-	    		var newIndex = Math.min(selectionData[0][1] + 1, contentArray[getIndexFromLineId(editedLineId)][1].length);
-	    		selectionData = [[selectionData[0][0], newIndex, newIndex]];
-	    		savedCaretOffsetInPixels = null;
-	    		restoreSelection();
-	    		initializeCaretOffsetInPixels();
-	    	}
-	    	return;
-	    }
-		selectionData[0][1] = endOffset;
-		selectionData[0][2] = endOffset;
-	} else if (event.key.length == 1 || event.keyCode == 8 || event.keyCode == 46) { // multiple lines selected, character input, backspace or delete requires a deletion
-			event.preventDefault();
-			var inject;
-			if (event.key.length == 1)
-				inject = event.key;
-			else
-				inject = "";
-			var c = 1;
-			var lastButOne = selectionData.length - 1;
-			lineEditAction(editedLineId, contentArray[getIndexFromLineId(editedLineId)][1].length, endOffset, inject);
-			var deleteFromId = getNextLineId(editedLineId);
-			while (c < lastButOne) {
-				undoArray.push(contentArray[getIndexFromLineId(deleteFromId)].slice());
-				lineEditAction(deleteFromId, contentArray[getIndexFromLineId(deleteFromId)][1].length, 0);
-				deleteFromId = getNextLineId(deleteFromId);
-				c++;
-			}
-			undoArray.push(contentArray[getIndexFromLineId(deleteFromId)].slice());
-			lineEditAction(deleteFromId, selectionData[i][2], 0);
-			selectionData = [[editedLineId, endOffset, endOffset]];
+	if (event.keyCode == 8) { // backspace?
+		if (selectionData.length == 1 && (selectionData[0][1] == selectionData[0][2])) // just a caret, no selection?
+			selectionData[0] = [selectionData[0][0], Math.max(0, selectionData[0][1] - 1), selectionData[0][2]]; // select the preceding character, if any			
+		eraseSelected();
+		buildLineList();
+		initializeCaretOffsetInPixels();
+	} else if (event.keyCode == 46) { // delete?
+		if (selectionData.length == 1 && (selectionData[0][1] == selectionData[0][2])) // just a caret, no selection?
+			selectionData[0] = [selectionData[0][0], selectionData[0][1], Math.min(selectionData[0][2] + 1, contentArray[getIndexFromLineId(selectionData[0][0])][1].length)]; // select the next character, if any
+		eraseSelected();
+		buildLineList();
+		initializeCaretOffsetInPixels();
+	} else if (event.key == "ArrowUp" && ("i" === ifc || "t" === ifc)) {
+		// TODO Move caret instead, if there's a line visible?
+		typewriterPrevious();
+	} else if ((event.key == "ArrowDown" || event.key == "Enter") && ("i" === ifc || "t" === ifc)) {
+		// TODO Move caret instead, if there's a line visible?
+		typewriterNext();
+	} else if (event.key == "Home") {// In some cases the "parent" is the LI which doesn't yield the right offset in updateSelection
+		selectionData = [[selectionData[0][0], 0, 0]];
+		savedCaretOffsetInPixels = null;
+		restoreSelection();
+		initializeCaretOffsetInPixels();
+	} else if (event.key == "End") { // same thing
+		var lineLength = contentArray[getIndexFromLineId(selectionData[0][0])][1].length;
+		selectionData = [[selectionData[0][0], lineLength, lineLength]];
+		savedCaretOffsetInPixels = null;
+		restoreSelection();
+		initializeCaretOffsetInPixels();
+	} else if (event.key == "ArrowLeft"){
+		var newIndex = Math.max(selectionData[0][1] - 1, 0);
+		selectionData = [[selectionData[0][0], newIndex, newIndex]];
+		savedCaretOffsetInPixels = null;
+		restoreSelection();
+		initializeCaretOffsetInPixels();
+	} else if (event.key == "ArrowRight"){
+		var newIndex = Math.min(selectionData[0][1] + 1, contentArray[getIndexFromLineId(selectionData[0][0])][1].length);
+		selectionData = [[selectionData[0][0], newIndex, newIndex]];
+		savedCaretOffsetInPixels = null;
+		restoreSelection();
+		initializeCaretOffsetInPixels();
 	}
-	buildLineList();
-	initializeCaretOffsetInPixels();
 }
 function undoAction() {
 	for (var i = 0; i < undoArray.length; i++) {
@@ -295,57 +246,6 @@ function undoAction() {
 	}
 	buildLineList();
 }
-// TODO Add undo to this when undo works.
-function inputAction(text) { // TODO This can and should be sped up now that it's used a lot. And renamed.
-	text = text.replace(" ", "\u00A0");
-	if (!changed)
-		setMessage(transUnsavedChanges);
-	changed = true;
-	var lines = text.split("\n");
-	if ( selectionData === undefined || selectionData[0] === undefined )
-		return;
-	var editedLineId = selectionData[0][0];
-	var startOffset = selectionData[0][2];
-	var endOffset = selectionData[0][1];
-	// TODO Remove selected content first. Uh, still applicable?
-	if (selectionData.length > 1 && selectionData[0][1] != selectionData[0][2]) {
-		var i = 1;
-		var lastButOne = selectionData.length - 1;
-		lineEditAction(editedLineId, contentArray[getIndexFromLineId(editedLineId)][1].length, endOffset);
-		var deleteFromId = getNextLineId(editedLineId);
-		while (i < lastButOne) {
-			lineEditAction(deleteFromId, contentArray[getIndexFromLineId(deleteFromId)][1].length, 0);
-			deleteFromId = getNextLineId(deleteFromId);
-			i++;
-		}
-		lineEditAction(deleteFromId, selectionData[i][2], 0);
-	}
-	if (contentArray[getIndexFromLineId(editedLineId)][1].length == endOffset) { // don't even consider multi-line pasting unless we start doing it at the end of the line
-		var pasteText = lines[0];
-		lineEditAction(editedLineId, startOffset, endOffset, pasteText);
-		nextLineId = getNextLineId(editedLineId);
-		endOffset += pasteText.length;
-		for (var i = 1; i < lines.length; i++) { // write to subsequent lines, if they're empty but otherwise append to one line without breaks
-			pasteText = lines[i];
-			if ("" == contentArray[getIndexFromLineId(nextLineId)][1].replace(/\s+/g, '')) {
-				endOffset = 0;
-				lineEditAction(nextLineId, 0, 0, pasteText);
-				nextLineId = getNextLineId(nextLineId);
-			} else {
-				endOffset += pasteText.length;
-				lineEditAction(editedLineId, endOffset, endOffset, pasteText);
-			}
-		}
-	} else {
-		var oneLine = lines.join(" ");
-		lineEditAction(editedLineId, startOffset, endOffset, oneLine);
-		endOffset += oneLine.length; // to update selectionData below...
-	}
-	// set the caret to where the pasting ended
-	selectionData = [[selectionData[selectionData.length - 1][0], endOffset, endOffset]]; // the lineId must be the same as the last line affected
-	buildLineList();
-}
-
 // helpers
 function getIndexFromLineId(lineId) {
 	var length = contentArray.length;
@@ -370,7 +270,6 @@ function getPreviousLineId(lineId) {
 	else
 		return contentArray[index - 1][0];
 }
-
 // selections
 function setSelectionData(lineId, startOffset, endOffset) { // set the selectiondata, endOffset is optional and if not given, it is set to startOffset
 	if (2 == arguments.length) {
@@ -608,7 +507,7 @@ function getLineLiWithTags(tagLineId, idPrefix) { // generates a line with spans
 			previousTag = currentTag;
 			rangeBegin = offset;
 		});
-		var remainder = lineUnicode.substring(rangeBegin, lineUnicode.length);
+		var remainder = lineUnicode.substring(rangeBegin);
 		tagString += '<span tagLineId="' + tagLineId + '" spanOffset="' + rangeBegin + '">' + remainder + '</span></div></li>';
 		return tagString;
 	} else
