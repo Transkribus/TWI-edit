@@ -62,11 +62,15 @@ function getContent() { // "JSON.stringifies" (verbing a noun) contentArray and 
 	return content;
 }
 function saveChanges(e) {
+	if(!changed){
+		setMessage(noChangesToSave);
+		return false;
+	}
 	if (arguments.length == 1)
 		e.preventDefault();
-	setMessage(transSavingChanges);
+	setMessage(transSavingChanges,"warning",false);
 	$.post(window.location.href, {content: getContent(), csrfmiddlewaretoken: csrf_token}, function( data ) {
-		setMessage(data);
+		setMessage(data,"success");
 		changed = false;
 	});
 	// TODO Handle failures here or are we happy with the current solution?
@@ -75,6 +79,9 @@ function hasEditPermission(role) {
 	return role === "Editor" || role === "Owner" || role === "Admin" || role === "CrowdTranscriber" || role === "Transcriber"
 }
 function setPageStatus(role, newStatus, newStatusTrans) {
+	if(pageStatus === newStatus){
+		return true;
+	}
 	if ( role === "CrowdTranscriber" || role === "Transcriber" ) {
         $("#page_status").html(newStatusTrans);
         pageStatus = newStatus;

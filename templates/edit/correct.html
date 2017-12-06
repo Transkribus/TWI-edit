@@ -43,12 +43,13 @@
 	var transUnsavedChanges = "{% trans "You have unsaved changes." %}";
 	var transSavingChanges = "{% trans "Saving changes..." %}";
 	var dialogBeingResized = false; {# a "semaphore" to avoid false resize events (resizing the dialog triggers such events and we only want those triggered by the window) #}
+	var noChangesToSave = "{% trans "No changes to save" %}";
 	var canOpenContextMenu = false;
 	var ignoreLeave = false;
 	var isDragged = false;
 	var resizeTimeout;
     var pageStatus = "{{ pageStatus }}";
-    var pageStatusNotAllowedTrans = "{% trans "You can not change the page status." %}";
+    var pageStatusNotAllowedTrans = "{% trans "You cannot change the page status." %}";
 	var zoomFactor = 1;
 	var ifc = "{{ i }}";
 	var tagItems = {
