@@ -163,6 +163,9 @@
 			</div>
 		</div>
 	</div>
+	<div>
+		<input id="capture" type="text" class="capture">
+	</div>
 	<div class="interface-lbl" style="padding-left: 15px; display: none;">
         <script type="text/javascript">
             function drawLineImage(lineId, coordinates) {
@@ -889,6 +892,8 @@
     				$("#correctModal").css("top",  "0px");
     			if (($("#correctModal").offset().top + dialogHeight) > document.body.clientHeight)
     				$("#correctModal").css("top",  (window.innerHeight - dialogHeight) + "px");
+				dialogX = parseInt($("#correctModal").css("left"));
+				dialogY = parseInt($("#correctModal").css("top"));
     		},
     		resizeStop: function (e) {
     			dialogWidth = parseInt(this.style.width, 10); // saving this... TODO Ask if this is to be saved? User opinions vary...!?

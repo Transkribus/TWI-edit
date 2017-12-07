@@ -1,7 +1,7 @@
 function refreshOriginalVersion() {
 	$("#originalVersion").html("");
 	for (var index = 1; index <= contentArray.length - 1; index++)
-		$("#originalVersion").append(getLineLiWithTags(contentArray[index][0], "orig"));
+		$("#originalVersion").append(getLineLiWithTags(index, "orig"));
 }
 function refreshYourVersion() { // call to highlight changes made to the original (regardless of which view they were made in)
 	$("#yourVersion").html("");

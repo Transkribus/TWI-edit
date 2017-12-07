@@ -1,5 +1,4 @@
 {% load i18n %}
-
 <div id="correctModal" style="display: none; z-index: 1999; overflow: hidden;"
 	title=' {# We (ab)use the Gijgo Dialog like this to get a custom header with more buttons. #}
 		{% trans "Edit line" %}
@@ -75,9 +74,6 @@
 	        </div>
 	    </div>
 	</div>
-</div>
-<div>
-	<input id="capture" type="text" class="capture">
 </div>
 <script>
 	$("#correctModal").on("mouseenter", function(e) {
