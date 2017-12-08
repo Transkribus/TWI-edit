@@ -622,7 +622,10 @@ function typewriterMove(newLineId, caretLineId) {
 				break;
 			cA = cB;
 		}
-		var caretOffset = Math.min(t - 1 + parseInt($(span).attr("spanOffset")), contentArray[getIndexFromLineId(caretLineId)][1].length);
+		var cLength = contentArray[getIndexFromLineId(caretLineId)][1].length;
+		if (null == cLength)
+			cLength = 0;
+		var caretOffset = Math.min(t - 1 + parseInt($(span).attr("spanOffset")), cLength);
 		selectionData = [[caretLineId, caretOffset, caretOffset]];
 		restoreSelection();
 	}
