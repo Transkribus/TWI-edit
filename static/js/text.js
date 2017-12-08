@@ -138,6 +138,7 @@ function inputChar(char) {
 	contentArray[lineIndex][1] = lineUnicode.substring(0, charOffset) + char + lineUnicode.substring(charOffset);
 	selectionData = [[editedLineId, ++charOffset, charOffset]];
 	buildLineList(); // TODO Update a lot less!
+	//updateCurrentLine();
 }
 function eraseFrom(lineIndex, startOffset, endOffset) {
 	var contentDelta = startOffset - endOffset;
@@ -361,8 +362,9 @@ function pixelsToCharOffset(element, pixels) { // returns the character index wi
 }
 
 // text rendering
-function getLineLiWithTags(tagLineId, idPrefix) { // generates a line with spans matching the tags and generates and applies the relevant CSS/SVG to show them,  idPrefix is an optional prefix added to each the ID of each LI, defaults to "text" for compatibility reasons
+function getLineLiWithTags(tagLineIndex, idPrefix) { // generates a line with spans matching the tags and generates and applies the relevant CSS/SVG to show them,  idPrefix is an optional prefix added to each the ID of each LI, defaults to "text" for compatibility reasons
 	var prefix = "text";
+	var tagLineId = contentArray[tagLineIndex][0];
 	if (arguments.length == 2)
 		prefix = idPrefix;
 	// values for creating SVGs with the right height to be used as a background and a 1 px "long" line corresponding to each tag:
@@ -534,6 +536,17 @@ function contenteditableToArray(lineId, overwriteText) { // converts an editable
 	} else
 		contentArray[lineIndex][1] = $("#text_" + lineId).text().replace(/\u200B/g,''); // remove the zero width space!!!
 }
+function updateCurrentLine() { // TODO  Make this faster by skipping the if below?
+	console.log("updating (only!) the current line " + $("#text_region_" + currentLineId).html());
+	if ( $(".transcript-div").is(":visible") && currentLineId !== undefined && correctModal.isOpen()) { // TODO A better test? This works but sbs below also has transcript-div :visible...
+		$("#text_region_" + currentLineId).html("");
+	//	while (index <= showTo)
+	//		$("#lineList").append(getLineLiWithTags(contentArray[index++][0]));
+	//	highlightLineList();
+	//	updateDialogSize();
+	}
+	//restoreSelection();
+}
 function buildLineList() {
 	console.log("building line list!");
 	var index;
@@ -543,27 +556,27 @@ function buildLineList() {
 		index = Math.max(1, currentIdx - surroundingCount); // 1 because the first line is not real
 		$("#lineList").html("");
 		while (index <= showTo)
-			$("#lineList").append(getLineLiWithTags(contentArray[index++][0]));
+			$("#lineList").append(getLineLiWithTags(index++));
 		highlightLineList();
 		updateDialogSize();
 	}
 	if ( $(".interface-lbl").is(":visible") ) {
 		index = 1
 		while (index <= contentArray.length - 1) {
-			$("#line_" + contentArray[index][0]).html(getLineLiWithTags(contentArray[index][0]));
+			$("#line_" + contentArray[index][0]).html(getLineLiWithTags(index));
 			index++;
 		}
 	}
 	if ( $("#compareText").is(":visible") ) {
 		if ($("#your").is(":visible"))
 			for (index = 1; index <= contentArray.length - 1; index++)
-				$("#yourVersion").append(getLineLiWithTags(contentArray[index][0]));
+				$("#yourVersion").append(getLineLiWithTags(index));
 	}
 	if ( $(".interface-t").is(":visible") ) {
 		index = 1
 		$("#text").html("");
 		while (index <= contentArray.length - 1) {
-			$("#text").append(getLineLiWithTags(contentArray[index][0]));
+			$("#text").append(getLineLiWithTags(index));
 			index++;
 		}
 	}
@@ -580,6 +593,7 @@ function resizeText(delta) {
 	buildLineList();
 }
 function typewriterMove(newLineId, caretLineId) {
+	initializeCaretOffsetInPixels();
 	if (newLineId != null && selectionData !== undefined && selectionData[0] !== undefined ) {
 		if (null === savedCaretOffsetInPixels)
 			savedCaretOffsetInPixels = caretOffsetInPixels;
