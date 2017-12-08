@@ -1,3 +1,11 @@
+.capture {
+  color: white;
+  background-color: white;
+  box-shadow: none;
+  border: none;
+  height; 0px;
+}
+
 .btn-toolbar-centered {
     text-align: center;
 }
