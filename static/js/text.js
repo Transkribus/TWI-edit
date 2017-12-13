@@ -95,7 +95,7 @@ function paste(event) {
 		charOffset = selectionData[0][1] + text.length;
 	}
 	selectionData = [[contentArray[lineIndex][0], charOffset, charOffset]];
-	buildLineList(); // TODO Update a lot less!
+	buildLineList();
 }
 function inputChar(char) {
 	if ( selectionData === undefined || selectionData[0] === undefined )
@@ -103,7 +103,11 @@ function inputChar(char) {
 	if (!changed)
 		setMessage(transUnsavedChanges);
 	changed = true;
-	if (selectionData.length > 1 || (selectionData[0][1] != selectionData[0][2])) // do we have to erase a selection first?
+	var renderAll = false; // TODO Remove this flag and duplicate lots of code?
+	if (selectionData.length > 1) {// do we have to erase a selection first?
+		eraseSelected();
+		renderAll = true;
+	} else if (selectionData[0][1] != selectionData[0][2])
 		eraseSelected();
 	if (" " === char)
 		char = "\u00A0";
@@ -137,8 +141,10 @@ function inputChar(char) {
 	var lineUnicode = contentArray[lineIndex][1];
 	contentArray[lineIndex][1] = lineUnicode.substring(0, charOffset) + char + lineUnicode.substring(charOffset);
 	selectionData = [[editedLineId, ++charOffset, charOffset]];
-	buildLineList(); // TODO Update a lot less!
-	//updateCurrentLine();
+	if (renderAll)
+		buildLineList();
+	else
+		updateLine(editedLineId);
 }
 function eraseFrom(lineIndex, startOffset, endOffset) {
 	var contentDelta = startOffset - endOffset;
@@ -536,16 +542,12 @@ function contenteditableToArray(lineId, overwriteText) { // converts an editable
 	} else
 		contentArray[lineIndex][1] = $("#text_" + lineId).text().replace(/\u200B/g,''); // remove the zero width space!!!
 }
-function updateCurrentLine() { // TODO  Make this faster by skipping the if below?
-	console.log("updating (only!) the current line " + $("#text_region_" + currentLineId).html());
+function updateLine(updatedLineId) { // TODO  Make this faster by skipping the if below?
 	if ( $(".transcript-div").is(":visible") && currentLineId !== undefined && correctModal.isOpen()) { // TODO A better test? This works but sbs below also has transcript-div :visible...
-		$("#text_region_" + currentLineId).html("");
-	//	while (index <= showTo)
-	//		$("#lineList").append(getLineLiWithTags(contentArray[index++][0]));
-	//	highlightLineList();
-	//	updateDialogSize();
+		$("#text_" + updatedLineId).html(getLineLiWithTags(getIndexFromLineId(updatedLineId)));	
+		updateDialogSize();
+		restoreSelection();
 	}
-	//restoreSelection();
 }
 function buildLineList() {
 	console.log("building line list!");

@@ -59,7 +59,8 @@
     background-color: white;
 }
 .line-list-div {
-	overflow: auto;
+	overflow-y: auto;
+	overflow-x: scroll;
 }
 .line-list {
 	font-size: 25px;

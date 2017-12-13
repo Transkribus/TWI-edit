@@ -5,7 +5,8 @@ var dialogAbsoluteMinHeight = null;
 var docked = false;
 var dockedHeight = 250;// TODO Decide how to calculate this.
 var restoreDialogLine;
-var dialogHighlightDX, dialogHighlightDY; 
+var dialogHighlightDX, dialogHighlightDY;
+var scrollbarHeight = null;
 // these vars must be initialized when importing this JavaScript
 // initialScale;
 // previousInnerWidth = window.innerWidth;
@@ -14,7 +15,6 @@ var dialogHighlightDX, dialogHighlightDY;
 // accumExtraY
 // these JavaScripts must also be imported
 // TODO Check which...?
-
 function hideDialog() {
 	if (!docked) // we're only interested in the user-modifiable properties since we have a docking variable
 		saveDialogProperties();
@@ -87,6 +87,12 @@ function updateDialog(lineId) { // This function can be called without a line ID
 		initializeCaretOffsetInPixels();
 		dialogHighlightDX = dialogX + accumExtraX - contentArray[getIndexFromLineId(currentLineId)][2][0] * initialScale * zoomFactor;
 		dialogHighlightDY = dialogY + accumExtraY - $(".transcript-div").offset().top - contentArray[getIndexFromLineId(currentLineId)][2][1] * initialScale * zoomFactor;// + $(".transcript-map-div").css("top");
+		if (null === scrollbarHeight) {
+			$(".line-list-div").css("overflow-x", "scroll");
+			scrollbarHeight = parseInt($(".content-row").css("height"));
+			$(".line-list-div").css("overflow-x", "hidden");
+			scrollbarHeight -= parseInt($(".content-row").css("height"));
+		}
 	} else {
 		correctModal.open(); // TODO Redundantify correctModal.open() here. It's here for restoring the dialog after "visits" to other views...
 		var oldDeltaX = contentArray[getIndexFromLineId(currentLineId)][2][0] * initialScale * zoomFactor - accumExtraX - $("#correctModal").offset().left;// TODO Replace with dialogX and dialogY?
@@ -126,15 +132,23 @@ function updateDialogSize() {
 		var index = Math.max(1, currentIdx - surroundingCount); // 1 because the first line is not real
 		while (index <= showTo) {
 			var lineId = contentArray[index++][0];
-			longestLine = Math.max(longestLine, $("[tagLineId=" + lineId + "]").last().offset().left + $("[tagLineId=" + lineId + "]").last().outerWidth() - $("#correctModal").offset().left);//$("#text_" + lineId).offset().left);
+			longestLine = Math.max(longestLine, $("[tagLineId=" + lineId + "]").last().offset().left + $("[tagLineId=" + lineId + "]").last().outerWidth() - $("#correctModal").offset().left);
 			currentMinH += parseInt($("#text_" + lineId).children().first().css("min-height")); // get min-height from the div
 		}
 	}
 	var currentMinW = Math.max(dialogAbsoluteMinWidth, longestLine + parseInt($(".line-list-div").css("padding-right")));
+	var currentScrollbarH = 0;
+	if (currentMinW > window.innerWidth) { // we don't let the dialog become wider than the window and thus add a scrollbar, if the line length requires it
+		$(".line-list-div").css("overflow-x", "scroll");
+		currentMinW = window.innerWidth;
+		currentScrollbarH = scrollbarHeight;
+	} else {
+		$(".line-list-div").css("overflow-x", "hidden");
+	}
 	dialogWidth = Math.max(dialogWidth, currentMinW); // we don't shrink the dialog automatically
 	dialogHeight = Math.max(dialogHeight, currentMinH);
 	$("#correctModal").css("width",  dialogWidth + "px");
-	$("#correctModal").css("height",  dialogHeight + "px");
+	$("#correctModal").css("height",  (currentScrollbarH + dialogHeight) + "px");
 	$("#correctModal").css("min-width",  currentMinW + "px");
 	$("#correctModal").css("min-height",  currentMinH + "px");
 	$("#line-list").css("min-height", (dialogHeight - dialogAbsoluteMinHeight) + "px"); // the text contenteditable isn't updated automagically
