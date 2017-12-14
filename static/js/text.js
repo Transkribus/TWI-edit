@@ -12,7 +12,24 @@ var message_timeout;
 // TODO Check which.
 // TODO Optimize by removing some unnecessary calls to getIndexFromLineId...
 
-function initializeCaretOffsetInPixels() { 
+function keydown(e) {
+	if ( e.key.length > 1 ) {
+		e.preventDefault();
+		editAction(e);
+	}
+	else if ( checkForComposite )
+		$("#capture").focus();// we want composite characters to go here since we can't get them from the key
+	else {
+		e.preventDefault();
+		inputChar(e.key);
+	}
+}
+function keyup(e) {
+	if ( e.key === "Dead" )// we get ready to use the hidden from view input to get composite characters
+		checkForComposite = true;
+}
+
+function initializeCaretOffsetInPixels() {
 	var selection = window.getSelection();
 	if ( selection.anchorNode === null || selection.anchorNode.parentNode === null )
 		return;
@@ -32,7 +49,7 @@ function drop(e) {
 	// Nobody needs to do this and this breaks things.
 	e.preventDefault();
 }
-function cut(event) { 
+function cut(event) {
 	console.log("calling cut");
 	// TODO This! Maybe with zeroclipboard?
 	eraseSelected();
@@ -74,7 +91,7 @@ function paste(event) {
 		// TODO undoArray.push(contentArray[lineIndex].slice()); // TODO Speed this up?
 		contentArray[lineIndex][4] = newCustom;
 		if ("None" != custom) {
-			custom.forEach(function(attribute) { 
+			custom.forEach(function(attribute) {
 				attribute = attribute.split('{');
 				if ("" != attribute && "readingOrder" != attribute[0] && attribute[1].indexOf("offset:") != -1 && attribute[1].indexOf(";length:") != -1) { // we have no use for readingOrder for now...
 					var split = attribute[1].split("offset:")[1].split(";length:");
@@ -90,7 +107,7 @@ function paste(event) {
 				}
 			});
 		}
-		var lineUnicode = contentArray[lineIndex][1]; 
+		var lineUnicode = contentArray[lineIndex][1];
 		contentArray[lineIndex][1] = lineUnicode.substring(0, selectionData[0][1]) + text + lineUnicode.substring(selectionData[0][1]);
 		charOffset = selectionData[0][1] + text.length;
 	}
@@ -121,7 +138,7 @@ function inputChar(char) {
 	// TODO undoArray.push(contentArray[lineIndex].slice()); // TODO Speed this up?
 	contentArray[lineIndex][4] = newCustom;
 	if ("None" != custom) {
-		custom.forEach(function(attribute) { 
+		custom.forEach(function(attribute) {
 			attribute = attribute.split('{');
 			if ("" != attribute && "readingOrder" != attribute[0] && attribute[1].indexOf("offset:") != -1 && attribute[1].indexOf(";length:") != -1) { // we have no use for readingOrder for now...
 				var split = attribute[1].split("offset:")[1].split(";length:");
@@ -192,7 +209,7 @@ function eraseSelected() {
 		lineIndex = getIndexFromLineId(selectionData[sdLength][0]);
 		eraseFrom(lineIndex, 0, selectionData[sdLength][2]);
 	}
-	selectionData = [[selectionData[0][0], selectionData[0][1], selectionData[0][1]]]; 
+	selectionData = [[selectionData[0][0], selectionData[0][1], selectionData[0][1]]];
 }
 function editAction(event) {
 	if (event.ctrlKey || event.altKey || event.metaKey) {
@@ -205,7 +222,7 @@ function editAction(event) {
 	}
 	if (event.keyCode == 8) { // backspace?
 		if (selectionData.length == 1 && (selectionData[0][1] == selectionData[0][2])) // just a caret, no selection?
-			selectionData[0] = [selectionData[0][0], Math.max(0, selectionData[0][1] - 1), selectionData[0][2]]; // select the preceding character, if any			
+			selectionData[0] = [selectionData[0][0], Math.max(0, selectionData[0][1] - 1), selectionData[0][2]]; // select the preceding character, if any
 		eraseSelected();
 		buildLineList();
 		initializeCaretOffsetInPixels();
@@ -544,10 +561,12 @@ function contenteditableToArray(lineId, overwriteText) { // converts an editable
 }
 function updateLine(updatedLineId) { // TODO  Make this faster by skipping the if below?
 	if ( $(".transcript-div").is(":visible") && currentLineId !== undefined && correctModal.isOpen()) { // TODO A better test? This works but sbs below also has transcript-div :visible...
-		$("#text_" + updatedLineId).html(getLineLiWithTags(getIndexFromLineId(updatedLineId)));	
+		$("#text_" + updatedLineId).html(getLineLiWithTags(getIndexFromLineId(updatedLineId)));
 		updateDialogSize();
-		restoreSelection();
 	}
+	if ( $(".interface-lbl").is(":visible") )
+		$("#line_" + updatedLineId).html(getLineLiWithTags(getIndexFromLineId(updatedLineId)));
+	restoreSelection();
 }
 function buildLineList() {
 	console.log("building line list!");

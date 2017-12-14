@@ -198,7 +198,7 @@
     					{% trans "Your browser does not support the HTML5 canvas tag." %}
     				</canvas>
                 </div>
-				<ol id="line_{{ line|get_item:"@id" }}" class="line-list" contenteditable="false" style="margin-top: 3px; margin-bottom: 0;">
+				<ol id="line_{{ line|get_item:"@id" }}" class="line-list" contenteditable="true" style="margin-top: 3px; margin-bottom: 0;">
 				</ol>
 				<div id="options_{{ line|get_item:"@id" }}" class="option-box">
 					{% include "edit/option_box.html" %}
@@ -209,7 +209,7 @@
 				    });
 				    $("#line_{{ line|get_item:"@id" }}").on("keydown", function(e) {
 				    	if ( window.location.href.indexOf('edit') >= 0 )
-							keydown(e);
+                            keydown(e);
 						else
 							e.preventDefault();
 					});
@@ -282,7 +282,7 @@
 		{% endfor %}
 	</div>
     <div class="interface-t" style="padding-left: 15px; padding-right: 15px; display: none;">
-        <ol id="text" class="line-list" contenteditable="false" style="margin-top: 3px; margin-bottom: 0;">
+        <ol id="text" class="line-list" contenteditable="true" style="margin-top: 3px; margin-bottom: 0;">
         </ol>
         <canvas id="canvas_text" width="800" height="100" style="display: none; z-index: 1998; border: 1px solid #d3d3d3; position: fixed;">
             {% trans "Your browser does not support the HTML5 canvas tag." %}
@@ -639,7 +639,7 @@
 	$("#pageNumber").change(function() {
    		checkPageNumberInput();
 	});
-	
+
     function changeInterface(target) {
         var oldLineId = currentLineId;
         currentLineId = null;
@@ -876,7 +876,7 @@
     		dragStart: function (e) {
     			updateDockingStatus(false);
     		},
-    		dragStop: function(e) {    		
+    		dragStop: function(e) {
 				dialogX = parseInt($("#correctModal").css("left"));
 				dialogY = parseInt($("#correctModal").css("top"));
     		},
