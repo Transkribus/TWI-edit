@@ -661,7 +661,8 @@ function typewriterPrevious() {
 		$("#options_" + currentLineId).hide();
 	typewriterMove(getPreviousLineId(currentLineId), getPreviousLineId(selectionData[0][0])); // the caret will "remain in place" and the lines shifted around it
 }
-function setMessage(message, type, timeout=true) {
+function setMessage(message, type, timeout) {
+	if(timeout==undefined) timeout = true;
 	clearTimeout(message_timeout);
 	type = type || "warning";
 	$("#message").removeClass("btn-muted btn-primary btn-success btn-info btn-warning btn-danger");
