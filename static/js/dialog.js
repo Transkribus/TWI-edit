@@ -32,7 +32,7 @@ function updateDocking(dock) { // docks (true) / undocks (false) the dialog. Whe
 		$("#correctModal").css("position", "fixed");
 		$("#correctModal").css("top", $(window).height() - dockedHeight + "px");// using "bottom" is problematic
 		$("#correctModal").on("mousedown touchdown", function (e) { // TODO Test touchdown when an appropriate device is available...
-			$("#correctModal").css("position", "fixed"); // gijgo dialog messes with this undesirably...
+		$("#correctModal").css("position", "fixed"); // gijgo dialog messes with this undesirably...
 		});
 	} else {
     	$("#correctModal").css("left",  dialogX);
@@ -108,8 +108,6 @@ function updateDialog(lineId) { // This function can be called without a line ID
 	}
 }
 function updateDialogSize() {
-	if (docked)
-		return;
 	if (null === dialogAbsoluteMinWidth) { // if we're doing this for the very first time, we calculate the absolute minimum, which means space for all buttons on a single row
 		var buttonSum = 0;
 		// get the delta between a button group and the span containing it when there's another button following it
@@ -138,18 +136,28 @@ function updateDialogSize() {
 	}
 	var currentMinW = Math.max(dialogAbsoluteMinWidth, longestLine + parseInt($(".line-list-div").css("padding-right")));
 	var currentScrollbarH = 0;
-	if (currentMinW > window.innerWidth) { // we don't let the dialog become wider than the window and thus add a scrollbar, if the line length requires it
-		$(".line-list-div").css("overflow-x", "scroll");
+		if (currentMinW > window.innerWidth) { // we don't let the dialog become wider than the window and thus add a scrollbar, if the line length requires it
+		$(".line-list").css("overflow-x", "scroll");
 		currentMinW = window.innerWidth;
 		currentScrollbarH = scrollbarHeight;
+		$(".line-list").css("width",  (currentMinW - 2 * parseInt($(".line-list-div").css("padding-right"))));
 	} else {
-		$(".line-list-div").css("overflow-x", "hidden");
+		$(".line-list").css("overflow-x", "hidden");
 	}
-	dialogWidth = Math.max(dialogWidth, currentMinW); // we don't shrink the dialog automatically
-	dialogHeight = Math.max(dialogHeight, currentMinH);
-	$("#correctModal").css("width",  dialogWidth + "px");
-	$("#correctModal").css("height",  (currentScrollbarH + dialogHeight) + "px");
-	$("#correctModal").css("min-width",  currentMinW + "px");
-	$("#correctModal").css("min-height",  currentMinH + "px");
-	$("#line-list").css("min-height", (dialogHeight - dialogAbsoluteMinHeight) + "px"); // the text contenteditable isn't updated automagically
+	if (docked) {
+		if (currentMinH > dockedHeight) {
+			$(".line-list").css("overflow-y", "scroll");
+			$(".line-list").css("height", (dockedHeight - currentScrollbarH - dialogAbsoluteMinHeight));
+		} else {
+			$(".line-list").css("overflow-y", "hidden");
+		}
+	} else {	
+		dialogWidth = Math.max(dialogWidth, currentMinW); // we don't shrink the dialog automatically
+		dialogHeight = Math.max(dialogHeight, currentMinH);
+		$("#correctModal").css("width",  dialogWidth + "px");
+		$("#correctModal").css("height",  (currentScrollbarH + dialogHeight) + "px");
+		$("#correctModal").css("min-width",  currentMinW + "px");
+		$("#correctModal").css("min-height",  currentMinH + "px");
+		$("#line-list").css("min-height", (dialogHeight - dialogAbsoluteMinHeight) + "px"); // the text contenteditable isn't updated automagically
+	}
 }
