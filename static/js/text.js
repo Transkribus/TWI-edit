@@ -226,12 +226,22 @@ function editAction(event) {
 		eraseSelected();
 		buildLineList();
 		initializeCaretOffsetInPixels();
+		//RM If we press backspace then we should assume that there has been a achange to the transcript
+		// (these globals must go)
+		if (!changed)
+			setMessage(transUnsavedChanges);
+		changed = true;
 	} else if (event.keyCode == 46) { // delete?
 		if (selectionData.length == 1 && (selectionData[0][1] == selectionData[0][2])) // just a caret, no selection?
 			selectionData[0] = [selectionData[0][0], selectionData[0][1], Math.min(selectionData[0][2] + 1, contentArray[getIndexFromLineId(selectionData[0][0])][1].length)]; // select the next character, if any
 		eraseSelected();
 		buildLineList();
 		initializeCaretOffsetInPixels();
+		//RM If we press delete then we should assume that there has been a achange to the transcript
+		// (these globals must go)
+		if (!changed)
+			setMessage(transUnsavedChanges);
+		changed = true;
 	} else if (event.key == "ArrowUp" && ("i" === ifc || "t" === ifc)) {
 		// TODO Move caret instead, if there's a line visible?
 		typewriterPrevious();
