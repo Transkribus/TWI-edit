@@ -147,7 +147,7 @@ def correct(request, collId, docId, page=None, transcriptId=None):# TODO Decide 
                 regionTextEquiv = ""
                 for line in text_region.iter('{http://schema.primaresearch.org/PAGE/gts/pagecontent/2013-07-15}TextLine'):
                     modified_content = content.get(text_region.get("id") + line.get("id"))
-                    if hasattr(modified_content,"custom") :
+                    if "custom" in modified_content :
                         line.set("custom", modified_content.get("custom"))
                     if "Unicode" in modified_content :
                         modified_text = modified_content.get("Unicode")
