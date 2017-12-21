@@ -147,15 +147,30 @@ def correct(request, collId, docId, page=None, transcriptId=None):# TODO Decide 
                 regionTextEquiv = ""
                 for line in text_region.iter('{http://schema.primaresearch.org/PAGE/gts/pagecontent/2013-07-15}TextLine'):
                     modified_content = content.get(text_region.get("id") + line.get("id"))
-                    line.set("custom", modified_content.get("custom"))
-                    modified_text = modified_content.get("Unicode")
-                    regionTextEquiv += modified_text +"\r\n"
-                    line.find('{http://schema.primaresearch.org/PAGE/gts/pagecontent/2013-07-15}TextEquiv').find('{http://schema.primaresearch.org/PAGE/gts/pagecontent/2013-07-15}Unicode').text = modified_text
-                #RM not sure what this bit is for but it was triggering a can't find() on noneType
-                #error so best to check the fing we are calling find() on is not None
-                text_equiv = text_region.find('{http://schema.primaresearch.org/PAGE/gts/pagecontent/2013-07-15}TextEquiv')
-                if text_equiv:
-                    text_equiv.find('{http://schema.primaresearch.org/PAGE/gts/pagecontent/2013-07-15}Unicode').text = regionTextEquiv
+                    if hasattr(modified_content,"custom") :
+                        line.set("custom", modified_content.get("custom"))
+                    if "Unicode" in modified_content :
+                        modified_text = modified_content.get("Unicode")
+                        regionTextEquiv += modified_text +"\r\n"
+                        t_equiv = line.find('{http://schema.primaresearch.org/PAGE/gts/pagecontent/2013-07-15}TextEquiv')
+                        ##############################################################
+                        # RM in cases where the is no TextQuiv (or Unicde) tag already
+                        # We must make one before attempting to add modified text
+                        #############################################################
+                        if t_equiv is None :
+                            t_equiv = ElementTree.SubElement(line,'{http://schema.primaresearch.org/PAGE/gts/pagecontent/2013-07-15}TextEquiv')
+                            ElementTree.SubElement(t_equiv,'{http://schema.primaresearch.org/PAGE/gts/pagecontent/2013-07-15}Unicode')
+                        t_equiv.find('{http://schema.primaresearch.org/PAGE/gts/pagecontent/2013-07-15}Unicode').text = modified_text
+                r_text_equiv = text_region.find('{http://schema.primaresearch.org/PAGE/gts/pagecontent/2013-07-15}TextEquiv')
+                ##############################################################
+                # RM in cases where the is no TextQuiv (or Unicde) tag already
+                # We must make one before attempting to add modified text
+                #############################################################
+                if r_text_equiv is None:
+                    r_text_equiv = ElementTree.SubElement(text_region,'{http://schema.primaresearch.org/PAGE/gts/pagecontent/2013-07-15}TextEquiv')
+                    ElementTree.SubElement(r_text_equiv,'{http://schema.primaresearch.org/PAGE/gts/pagecontent/2013-07-15}Unicode')
+    
+                r_text_equiv.find('{http://schema.primaresearch.org/PAGE/gts/pagecontent/2013-07-15}Unicode').text = regionTextEquiv
             t.save_transcript(request, ElementTree.tostring(transcript_root), collId, docId, page, transcriptId)
             current_transcript = t.current_transcript(request, collId, docId, page)# We want the updated transcript now.
             #RM add some error catching (though somewhat suboptimal)
