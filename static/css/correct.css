@@ -48,15 +48,24 @@
 }
 .thumb-current {
     padding: 3%;
-    background-color: red;
+    background-color: blue;
 }
 .thumb-img:hover {
     padding: 3%;
-    background-color: blue;
+    background-color: white;
 }
 .thumb-img {
     padding: 3%;
-    background-color: white;
+}
+/* Thumbs should reflect page transcription status. */ 
+.no-segmentation {
+	background-color: red;
+}
+.transcribed {
+	background-color: green;
+}
+.only-segmented {
+	background-color: yellow;
 }
 .line-list-div {
 	overflow-y: auto;

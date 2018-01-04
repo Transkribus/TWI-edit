@@ -235,8 +235,14 @@ def correct(request, collId, docId, page=None, transcriptId=None):# TODO Decide 
         pages = document.get('pageList').get('pages')
         thumb_urls =[]
         for thumb_page in pages:
-            thumb_urls.append(escape(thumb_page.get("thumbUrl")).replace("&amp;", "&"))# The JavaScript must get the strings like this.
-
+            if  0 < thumb_page.get("tsList").get("transcripts")[0].get("nrOfLines"):
+                if 0 < thumb_page.get("tsList").get("transcripts")[0].get("nrOfTranscribedLines"):
+                    thumb_urls.append("['" + escape(thumb_page.get("thumbUrl")).replace("&amp;", "&") + "', 'transcribed']")# The JavaScript must get the strings like this.
+                else:
+                    thumb_urls.append("['" + escape(thumb_page.get("thumbUrl")).replace("&amp;", "&") + "', 'only-segmented']")# The JavaScript must get the strings like this.
+            else:
+                thumb_urls.append("['" + escape(thumb_page.get("thumbUrl")).replace("&amp;", "&") + "', 'no-segmentation']")# The JavaScript must get the strings like this.
+                
         pageStatus = document.get('pageList').get('pages')[int(page) - 1].get("tsList").get('transcripts')[0].get('status')
         if pageStatus == 'GT' and 'edit' in request.path:
             t_log('Redirect user back to view mode since page status is GT. [from: %s to: %s]' % (request.get_full_path(), request.get_full_path().replace('edit', 'view')))
@@ -260,7 +266,7 @@ def correct(request, collId, docId, page=None, transcriptId=None):# TODO Decide 
                  'imageUrl': document.get('pageList').get('pages')[int(page) - 1].get("url"),
                  'pageStatus': pageStatus,
                  'lines': lineList,
-                 'thumbArray': "['" + "', '".join(thumb_urls) + "']",
+                 'thumbArray': "[" + ", ".join(thumb_urls) + "]",
                  'collId': collId,
                  'collName': document.get('collection').get('colName'),
                  'docId': docId,

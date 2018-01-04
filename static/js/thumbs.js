@@ -36,7 +36,7 @@ function loadThumbs() { // Loads all thumbs and shows the ones which are visible
 		if ( thumbArray[i] === undefined )
 			continue;
 		tempImg = new Image();
-		tempImg.src = thumbArray[i];
+		tempImg.src = thumbArray[i][0];
 		tempImg.onload = function() {
 			toLoadCount--; //  JavaScript is single-threaded...
 			if (0 == toLoadCount) {
@@ -60,15 +60,15 @@ function generateThumbGrid() {
 	var i = 1;
 	// Before the current page:
 	while(i < pageNo) {
-		thumbTDs += '<td class="thumb" style="padding: ' + padding + 'px; min-width: ' + thumbWidth + 'px;"><a href="#" onclick="gotoPage(' + i + ')"><img style="max-width: "' + (thumbWidth - 2 * padding) + 'px;" class="thumb thumb-img" src="' + thumbArray[i - 1] + '"><br/><span style="color: white;">' + i +'</span></a></td>';
+		thumbTDs += '<td class="thumb" style="padding: ' + padding + 'px; min-width: ' + thumbWidth + 'px;"><a href="#" onclick="gotoPage(' + i + ')"><img style="max-width: "' + (thumbWidth - 2 * padding) + 'px;" class="thumb thumb-img ' + thumbArray[i - 1][1] + '" src="' + thumbArray[i - 1][0] + '"><br/><span style="color: white;">' + i +'</span></a></td>';
 		i++;
 	}
 	// Highlight current page:
-	thumbTDs += '<td class="thumb" style="padding: ' + padding + 'px; min-width: ' + thumbWidth + 'px;"><img style="max-width: "' + (thumbWidth - 2 * padding) + 'px;" class="thumb thumb-current" src="' + thumbArray[i - 1] + '"><br/><span style="color: white;">' + i +'</span></td>';
+	thumbTDs += '<td class="thumb" style="padding: ' + padding + 'px; min-width: ' + thumbWidth + 'px;"><img style="max-width: "' + (thumbWidth - 2 * padding) + 'px;" class="thumb thumb-current" src="' + thumbArray[i - 1][0] + '"><br/><span style="color: white;">' + i +'</span></td>';
 	i++;
 	// After the current page:
 	while(i <= thumbArray.length) {
-		thumbTDs += '<td class="thumb" style="padding: ' + padding + 'px;  min-width: ' + thumbWidth + 'px;"><a href="#" onclick="gotoPage(' + i + ')"><img style="max-width: "' + (thumbWidth - 2 * padding) + 'px;" class="thumb thumb-img" src="' + thumbArray[i - 1] + '"><br/><span style="color: white;">' + i +'</span></a></td>';
+		thumbTDs += '<td class="thumb" style="padding: ' + padding + 'px;  min-width: ' + thumbWidth + 'px;"><a href="#" onclick="gotoPage(' + i + ')"><img style="max-width: "' + (thumbWidth - 2 * padding) + 'px;" class="thumb thumb-img ' + thumbArray[i - 1][1] + '" src="' + thumbArray[i - 1][0] + '"><br/><span style="color: white;">' + i +'</span></a></td>';
 		i++;
 	}
 	thumbTDs += '</tr></table></div></div></td><td style="min-width: ' + arrowWidth + 'px;">';
