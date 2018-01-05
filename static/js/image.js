@@ -119,24 +119,6 @@ function updateCanvas() {
 	//for (var i = 1; i < contentArray.length; i++)
 		//highlightLine(contentArray[i][0]);
 }
-function placeBalls(lineId) {
-	var length = contentArray.length;
-	var coords = Array(8); // TODO Four coordinate pairs are not needed...
-	for (j = 0; j < length; j++) { // TODO Stop the loop sooner!
-		if (contentArray[j][0] == lineId) {
-			for (k = 0; k < coords.length; k++) {
-				coords[k] = Math.round(initialScale*contentArray[j][2][k]);
-			}
-		}
-	}
-	var lineHeight = (coords[5] - coords[1]); // We use this to get an "appropriate" place for the ball in relation to the line size...
-	var c=document.getElementById("transcriptCanvas");
-	var ctx=c.getContext("2d");
-	ctx.beginPath();
-	ctx.arc(coords[0] -0.5 * lineHeight, coords[1] + lineHeight / 2, 10, 0, 2*Math.PI);
-	ctx.fillStyle = "rgba(0, 255, 0, 1)";
-	ctx.fill();
-}
 function highLightArea(coords) {
 	var c=document.getElementById("transcriptCanvas");
 	var ctx=c.getContext("2d");
