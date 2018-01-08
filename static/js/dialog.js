@@ -66,8 +66,9 @@ function updateDialog(lineId) { // This function can be called without a line ID
 		setSelectionData(currentLineId, endOfLine, endOfLine);
 		correctModal.open();
 		buildLineList();
-		//dialogX =  Math.max(Math.min(initialScale * zoomFactor * contentArray[lineIdx][2][0] + $(".transcript-div").offset().left - accumExtraX - dialogWidth * 0.2, window.innerWidth - dialogWidth - 20), $(".transcript-div").offset().left);
-		dialogX = window.innerWidth / 5;
+		accumExtraX = Math.min(initialScale * zoomFactor * contentArray[lineIdx][2][0]) - window.innerHeight / 5; // we move the image so that the dialog can be opened in a sensible place
+		$( ".transcript-map-div" ).css("transform",  "translate(" + -accumExtraX +"px, " + -accumExtraY+ "px) scale(" + (zoomFactor) + ")");// Note, the CSS is set to "transform-origin: 0px 0px"
+		dialogX = window.innerHeight / 5;// this is a nice place for the dialog
 		// get the last shown line index
 		var lastShown = Math.min(lineIdx + surroundingCount, contentArray.length - 1);
 		// place the dialog one "last line height" below the last shown BELOW the clicked line (a higher index does not guarantee a lower position)
@@ -101,7 +102,7 @@ function updateDialog(lineId) { // This function can be called without a line ID
 		if (1 == arguments.length)
 			currentLineId = lineId;
 		var lineIdx = getIndexFromLineId(currentLineId);
-		//accumExtraX = contentArray[getIndexFromLineId(currentLineId)][2][0] * initialScale * zoomFactor - $("#correctModal").offset().left - oldDeltaX;
+		accumExtraX = contentArray[getIndexFromLineId(currentLineId)][2][0] * initialScale * zoomFactor - $("#correctModal").offset().left - oldDeltaX;
 		accumExtraY = contentArray[getIndexFromLineId(currentLineId)][2][1] * initialScale * zoomFactor - $("#correctModal").offset().top - oldDeltaY;
 		$( ".transcript-map-div" ).css("transform",  "translate(" + -accumExtraX +"px, " + -accumExtraY+ "px) scale(" + zoomFactor + ")");// Note, the CSS is set to "transform-origin: 0px 0px"
 		buildLineList();
