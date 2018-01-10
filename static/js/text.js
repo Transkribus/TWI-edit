@@ -25,6 +25,7 @@ function keydown(e) {
 	}
 }
 function keyup(e) {
+	ctrlMeta = false;
 	if ( e.key === "Dead" )// we get ready to use the hidden from view input to get composite characters
 		checkForComposite = true;
 }

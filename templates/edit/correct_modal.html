@@ -81,12 +81,17 @@
 	});
 	{# TODO Refactor and move this elsewhere: #}
 	var checkForComposite = false;
+	var ctrlMeta;
 	$("#correctModal").on("keyup", function(e) {
+		ctrlMeta = false;
 		if (e.key === "Dead")  // we get ready to use the hidden from view input to get composite characters
 			checkForComposite = true;
 	});
 	$("#correctModal").on("keydown", function(e) {
+		if (ctrlMeta)
+			return; // let whatever happens with this shortcut happen
 		if (e.key.length > 1) {
+			ctrlMeta = e.ctrlKey || e.metaKey;
 			e.preventDefault();
 			editAction(e);
 		} 	else if (checkForComposite) {
