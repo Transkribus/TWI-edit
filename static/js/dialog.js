@@ -155,6 +155,7 @@ function updateDialogSize() {
 		}
 	} else {	
 		dialogWidth = Math.max(dialogWidth, currentMinW); // we don't shrink the dialog automatically
+		dialogWidth = Math.min(dialogWidth, window.innerWidth); // we don't allow a wider dialog than the window
 		dialogHeight = Math.max(dialogHeight, currentMinH);
 		$("#correctModal").css("width",  dialogWidth + "px");
 		$("#correctModal").css("height",  (currentScrollbarH + dialogHeight) + "px");
