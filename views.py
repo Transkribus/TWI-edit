@@ -181,7 +181,8 @@ def document_view(request, collId=None, docId=None, pageNr=None, transcriptId=No
 		     'title': dd.get("md").get("title"),
 		     'pageNo': pageNr,
 		     'i': i,
-		     'metadata' : dd.get("md")
+		     'metadata' : dd.get("md"),
+			 'interfaces' : settings.INTERFACES
 		})
         })
  
