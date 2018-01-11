@@ -1,0 +1,692 @@
+{% extends "navi_base.html" %}
+{% load i18n %}
+
+{% load staticfiles %}
+
+{% block breadcrumb %}
+	<a href="{% url 'index' %}" class="navbar-brand">{% trans "My Collections" %}</a>
+    <a class="navbar-brand" href="{% url "library:collection" collId %}">/ {{ collName }} <small>{{ collId }}</small></a></li>
+    <a class="navbar-brand" href="{% url "edit:correct" collId docId %}"><b>/ {{ title }} <small>{{ docId }}</small></b></a>
+{% endblock %}
+
+{% block content %}
+
+<!-- gijgo js can't be included here, it must come after everything else -->
+<script>
+	//We will get *all* the data that javascript needs from this json
+	var d = {{ json_from_view|safe }};
+	
+	//For ease of transition we can set a few vars here... but preerence would be access direct from d
+	var thumbArray = d.thumbArray;
+        var contentArray = d.contentArray;
+        var accumExtra = d.accumExtra;	
+	var ifc = d.i;
+	var pageStatus = d.pageStatus;
+	var role = d.role;	
+	
+	//csrf_token is a django default template tag
+	var csrf_token = "{{ csrf_token }}";
+
+	//Translation for javascript phrases # todo use javascrip/json catalog (allows pluralisation processing too)
+	var transUnsavedChanges = "{% trans "You have unsaved changes." %}";
+	var transSavingChanges = "{% trans "Saving changes..." %}";
+    	var pageStatusNotAllowedTrans = "{% trans "You can not change the page status." %}";
+	
+	//I don't think that django needs to know about tags at all.
+	//I suggest defining an array of tags and css clases with a 
+	//derivative name that we cn use to set colours an so on
+	//TODO we can define a tag menu function to build the menu with jquery...
+	var tagItems = {
+		{% for tag in tags %}"{{tag.name}}": {name: "<span href=\"#\" style=\"color: #{{tag.color}};\">{{tag.name}}</span>", type: "checkbox", isHtmlName: true} {% if not forloop.last %}, {% endif %}
+		{% endfor %}
+    };
+	var tagColors = {
+		{% for tag in tags %}"{{tag.name}}": "{{tag.color}}" {% if not forloop.last %}, {% endif %}
+		{% endfor %}
+	};
+
+</script>
+<div class="top-div col-md-12">
+    {# Include control #} 
+    <div class="row row-centered fix_scroll_top">
+    		{% include "edit/control.html" %}
+    </div>
+
+    <div class="row row-centered">
+        {# The full image canvas, map for lines and img #}
+	<div class="transcript-div col-lg-12" style="display:none;">
+		<div class="transcript-map-div">
+			<map name="transcriptMap" id="transcriptMap">
+				{% for line in lines %}
+					<area line-key="{{ line|get_item:"@id"}}" id="{{ line|get_item:"@id"}}"  href="{{ line|get_item:"@id"}}"  shape="poly"  style="cursor: default;">
+				{% endfor %}
+			</map>
+			<canvas id="transcriptCanvas" style="position: absolute; z-index: 998; pointer-events: none;"></canvas>
+			<img src="{{ imageUrl }}" usemap="#transcriptMap" id="transcriptImage" class="transcript-img" style="z-index: 999;"/>
+		</div>
+	</div>
+    </div>
+
+{% include "edit/correct_modal.html" %}
+
+
+ <div class="modal fade"  id="document_metadata_modal" role="dialog">
+    <div class="modal-dialog">
+
+      <!-- Modal content-->
+      <div class="modal-content">
+        <div class="modal-header">
+          <button type="button" class="close" data-dismiss="modal">&times;</button>
+          <h4>Document details</h4>
+        </div>
+        <div class="modal-body">
+	<dl>
+	     {% for item in metadata %}
+		{% if item != 'collectionList' %}
+		<dt>{{item}}</dt>
+		<dd>{{ metadata|get_item:item }}</dd>
+		{% endif %}
+	     {% endfor %}
+	</dl>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<div class="modal">
+
+	<ul>
+     {% for item in metadata %}
+	<li>{{ item }} - {{ metadata|get_item:item }}</li>
+     {% endfor %}
+	</ul>
+</div>
+
+
+<style type="text/css">{# The above lib sets the padding-bottom to 150, removing this. #}
+	html body {
+	    padding-bottom: 0;
+	}
+</style>
+
+<script src="{% static "js/btn-toggle.js" %}"></script>
+<script>
+	// TODO Clean...
+
+	$("a[data-target='#saveChanges']").click(function(e) {
+		saveChanges(e);
+        	setPageStatus("IN_PROGRESS", "{% trans "IN_PROGRESS" %}")
+	});
+
+	/* Toggle page status */
+	$("button#page_status").on("click", function(e) {
+		newStatus = $(this).data("status-0");
+		newStatusLabel = $(this).data("status-label-0");
+		if($(this).data("value") === $(this).data("status-0")){
+			newStatus = $(this).data("status-1")
+			newStatusLabel = $(this).data("status-label-1")
+		}
+		setPageStatus(newStatus,newStatusLabel);
+       	});
+	/* Select page status */
+	$("a[data-target='#page_status']").on("click", function(e) {
+		newStatus = e.currentTarget.name;
+		newStatusLabel = $(e.currentTarget).data("value");
+		setPageStatus(newStatus,newStatusLabel);
+       	});
+	/* Set page Status */
+	function setPageStatus(newStatus, newStatusLabel){
+		$.post(window.location.href, {status : newStatus, csrfmiddlewaretoken: csrf_token }, function(response){
+			$("#page_status_label").html(newStatusLabel);
+			$("#page_status").data("value",newStatus);
+			d.pageStatus = newStatus;
+			setMessage(response, "success");
+		}).fail(function(jqXHR, textStatus, error){
+  			setMessage(error, "warning");
+		    	console.log( "Fail: ",jqXHR, textStatus, error);
+		});
+	}
+
+// RM dont' think we need this
+//        setMessage(pageStatusNotAllowedTrans, "danger", false);
+
+//	$("a[data-target='#toggleEdit']").click(function(e) {
+	// Toggle the mode from edit to view
+        // What needs to happen:
+	// - url changes to new mode
+	// - button text changes to the old mode
+	// - check mode status for interfaces
+	// - contenteditable is turned off/on
+	// - load of other stuff...
+	$("a#editToggle").click(function(e) {
+	    	e.preventDefault();
+
+    		if(window.location.href.indexOf("view") != -1) {
+			var newURL = window.location.href.replace('view', 'edit');
+			console.log("VIEW TO EDIT");
+			pathWithoutPage = pathWithoutPage.replace('view', 'edit');
+			var newButtonText = "{% trans 'View' %}";
+			$('[contenteditable="false"]').attr("contenteditable", "true");
+		    $("#toggleInterface_sbs").addClass("disabled");
+		    $("#toggleInterface_t").addClass("disabled");
+		}else{
+
+			var newURL = window.location.href.replace('edit', 'view');
+			console.log("EDIT TO VIEW");
+
+			pathWithoutPage = pathWithoutPage.replace('edit', 'view');
+			var newButtonText = "{% trans 'Edit' %}";
+			$('[contenteditable="true"]').attr("contenteditable", "false");
+		    $("#toggleInterface_sbs").removeClass("disabled");
+		    $("#toggleInterface_t").removeClass("disabled");
+		}
+
+		window.history.pushState(null, document.title, newURL);
+		if ( correctModal !== undefined && correctModal.isOpen() )
+				correctModal.close();
+
+		$(".editControls").toggle();
+		$("#editToggle").html(newButtonText);
+		$("area").css("cursor", "pointer");
+		if ( window.location.href.indexOf("view") === -1 && "i" === ifc )
+		    updateDialog({% if lines %}"{{ lines|index:0|get_item:"@id" }}"{% endif %});
+		updateCanvas();
+		if ( $(".interface-lbl").is(":visible") ) {
+		    contentArray.forEach(function(obj, i) {
+			drawLineImage(obj[0], obj[2]);
+			if ( $(".lines-div").is(":visible") ) {
+			    currentLineId = obj[0];
+			    buildLineList();
+			}
+		    });
+		}
+		if ( $(".interface-t").is(":visible") ) {
+		    $("#text").html("");
+		    buildLineList();
+		}
+	});
+	$("a[data-target='#toggleInterface']").click(function(e) {
+    	e.preventDefault();
+        if ( e.target.id.substring(16) == ifc )
+            return;
+        changeInterface(e.target.id.substring(16));
+	});
+	$('.transcript-map-div').draggable({
+		start: function() {
+			isDragged = true;
+		},
+		stop: function() {
+			setTimeout(function() { {# A hack to avoid triggering clicks on the map if clicking a region when dragging. #}
+				isDragged = false;
+			}, 250);
+			{# We prefer to keep it simple and let accumExtra* contain the offsets regardless of how they were created (i.e. also when the user has dragged the image): #}
+			accumExtraY -= Math.round(parseInt($( ".transcript-map-div" ).css("top"), 10));
+			accumExtraX -= Math.round(parseInt($( ".transcript-map-div" ).css("left"), 10));
+			$(".transcript-map-div" ).css("top", "0px");
+			$(".transcript-map-div" ).css("left", "0px");
+			$(".transcript-map-div" ).css("transform", "translate(" + -accumExtraX +"px, " + -accumExtraY+ "px) scale(" + zoomFactor + ")");// Note, the CSS is set to "transform-origin: 0px 0px"
+		}
+	});
+	$( "#transcriptMap area" ).on('click', function(e) {
+    	e.preventDefault();
+		if (isDragged || window.location.href.indexOf('view') >= 0 || ifc != "i") {# We ignore clicks if the user has been dragging the image, we assume that that's what the user wants. #}
+			return;
+		//ignoreLeave = true; {# We don't want the original selection "unhighlighted" when the user moves the mouse to the modal. #}
+		updateDialog($(this).attr("line-key"));
+		updateCanvas();
+	});
+	$('area').mouseenter(function(e) {
+		if (window.location.href.indexOf('view') < 0)
+			highlightLine(e.target.id);
+	});
+	$('area').mouseleave(function(e) {
+		updateCanvas();
+	});
+	$( ".previous-page" ).on('click', function(e) {
+		gotoPage(pageNo - 1);
+	});
+	$( ".next-page" ).on('click', function(e) {
+		gotoPage(pageNo * 1 + 1);
+	});
+	$( ".first-page" ).on('click', function(e) {
+		gotoPage(1);
+	});
+	$( ".last-page" ).on('click', function(e) {
+		gotoPage(Number.MAX_SAFE_INTEGER);
+	});
+	$( ".scroll-up" ).on('click', function(e) {
+		scrollToPreviousTop();
+	});
+	$( ".scroll-down" ).on('click', function(e) {
+		scrollToNextTop();
+	});
+	$('#correctModal').on('keydown', function(e) {
+		keydown(e);
+	});
+	$('#correctModal').on('keyup', function(e) {
+		keyup(e);
+	});
+	$('#correctModal').on('mouseup', function(e) {
+		mouseup(e);
+	});
+	$("#correctModal").on("paste", function(e) {
+		paste(e);
+	});
+	$("#correctModal").on("drop", function(e) {
+		drop(e);
+	});
+	$("#correctModal").on("cut", function(e) {
+		cut(e);
+	});
+	$( ".typewriter-previous" ).on('click', function(e) {
+		typewriterPrevious();
+	});
+	$( ".typewriter-next" ).on('click', function(e) {
+		typewriterNext();
+	});
+	$( ".zoom-in" ).on('click', function(e) {
+		setZoom(20);
+	});
+	$( ".zoom-out" ).on('click', function(e) {
+		setZoom(-20);
+	});
+	$( ".fit-width" ).on('click', function(e) {
+		fitWidth();
+	});
+	$( ".fit-height" ).on('click', function(e) {
+		fitHeight();
+	});
+	$( ".add-line" ).on('click', function(e) {
+		surroundingCount++;
+		buildLineList();
+	});
+	$( ".enlarge-text" ).on('click', function(e) {
+		resizeText(1);
+	});
+	$( ".shrink-text" ).on('click', function(e) {
+		resizeText(-1);
+	});
+	$(".bold-text").on("click", function(e) {
+		toggleTag("bold");
+	});
+	$(".italic-text").on("click", function(e) {
+		toggleTag("italic");
+	});
+	$(".strikethrough-text").on("click", function(e) {
+		toggleTag("strikethrough");
+	});
+	$(".underline-text").on("click", function(e) {
+		toggleTag("underlined");
+	});
+	$(".subscript-text").on("click", function(e) {
+		toggleTag("subscript");
+	});
+	$(".superscript-text").on("click", function(e) {
+		toggleTag("superscript");
+	});
+	$( ".remove-line" ).on('click', function(e) {
+		surroundingCount--; {# TODO A function instead? #}
+		if (surroundingCount >= 0)
+			buildLineList();
+		else
+			surroundingCount = 0;
+	});
+	$( ".thumbs-left" ).on('click', function(e) {
+		scrollThumbsLeft();
+	});
+	$( ".thumbs-right" ).on('click', function(e) {
+		scrollThumbsRight();
+	});
+    $('.transcript-div').on('mousewheel DOMMouseScroll', function(e) {
+    	e.preventDefault();
+    	var mouseZoom;
+    	if (e.originalEvent.detail > 0 || e.originalEvent.wheelDelta < 0)
+			mouseZoom = -20;
+		else
+			mouseZoom = 20;
+    	setZoom(mouseZoom, e.originalEvent.pageX - $( ".transcript-map-div" ).offset().left, e.originalEvent.pageY - $( ".transcript-map-div" ).offset().top);
+    });
+    $(window).resize(function() {
+    	if (!dialogBeingResized) { {# If the dialog is being resized, it triggers this event and we must ignore it. #}
+	    	clearTimeout(resizeTimeout); {# We don't want to respond until the window has finished resizing. #}
+	    	resizeTimeout = setTimeout(function() {
+				resizeContents();
+	    	}, 480);
+	    }
+	});
+	$("#pageNumber").focus(function() {
+   		$(this).select();
+	});
+	$("#pageNumber").change(function() {
+   		checkPageNumberInput();
+	});
+    function changeInterface(target) {
+        var oldLineId = currentLineId;
+        currentLineId = null;
+
+        if ( target === "i" ) {
+            ifc = "i";
+            $("").html(""); {# the dialog height does not get calculated correctly unless we do this! #}
+            $(".transcript-div").show();
+            $(".interface-lbl").hide();
+            $(".interface-sbs").hide();
+            $(".interface-t").hide();
+            $("#compareText").hide();
+            // in case we've been to sbs and shrunk the image:
+            $(".transcript-div").removeClass("col-lg-6");
+            $(".transcript-div").addClass("col-lg-12");
+            $(".transcript-div").height(window.innerHeight - 200);
+            resizeContents();
+            $(".zoom-in").removeClass("disabled");
+            $(".zoom-out").removeClass("disabled");
+            $(".fit-width").removeClass("disabled");
+            $(".fit-height").removeClass("disabled");
+            {% if lines %}
+                if ( hasEditPermission("{{ role }}") && "{{ pageStatus }}" !== "GT" ) {
+                    $("#editToggle").removeClass("disabled");
+                    $("a[data-target='#saveChanges']").removeClass("disabled");
+                    $("#page_status").removeClass("disabled");
+                }else{
+                    $("#editToggle").addClass("disabled");
+                    $("a[data-target='#saveChanges']").addClass("disabled");
+                    $("#page_status").addClass("disabled");
+		}
+            {% endif %}
+        }
+        else if ( target === "lbl" ) {
+            ifc = "lbl";
+            $(".line-list").html("");
+            hideDialog();
+            $(".transcript-div").hide();
+            $(".interface-lbl").show();
+            $(".interface-sbs").hide();
+            $(".interface-t").hide();
+            $("#compareText").hide();
+            resizeContents();
+            $(".zoom-in").removeClass("disabled");
+            $(".zoom-out").removeClass("disabled");
+            $(".fit-width").removeClass("disabled");
+            $(".fit-height").removeClass("disabled");
+            {% if lines %}
+                if ( hasEditPermission("{{ role }}") && "{{ pageStatus }}" !== "GT" )  {
+                    $("#editToggle").removeClass("disabled");
+                    $("a[data-target='#saveChanges']").removeClass("disabled");
+                    $("#page_status").removeClass("disabled");
+                }else{
+                    $("#editToggle").addClass("disabled");
+                    $("a[data-target='#saveChanges']").addClass("disabled");
+                    $("#page_status").addClass("disabled");
+		}
+            {% endif %}
+        }
+        else if ( target === "sbs" ) {
+            ifc = "sbs";
+            $(".line-list").html("");
+            hideDialog();
+            $(".interface-lbl").hide();
+            $(".interface-t").hide();
+			// we shrink the image to make space for compareText
+            $(".transcript-div").show();
+            $(".transcript-div").removeClass("col-lg-12");
+            $(".transcript-div").addClass("col-lg-6");
+            $("#compareText").show();
+            refreshYourVersion();
+            $(".transcript-div").height($("#compareText").innerHeight());
+            resizeContents();
+            $(".zoom-in").removeClass("disabled");
+            $(".zoom-out").removeClass("disabled");
+            $(".fit-width").removeClass("disabled");
+            $(".fit-height").removeClass("disabled");
+            $("#editToggle").addClass("disabled");
+            $("a[data-target='#saveChanges']").addClass("disabled");
+            $("#page_status").addClass("disabled");
+            {% if lines %}
+                /*if ( hasEditPermission("{{ role }}") && "{{ pageStatus }}" !== "GT" )  {
+                    $("#editToggle").removeClass("disabled");
+                    $("a[data-target='#saveChanges']").removeClass("disabled");
+                    $("#page_status").removeClass("disabled");
+                }else{
+                    $("#editToggle").addClass("disabled");
+                    $("a[data-target='#saveChanges']").addClass("disabled");
+                    $("#page_status").addClass("disabled");
+		}*/
+            {% endif %}
+            return;
+        }
+        else if ( target === "t" ) {
+            ifc = "t";
+            $(".line-list").html("");
+            hideDialog();
+            $(".transcript-div").hide();
+            $(".interface-lbl").hide();
+            $(".interface-sbs").hide();
+            $(".interface-t").show();
+            $("#compareText").hide();
+            resizeContents();
+            $(".zoom-in").addClass("disabled");
+            $(".zoom-out").addClass("disabled");
+            $(".fit-width").addClass("disabled");
+            $(".fit-height").addClass("disabled");
+            $("#editToggle").addClass("disabled");
+            $("a[data-target='#saveChanges']").addClass("disabled");
+            $("#page_status").addClass("disabled");
+            {% if lines %}
+                /*if ( hasEditPermission("{{ role }}") && "{{ pageStatus }}" !== "GT" )  {
+                    $("#editToggle").removeClass("disabled");
+                    $("a[data-target='#saveChanges']").removeClass("disabled");
+                    $("#page_status").removeClass("disabled");
+                }else{
+                    $("#editToggle").addClass("disabled");
+                    $("a[data-target='#saveChanges']").addClass("disabled");
+                    $("#page_status").addClass("disabled");
+		}*/
+            {% endif %}
+        }
+        else {
+            ifc = target;
+            $(".transcript-div").hide();
+            $(".interface-lbl").hide();
+            $(".interface-sbs").hide();
+            $(".interface-t").hide();
+            $(".zoom-in").addClass("disabled");
+            $(".zoom-out").addClass("disabled");
+            $(".fit-width").addClass("disabled");
+            $(".fit-height").addClass("disabled");
+            {% if lines %}
+                $("#editToggle").addClass("disabled");
+                $("a[data-target='#saveChanges']").addClass("disabled");
+                $("#page_status").addClass("disabled");
+            {% endif %}
+        }
+
+        if ( window.location.href.indexOf("view") === -1 ) {
+            $("#toggleInterface_sbs").addClass("disabled");
+            $("#toggleInterface_t").addClass("disabled");
+        }
+
+        if ( correctModal !== undefined && correctModal.isOpen() )
+            hideModal();
+
+        fitWidth();
+        contentArray.forEach(function(obj, i) {
+            drawLineImage(obj[0], obj[2]);
+            if ( $(".transcript-div").is(":visible") ) {
+                $("line_" + obj[0]).html("");
+            }
+            if ( $(".interface-lbl").is(":visible") ) {
+                currentLineId = obj[0];
+                buildLineList();
+            }
+            if ( $(".interface-t").is(":visible") ) {
+                $("line_" + obj[0]).html("");
+            }
+        });
+        currentLineId = oldLineId;
+        if ( window.location.href.indexOf("view") === -1 && "i" === ifc )
+            updateDialog(currentLineId);
+        updateCanvas();
+        buildLineList();
+        {# TODO Handle failures here or are we happy with the current solution? #}
+    }
+	$(function() { {# TODO Solution for people using broken computers that don't have more than one mouse button. Issues: z-index (or overflow?) and selections getting deselected... #}
+        $.contextMenu({
+            selector: '.tag-menu',
+            zIndex: 2000,
+            build: function($trigger, e) {
+            	if (canOpenContextMenu) {
+	            	updateSelectionData(); {# TODO What do we do in this case if we also want to have the feature below? #}
+	            	restoreSelection(); {# TODO Request feedback. This solution has the advantage of allowing a selection to be made and the menu opened elsewhere in order not to cover the relevant text. #}
+					return tagMenu();
+				} else
+					return null;
+        	},
+       	    events: {
+				hide : function(){
+					selectionData = ""; // the old selection must be forgotten to avoid strange behaviour
+				}
+	       },
+		});
+    });
+	$(".line-list").bind('contextmenu', function(e) {	// if we get a right click within the line list, we have to place the caret where the click was unless we already have a non-zero length selection
+		canOpenContextMenu = contextMenuOpenable(e);
+	});
+    $(document.body).on("click", ".context-menu-input", function(e) { // TODO Place this somewhere else....
+    	if (e.target.nodeName != "INPUT") // multiple clicks can be triggered, some of which are label or span...
+    		return;
+		toggleTag($(e.target).prop("name").substr(19)); // "context-menu-input-".length is 19
+	});
+	$(window).on("load", function() {
+		initialWidth = $('#transcriptImage').width() ? $('#transcriptImage').width() : window.innerWidth;
+		initialHeight = $('#transcriptImage').height();
+		naturalWidth = $('#transcriptImage').get(0).naturalWidth;
+        $("#canvas_text").width(window.innerWidth - 50);
+		initialScale = initialWidth / naturalWidth;
+		pathWithoutPage = "{% url 'edit:correct' collId docId %}/";
+		pageNo = {{pageNo}};
+		var search = window.location.search + 'tco=0';// just to avoid NaN below
+		thumbCountOffset = parseInt(search.substring(search.indexOf('tco=') + 4)); // "tco=".length = 4
+
+		// If the current page isn't among the thumbs first shown, we change the offset to make it so
+		thumbCountOffset = Math.max(thumbCountOffset, -pageNo + 1);
+		thumbCountOffset = Math.min(thumbCountOffset, -pageNo + THUMBS_TO_SHOW);
+
+		// Show the current page number
+		checkPageNumberInput();
+
+		updateCanvas();
+		calculateAreas();
+		loadThumbs();
+
+		// Getting this from the CSS file for now, set a variable instead?
+		contentLineFontSize = parseInt($('.line-list').css("font-size"), 10);
+
+		correctModal = $("#correctModal").dialog({
+			autoOpen: false,
+		    uiLibrary: 'bootstrap',
+            resizable: true,
+		    closed: function(e) {
+		        currentLineId = null;
+				updateCanvas();
+				ignoreLeave = false;
+		    },
+    		resizeStart: function (e) {
+    			dialogBeingResized = true;
+    			updateDockingStatus(false);
+    		},
+    		dragStart: function (e) {
+    			updateDockingStatus(false);
+    		},
+    		drag: function(e) {
+    			if ($("#correctModal").offset().left <= 0)
+    				$("#correctModal").css("left",  "0px");
+    			if (($("#correctModal").offset().left + dialogWidth) >= window.innerWidth)
+    				$("#correctModal").css("left",  (window.innerWidth - dialogWidth) + "px");
+    			if ($("#correctModal").offset().top <= 0)
+    				$("#correctModal").css("top",  "0px");
+    			if (($("#correctModal").offset().top + dialogHeight) > document.body.clientHeight)
+    				$("#correctModal").css("top",  (window.innerHeight - dialogHeight) + "px");
+    		},
+    		dragStop: function(e) {
+    			if ($("#correctModal").offset().left < 0)
+    				$("#correctModal").css("left",  "0px");
+    			if (($("#correctModal").offset().left + dialogWidth) > window.innerWidth)
+    				$("#correctModal").css("left",  (window.innerWidth - dialogWidth) + "px");
+    			if ($("#correctModal").offset().top < 0)
+    				$("#correctModal").css("top",  "0px");
+    			if (($("#correctModal").offset().top + dialogHeight) > document.body.clientHeight)
+    				$("#correctModal").css("top",  (window.innerHeight - dialogHeight) + "px");
+    		},
+    		resizeStop: function (e) {
+    			dialogWidth = parseInt(this.style.width, 10); // saving this... TODO Ask if this is to be saved? User opinions vary...!?
+    			dialogHeight = parseInt(this.style.height, 10);
+    			dialogBeingResized = false;
+				$("#lineList").css("min-height", (dialogHeight - dialogAbsoluteMinHeight) + "px"); // TODO Put this and the actions above in a separate function...?
+    		}
+        });
+
+        $("#toggleInterface_i").removeClass("disabled");
+        $("#toggleInterface_lbl").removeClass("disabled");
+        $("#toggleInterface_sbs").removeClass("disabled");
+        $("#toggleInterface_t").removeClass("disabled");
+        $(".zoom-in").removeClass("disabled");
+        $(".zoom-out").removeClass("disabled");
+        $(".fit-width").removeClass("disabled");
+        $(".fit-height").removeClass("disabled");
+        $(".first-page").removeClass("disabled");
+        $(".previous-page").removeClass("disabled");
+        $("#pageNumber").removeClass("disabled");
+        $(".next-page").removeClass("disabled");
+        $(".last-page").removeClass("disabled");
+        $("a[aria-controls='thumbDiv']").removeClass("disabled");
+        {% if lines %}
+            if ( hasEditPermission("{{ role }}") || "{{ pageStatus }}" !== "GT" )  {
+                $("#editToggle").removeClass("disabled");
+                $("a[data-target='#saveChanges']").removeClass("disabled");
+                $("#page_status").removeClass("disabled");
+            }
+        {% endif %}
+       //  refreshOriginalVersion();
+        $("#toggleInterface_" + ifc).click();// Change buttons
+        changeInterface(ifc);
+    });
+	var fixmeTop = $(".fix_scroll_top").offset().top;
+	$(window).scroll(function() {
+		var currentScroll = $(window).scrollTop();
+	    if (currentScroll >= fixmeTop) {
+	        $(".fix_scroll_top").css({
+	            position: "fixed",
+	            top: "0",
+	            left: "0"
+	        });
+	    } else {
+	        $(".fix_scroll_top").css({
+	            position: "static"
+	        });
+	    }
+	});
+	$(window).bind('beforeunload', function(){
+		if (changed)
+			return '{% trans "You have unsaved changes. Are you sure you want to leave?" %}'; // custom messages aren't supported by all browsers now, this is for those that do show them
+	});
+    $(window).bind("keydown", function(e) {
+        if ( e.ctrlKey || e.metaKey ) {
+            if ( String.fromCharCode(e.which).toLowerCase() === "s" ) {
+                e.preventDefault();
+                saveChanges(e);
+                setPageStatus("{{ role }}", "IN_PROGRESS", "{% trans "Page status: in progress" %}")
+            }
+            else if ( e.charCode === 0 )
+                ctrlKey = true;
+        }
+    });
+    $(window).bind("keyup", function(e) {
+        if ( e.which == 17 || e.which == 112 || e.which == 111 )
+            ctrlKey = false;
+    });
+</script>
+
+<script src="{% static "js/gijgo.min.js" %}"></script>
+
+{% endblock %}
