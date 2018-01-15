@@ -154,7 +154,8 @@ function updateDialogSize() {
 			$(".line-list").css("overflow-y", "hidden");
 		}
 	} else {	
-		dialogWidth = Math.max(dialogWidth, currentMinW); // we don't shrink the dialog automatically
+		//dialogWidth = Math.max(dialogWidth, currentMinW); // we don't shrink the dialog automatically
+		dialogWidth = currentMinW; // now we do shrink the dialog because that's what users want (!?)
 		dialogWidth = Math.min(dialogWidth, window.innerWidth); // we don't allow a wider dialog than the window
 		dialogHeight = Math.max(dialogHeight, currentMinH);
 		$("#correctModal").css("width",  dialogWidth + "px");

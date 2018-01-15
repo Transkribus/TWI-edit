@@ -1,3 +1,4 @@
+var UNDO_ARRAY_MAX_LENGTH = 10;
 var undoArray = [];
 var ctrlKey = false, metaKey = false, altKey = false;
 var caretOffsetInPixels = null;
@@ -70,7 +71,7 @@ function paste(event) {
 	if (contentArray[lineIndex][1].length ==  selectionData[0][1]) { // we only attempt a multi-line paste, if we can do it to the end of the line and we ignore tags in that case
 		var textArray = text.split("\n");
 		for (var i = 0; i < textArray.length; i++) {
-			// TODO undoArray.push(contentArray[lineIndex].slice());
+			pushToUndoArray(contentArray[lineIndex].slice());
 			contentArray[lineIndex][1] += textArray[i];
 			if (++lineIndex >= contentArray.length || contentArray[lineIndex][1] != "") {
 				lineIndex--;
@@ -82,14 +83,13 @@ function paste(event) {
 			}
 		}
 	} else {
-		// TODO undoArray.push(contentArray[lineIndex].slice());
+		pushToUndoArray(contentArray[lineIndex].slice());
 		text = text.replace("\n", "\u00A0");
 		// update tags
 		var customString = contentArray[lineIndex][4] + ' ';
 		var custom = customString.replace(/\s+/g, '').split('}');
 		var newCustom = customString.match(/readingOrder {index:\d+;}/);
 		var contentDelta = text.length;
-		// TODO undoArray.push(contentArray[lineIndex].slice()); // TODO Speed this up?
 		contentArray[lineIndex][4] = newCustom;
 		if ("None" != custom) {
 			custom.forEach(function(attribute) {
@@ -136,7 +136,7 @@ function inputChar(char) {
 	var customString = contentArray[lineIndex][4] + ' ';
 	var custom = customString.replace(/\s+/g, '').split('}');
 	var newCustom = customString.match(/readingOrder {index:\d+;}/);
-	// TODO undoArray.push(contentArray[lineIndex].slice()); // TODO Speed this up?
+	pushToUndoArray(contentArray[lineIndex].slice());
 	contentArray[lineIndex][4] = newCustom;
 	if ("None" != custom) {
 		custom.forEach(function(attribute) {
@@ -169,7 +169,7 @@ function eraseFrom(lineIndex, startOffset, endOffset) {
 	var customString = contentArray[lineIndex][4] + ' ';
 	var custom = customString.replace(/\s+/g, '').split('}');
 	contentArray[lineIndex][4] = customString.match(/readingOrder {index:\d+;}/);
-	//undoArray.push(contentArray[lineIndex].slice());
+	pushToUndoArray(contentArray[lineIndex].slice());
 	if ("None" != custom) {
 		custom.forEach(function(attribute) {
 			attribute = attribute.split('{');
@@ -213,14 +213,8 @@ function eraseSelected() {
 	selectionData = [[selectionData[0][0], selectionData[0][1], selectionData[0][1]]];
 }
 function editAction(event) {
-	if (event.ctrlKey || event.altKey || event.metaKey) {
-		if (event.key == "z" || event.key == "Z")
-			undoAction();
+	if ( selectionData == undefined || selectionData[0] === undefined )
 		return;
-	}
-	if ( selectionData == undefined || selectionData[0] === undefined ) {
-		return;
-	}
 	if (event.keyCode == 8) { // backspace?
 		if (selectionData.length == 1 && (selectionData[0][1] == selectionData[0][2])) // just a caret, no selection?
 			selectionData[0] = [selectionData[0][0], Math.max(0, selectionData[0][1] - 1), selectionData[0][2]]; // select the preceding character, if any
@@ -274,12 +268,20 @@ function editAction(event) {
 		initializeCaretOffsetInPixels();
 	}
 }
+function pushToUndoArray(contentArraySlice) {
+	if (undoArray.length > UNDO_ARRAY_MAX_LENGTH)
+		undoArray.shift();
+	undoArray.push([contentArraySlice, selectionData[0][1]]);
+}
 function undoAction() {
-	for (var i = 0; i < undoArray.length; i++) {
-		var undoId = undoArray[i][0];
-		contentArray[getIndexFromLineId(undoArray[i][0])] = undoArray[i];
+	// TODO Remove unsaved changes notification, if applicable?
+	var restore = undoArray.pop();
+	if (restore != undefined) {
+		var lineId = restore[0][0];
+		contentArray[getIndexFromLineId(lineId)] = restore[0];
+		setSelectionData(lineId, restore[1]);
+		buildLineList();
 	}
-	buildLineList();
 }
 // helpers
 function getIndexFromLineId(lineId) {
