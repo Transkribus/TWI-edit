@@ -582,10 +582,13 @@ function updateLine(updatedLineId) { // TODO  Make this faster by skipping the i
 function buildLineList() {
 	console.log("building line list!");
 	var index;
+	console.log("tdiv: ", $(".transcript-div").is(":visible")," currentlinId: ",currentLineId, " correctmodal open? :", correctModal.isOpen());
 	if ( $(".transcript-div").is(":visible") && currentLineId !== undefined && correctModal.isOpen()) { // TODO A better test? This works but sbs below also has transcript-div :visible...
 		var currentIdx = getIndexFromLineId(currentLineId);
 		var showTo = Math.min(currentIdx + surroundingCount, contentArray.length - 1);
 		index = Math.max(1, currentIdx - surroundingCount); // 1 because the first line is not real
+		console.log("We will build line list now.... from ",index, " to ",showTo);
+
 		$("#lineList").html("");
 		while (index <= showTo)
 			$("#lineList").append(getLineLiWithTags(index++));
@@ -623,54 +626,6 @@ function resizeText(delta) {
 	contentLineFontSize = newFontSize;
 	$('.line-list').css("font-size", contentLineFontSize+ 'px');
 	buildLineList();
-}
-function typewriterMove(newLineId, caretLineId) {
-	initializeCaretOffsetInPixels();
-	if (newLineId != null && selectionData !== undefined && selectionData[0] !== undefined ) {
-		if (null === savedCaretOffsetInPixels)
-			savedCaretOffsetInPixels = caretOffsetInPixels;
-		// TODO Move the caret down even when we cannot make the lines move anymore?
-		updateDialog(newLineId);
-		updateCanvas();
-		// get the closest span offset on the new line
-		var span, spanOffset;
-		$("[tagLineId=" + caretLineId + "]:visible").each(function() {
-			if (this.offsetLeft < savedCaretOffsetInPixels) {
-				span = this;
-				spanOffset = this.offsetLeft;
-			}
-			// we don't break, we want the closest span in case there are nested ones
-		});
-		// we have the span offset, get the character offset
-		hiddenCopy = $(span).clone();
-		testText = $(hiddenCopy).text();
-		var cA = 0, cB, t;// pixel offsets of the previous and the current character (= [t])
-		for (t = 0; t <= testText.length; t++) {
-			$(hiddenCopy).text(testText.substr(0, t));
-			$(hiddenCopy).appendTo(span);
-			cB = $(hiddenCopy).outerWidth();
-			$(hiddenCopy).remove();
-			if ((cB + cA) / 2 > (savedCaretOffsetInPixels - spanOffset)) // we want the offset which is closest to this
-				break;
-			cA = cB;
-		}
-		var cLength = contentArray[getIndexFromLineId(caretLineId)][1].length;
-		if (null == cLength)
-			cLength = 0;
-		var caretOffset = Math.min(t - 1 + parseInt($(span).attr("spanOffset")), cLength);
-		selectionData = [[caretLineId, caretOffset, caretOffset]];
-		restoreSelection();
-	}
-}
-function typewriterNext() { // Aka. "press typewriter enter scroll". Changes the selected lines and the modal content.
-	if ( ifc === "lbl" )
-		$("#options_" + currentLineId).hide();
-	typewriterMove(getNextLineId(currentLineId), getNextLineId(selectionData[0][0])); // the caret will "remain in place" and the lines shifted around it
-}
-function typewriterPrevious() {
-	if ( ifc === "lbl" )
-		$("#options_" + currentLineId).hide();
-	typewriterMove(getPreviousLineId(currentLineId), getPreviousLineId(selectionData[0][0])); // the caret will "remain in place" and the lines shifted around it
 }
 function setMessage(message, type, timeout) {
 	if(timeout==undefined) timeout = true;

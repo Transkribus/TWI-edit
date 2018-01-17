@@ -10,22 +10,26 @@
 <link rel="stylesheet" href="https://swisnl.github.io/jQuery-contextMenu/css/theme-fixes.css" type="text/css"/>
 <link href="https://swisnl.github.io/jQuery-contextMenu/dist/jquery.contextMenu.css" rel="stylesheet" type="text/css" />
 
-<!--<script src="{% static "js/line-by-line.js" %}"></script>-->
+<script src="{% static "js/editClass.js" %}"></script>
 
-<!--<script src="{% static "js/side-by-side.js" %}"></script>-->
-
+<!--<script src="{% static "js/line-by-line.js" %}"></script>
+<script src="{% static "js/side-by-side.js" %}"></script>
+-->
 <script src="{% static "js/correct.js" %}"></script>
 <script src="{% static "js/thumbs.js" %}"></script>
 <script src="{% static "js/image.js" %}"></script>
 <script src="{% static "js/tags.js" %}"></script>
-<script src="{% static "js/dialog.js" %}"></script>
+<!--<script src="{% static "js/dialog.js" %}"></script>-->
 <script src="{% static "js/text.js" %}"></script>
+<script src="{% static "js/proofread.js" %}"></script>
 <!--<script src="{% static "js/diff.js" %}"></script>-->
 <script src="https://swisnl.github.io/jQuery-contextMenu/dist/jquery.contextMenu.js" type="text/javascript"></script>
 <!--<script src="https://swisnl.github.io/jQuery-contextMenu/dist/jquery.ui.position.min.js" type="text/javascript"></script>-->
 <script src="https://swisnl.github.io/jQuery-contextMenu/js/main.js" type="text/javascript"></script>
 
 <script>
+
+
 	var dialogBeingResized = false; {# a "semaphore" to avoid false resize events (resizing the dialog triggers such events and we only want those triggered by the window) #}
 	var canOpenContextMenu = false;
 	var ignoreLeave = false;
@@ -47,8 +51,57 @@
 	// we can make classes with the tag name and keep those in the css
 	var tags = [ "abbrev","date","gap","person","place","unclear","organization"]
 
+	//For back-compat we will set globals from the template tags, but we should be doing away with alllll of these globals in the longer run	
+	var pathWithoutPage = "{% url 'edit:correct' collId docId %}/";
+	// use the can_edit template tag to assess permisions in config and role and return a yay or nay for edit access
+	var can_edit = {{ role|can_edit|lower }};
+	// csrf_token is a django default template tag. TODO we shouldn't need to 
+    // set this as a global here becuase we use the django builtin template tag to set it in the head in base.html
+	var csrf_token = "{{ csrf_token }}";
 
+	//Translation for javascript phrases # todo use javascrip/json catalog (allows pluralisation processing too)
+	var transUnsavedChanges = "{% trans "You have unsaved changes." %}";
+	var transSavingChanges = "{% trans "Saving changes..." %}";
+    var pageStatusNotAllowedTrans = "{% trans "You can not change the page status." %}";
+
+	
+	// We can collect params for the Edit object with a bunch of stuff gleaned by the edit.document_view
+	var d = {{ json_from_view|safe }};
+
+	// Set some init params for Edit from templatetags
+	d.pathWithoutPage = pathWithoutPage; //TODO direct from template tag when back-compat can be turned off
+
+	d.can_edit = can_edit; //TODO direct from template tag when back-compat can be turned off
+	d.tags = tags;
+	
+	$(document).ready(function(){	
+		Edit.init_config(d);
+		Edit.setEventHandlers();
+	});
+	//For ease of transition back-compat etc we can set a few vars here... but preference would be access direct from d
+	var thumbArray = d.thumbArray;
+	var contentArray = d.contentArray;
+//	var accumExtra = d.accumExtra;	
+	var ifc = d.i;
+	var pageStatus = d.pageStatus;
+	var role = d.role;
+
+
+	//I don't think that django needs to know about tags at all.
+	//I suggest defining an array of tags and css clases with a 
+	//derivative name that we cn use to set colours an so on
+	//TODO we can define a tag menu function to build the menu with jquery...
+	var tagItems = {
+		{% for tag in tags %}"{{tag.name}}": {name: "<span href=\"#\" style=\"color: #{{tag.color}};\">{{tag.name}}</span>", type: "checkbox", isHtmlName: true} {% if not forloop.last %}, {% endif %}
+		{% endfor %}
+    };
+	var tagColors = {
+		{% for tag in tags %}"{{tag.name}}": "{{tag.color}}" {% if not forloop.last %}, {% endif %}
+		{% endfor %}
+	};
 
 </script>
+
+<script src="{% static "js/control.js" %}" type="text/javascript"></script>
 
 

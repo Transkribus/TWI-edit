@@ -9,46 +9,6 @@ var previousInnerWidth = window.innerWidth;
 var correctModal;
 var changed = false;
 
-// i18n vars needed: transUnsavedChanges, transSavingChanges
-
-function calculateAreas() {
-	var i = 1;
-	$("#transcriptMap").children().each(function (value) {
-		var coordString = "";
-		for (var j = 0; j < 7; j++) {
-			coordString += initialScale*contentArray[i][2][j] + ',';
-		}
-		coordString += initialScale*contentArray[i][2][7];
-		this.coords = coordString;
-		i++;
-	});
-}
-function resizeContents() { // Call to perform necessary updates of contents and variables whenever the GUI size is changed
-	var oldWidth = initialWidth;
-    previousInnerWidth = window.innerWidth;
-	initialWidth = $('#transcriptImage').width() ? $('#transcriptImage').width() : window.innerWidth;
-	initialHeight = $('#transcriptImage').height();
-	naturalWidth = $('#transcriptImage').get(0).naturalWidth;
-	initialScale = initialWidth / naturalWidth;
-	// We have to update these too in case the image has gotten resized by the browser along with the window:
-	accumExtraX = initialWidth * accumExtraX / oldWidth;
-	accumExtraY = initialWidth * accumExtraY / oldWidth;
-	$(".transcript-map-div").css("transform",  "translate(" + -accumExtraX +"px, " + -accumExtraY+ "px) scale(" + zoomFactor + ")");// Note, the CSS is set to "transform-origin: 0px 0px"
-	calculateAreas();
-	generateThumbGrid();
-	updateCanvas();
-	// If the dialog is open, position it as before in relation the highlighted area but according to the current window size = new scale...
-	if ( correctModal !== undefined && correctModal.isOpen() ) {
-		dialogHighlightDX *= initialWidth / oldWidth;
-		dialogHighlightDY *= initialWidth / oldWidth;
-		dialogX = -accumExtraX + contentArray[getIndexFromLineId(currentLineId)][2][0] * initialScale * zoomFactor + dialogHighlightDX;
-		dialogY = -accumExtraY + $(".transcript-div").offset().top + contentArray[getIndexFromLineId(currentLineId)][2][1] * initialScale * zoomFactor + dialogHighlightDY;
-		$("#correctModal").css("left",  dialogX + "px");
-		$("#correctModal").css("top",  dialogY + "px");
-		updateDialog(); // TODO Remove. should be redundant.
-	}
-    $(".transcript-div").height(window.innerHeight - 200);
-}
 function getContent() { // "JSON.stringifies" (verbing a noun) contentArray and also strips out content which does not need to be submitted.
 	var lengthMinusOne = contentArray.length - 1;
 	var content = '{';

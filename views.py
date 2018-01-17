@@ -68,6 +68,8 @@ def document_view(request, collId=None, docId=None, pageNr=None, transcriptId=No
     # We get the document data for this document which will give us lots of vital contectual information
     # We should get this data now so we can test whether we need to continue with processing
     dd = document_data(request,collId,docId,pageNr)
+    if isinstance(dd,HttpResponse) :
+        return error_view(request,dd)
 
     # We don not allow the editing of *any* page that has been set as Ground Truth (we dont' care who you are!!)
     if dd.get("pageStatus") == 'GT' and mode == 'edit' :
@@ -244,11 +246,11 @@ def document_data(request, collId, docId, pageNr) :
     
     t = get_ts_session(request) 
     if isinstance(t,HttpResponse) :
-        return error_view(request,t)
+        return t
 
     document = t.document(request, collId, docId, -1,ignore_cache=True)
     if isinstance(document,HttpResponse):
-        return error_view(request,document)
+        return document
 
     # Get all the pages for the document (this will be used for the thumbnail ribbon
     pages = document.get('pageList').get('pages')
@@ -450,6 +452,7 @@ def proofread(request, collId, docId, page, transcriptId=None):# TODO Decide whe
         'lines': lineList
         })
 
+'''
 @login_required
 def correct(request, collId, docId, page=None, transcriptId=None):# TODO Decide whether to select which transcript to work with unless it should always be the newest?
 #def correct(request, collId, docId, page, transcriptId=None):# TODO Decide whether to select which transcript to work with unless it should always be the newest?
@@ -627,3 +630,4 @@ def correct(request, collId, docId, page=None, transcriptId=None):# TODO Decide 
         view_data.update(navdata)
 
         return render(request, 'edit/correct.html', view_data)
+'''

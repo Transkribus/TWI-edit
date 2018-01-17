@@ -6,7 +6,7 @@
 	{# Interfaces from settings #}
 	<div class="btn-group btn-toggle">
 	    {% for interface in mode|get_interfaces %}
-		    <a id="toggleInterface_{{interface}}" class="btn btn-sm btn-primary active disabled" data-target="#toggleInterface">{% trans interface %}</a>
+		    <a id="toggleInterface_{{interface}}" data-interface-id="{{interface}}" class="btn btn-sm btn-primary active disabled" data-target="#toggleInterface">{% trans interface %}</a>
 		{% endfor %}
 	</div>
 	{# Zooming #}
@@ -27,7 +27,7 @@
 	</div>
 	{# mode switching #}
 	<div class="btn-group">
-	    <a id="editToggle" class="btn btn-sm btn-primary disabled">{% trans mode|opposite %}</a>
+	    <a id="editToggle" class="btn btn-sm btn-primary disabled" data-edit-label="{% trans "Edit" %}" data-view-label="{% trans "View" %}" >{% trans mode|opposite %}</a>
 
 	</div>
 
@@ -55,7 +55,7 @@
 				{% trans "Page status: "%}{% trans pageStatus %} 
 			</button>
 		{% endif %}
-		<a href="#" class="btn btn-sm btn-primary editControls disabled" {% if mode == "view" %}style="display: none;"{% endif %} data-target="#saveChanges" >{% trans "Save changes" %}</a>
+		<a href="#" class="btn btn-sm btn-primary editControls disabled" {% if mode == "view" %}style="display: none;"{% endif %} data-target="#saveChanges" data-in-progress-label="{%trans "IN_PROGRESS" %}">{% trans "Save changes" %}</a>
 		<span id="message" class="btn btn-sm"></span>
 	    </div>
 	{% else %}
