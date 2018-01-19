@@ -255,9 +255,9 @@ var Edit = new function() {
 		    uiLibrary: 'bootstrap',
             resizable: true,
 		    closed: function(e) {
-		    	self.currentLineId = null;
+		        self.currentLineId = null;
 				self.updateCanvas();
-				ignoreLeave = false;
+				self.ignoreLeave = false;
 		    },
     		resizeStart: function (e) {
     			self.dialogBeingResized = true;
@@ -266,25 +266,9 @@ var Edit = new function() {
     		dragStart: function (e) {
     			self.updateDockingStatus(false);
     		},
-    		drag: function(e) {
-    			if ($("#correctModal").offset().left <= 0)
-    				$("#correctModal").css("left",  "0px");
-    			if (($("#correctModal").offset().left + self.dialogWidth) >= window.innerWidth)
-    				$("#correctModal").css("left",  (window.innerWidth - self.dialogWidth) + "px");
-    			if ($("#correctModal").offset().top <= 0)
-    				$("#correctModal").css("top",  "0px");
-    			if (($("#correctModal").offset().top + dialogHeight) > document.body.clientHeight)
-    				$("#correctModal").css("top",  (window.innerHeight - self.dialogHeight) + "px");
-    		},
     		dragStop: function(e) {
-    			if ($("#correctModal").offset().left < 0)
-    				$("#correctModal").css("left",  "0px");
-    			if (($("#correctModal").offset().left + self.dialogWidth) > window.innerWidth)
-    				$("#correctModal").css("left",  (window.innerWidth - self.dialogWidth) + "px");
-    			if ($("#correctModal").offset().top < 0)
-    				$("#correctModal").css("top",  "0px");
-    			if (($("#correctModal").offset().top + self.dialogHeight) > document.body.clientHeight)
-    				$("#correctModal").css("top",  (window.innerHeight - self.dialogHeight) + "px");
+				self.dialogX = parseInt($("#correctModal").css("left"));
+				self.dialogY = parseInt($("#correctModal").css("top"));
     		},
     		resizeStop: function (e) {
     			self.dialogWidth = parseInt(this.style.width, 10); // saving this... TODO Ask if this is to be saved? User opinions vary...!?
@@ -293,6 +277,7 @@ var Edit = new function() {
 				$("#lineList").css("min-height", (self.dialogHeight - self.dialogAbsoluteMinHeight) + "px"); // TODO Put this and the actions above in a separate function...?
     		}
         });
+
 
 		//TODO I'm sure this can be done better
         $("#toggleInterface_i").removeClass("disabled");
@@ -957,45 +942,71 @@ var Edit = new function() {
 
 		}
 	};
-	
 	this.updateDialogSize = function() {
-		if (self.docked)
-			return;
-		if (null === self.dialogAbsoluteMinWidth) { // if we're doing this for the very first time, we calculate the absolute minimum, which means space for all buttons on a single row
+			// if we're doing this for the very first time, we calculate 
+			// the absolute minimum, which means space for all buttons on a single row
+		if (null === self.dialogAbsoluteMinWidth) { 
 			var buttonSum = 0;
-			// get the delta between a button group and the span containing it when there's another button following it
+			// get the delta between a button group and the span 
+			// containing it when there's another button following it
 			var spanPadding = $(".dialogbutton-group").first().parent().outerWidth(true) - $(".dialogbutton-group").first().outerWidth(true);
 			$(".dialogbutton-group").each(function() {
-				buttonSum += $(this).outerWidth(true) + spanPadding; // spanPadding must be added to avoid line breaks
+				// spanPadding must be added to avoid line breaks
+				buttonSum += $(this).outerWidth(true) + spanPadding; 
 			});
-			self.dialogAbsoluteMinWidth =  buttonSum + 2 * ($(".dialogbutton-group").first().offset().left - $("#correctModal").offset().left); // we use the same width for the space surrounding the text on both sides...
-			self.dialogWidth = self.dialogAbsoluteMinWidth; // we must set this when setting the absolute minimum for the first time
+			// we use the same width for the space surrounding the text on both sides...
+			self.dialogAbsoluteMinWidth =  buttonSum + 2 * ($(".dialogbutton-group").first().offset().left - $("#correctModal").offset().left); 
+			// we must set this when setting the absolute minimum for the first time
+			self.dialogWidth = self.dialogAbsoluteMinWidth; 
+			// the sum of these is the height of the dialog without any text
 			self.dialogAbsoluteMinHeight = 2 * parseInt($(".modal-header").css("padding-top"))
 					+ $(".modal-title").outerHeight(true)
 					+ $(".dialogbutton-group").outerHeight(true)
-					+ 2 * parseInt($(".modal-body").css("padding-top")); // the sum of these is the height of the dialog without any text
+					+ 2 * parseInt($(".modal-body").css("padding-top")); 
 		}
 		var currentMinH = self.dialogAbsoluteMinHeight;
 		if ($(".transcript-div").is(":visible") && self.currentLineId !== undefined ) { // check if any line is longer than the absolute minimum
 			var longestLine = 0;
 			var currentIdx = getIndexFromLineId(self.currentLineId);
-			var showTo = Math.min(currentIdx + surroundingCount,self.contentArray.length - 1);
-			var index = Math.max(1, currentIdx - surroundingCount); // 1 because the first line is not real
+			var showTo = Math.min(currentIdx + self.surroundingCount, self.contentArray.length - 1);
+			var index = Math.max(1, currentIdx - self.surroundingCount); // 1 because the first line is not real
+			//loop through lines to calculate the longest line and set dialogWidth accordingly
 			while (index <= showTo) {
-				var lineId =self.contentArray[index++][0];
-				longestLine = Math.max(longestLine, $("[tagLineId=" + lineId + "]").last().offset().left + $("[tagLineId=" + lineId + "]").last().outerWidth() - $("#correctModal").offset().left);//$("#text_" + lineId).offset().left);
-				currentMinH += parseInt($("#text_" + lineId).children().first().css("min-height")); // get min-height from the div
+				var lineId = self.contentArray[index++][0];
+				longestLine = Math.max(longestLine, $("[tagLineId=" + lineId + "]").last().offset().left + $("[tagLineId=" + lineId + "]").last().outerWidth() - $("#correctModal").offset().left);
+				// get min-height from the div
+				currentMinH += parseInt($("#text_" + lineId).children().first().css("min-height")); 
 			}
 		}
 		var currentMinW = Math.max(self.dialogAbsoluteMinWidth, longestLine + parseInt($(".line-list-div").css("padding-right")));
-		self.dialogWidth = Math.max(self.dialogWidth, currentMinW); // we don't shrink the dialog automatically
-		self.dialogHeight = Math.max(self.dialogHeight, currentMinH);
-		$("#correctModal").css("width",  self.dialogWidth + "px");
-		$("#correctModal").css("height",  self.dialogHeight + "px");
-		$("#correctModal").css("min-width",  currentMinW + "px");
-		$("#correctModal").css("min-height",  currentMinH + "px");
-		$("#line-list").css("min-height", (self.dialogHeight - self.dialogAbsoluteMinHeight) + "px"); // the text contenteditable isn't updated automagically
-
+		var currentScrollbarH = 0;
+		// we don't let the dialog become wider than the window and thus 
+		// add a scrollbar, if the line length requires it
+		if (currentMinW > window.innerWidth) { 
+			$(".line-list").css("overflow-x", "scroll");
+			currentMinW = window.innerWidth;
+			currentScrollbarH = self.scrollbarHeight;
+			$(".line-list").css("width",  (currentMinW - 2 * parseInt($(".line-list-div").css("padding-right"))));
+		} else {
+			$(".line-list").css("overflow-x", "hidden");
+		}
+		if (self.docked) {
+			if (currentMinH > self.dockedHeight) {
+				$(".line-list").css("overflow-y", "scroll");
+				$(".line-list").css("height", (self.dockedHeight - currentScrollbarH - self.dialogAbsoluteMinHeight));
+			} else {
+				$(".line-list").css("overflow-y", "hidden");
+			}
+		} else {	
+			self.dialogWidth = Math.max(self.dialogWidth, currentMinW); // we don't shrink the dialog automatically
+			self.dialogHeight = Math.max(self.dialogHeight, currentMinH);
+			$("#correctModal").css("width",  self.dialogWidth + "px");
+			$("#correctModal").css("height",  (currentScrollbarH + self.dialogHeight) + "px");
+			$("#correctModal").css("min-width",  currentMinW + "px");
+			$("#correctModal").css("min-height",  currentMinH + "px");
+			// the text contenteditable isn't updated automagically
+			$("#line-list").css("min-height", (self.dialogHeight - self.dialogAbsoluteMinHeight) + "px"); 
+		}
 	};
 /*
 //TODO this is for lbl
