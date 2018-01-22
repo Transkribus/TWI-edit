@@ -868,9 +868,9 @@ var Edit = new function() {
 	this.updateDockingStatus = function(dock) { 
 		self.docked = dock;
 		if (self.docked)
-			$("#dockButton").html('<button type="button" class="dock-toggle close" onclick="updateDocking(false);"><small><span class="glyphicon glyphicon-resize-small" aria-hidden="true"></span></small></button>');
+			$("#dockButton").html('<button type="button" class="dock-toggle close" onclick="Edit.updateDocking(false);"><small><span class="glyphicon glyphicon-resize-small" aria-hidden="true"></span></small></button>');
 		else
-			$("#dockButton").html('<button type="button" class="dock-toggle close" onclick="updateDocking(true);"><small><span class="glyphicon glyphicon-resize-full" aria-hidden="true"></span></small></button>');
+			$("#dockButton").html('<button type="button" class="dock-toggle close" onclick="Edit.updateDocking(true);"><small><span class="glyphicon glyphicon-resize-full" aria-hidden="true"></span></small></button>');
 	};
 	
 	 // Saves the undocked dialog properties...
