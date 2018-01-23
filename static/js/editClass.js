@@ -46,6 +46,7 @@ var Edit = new function() {
 	this.dialogHighlightDX;
 	this.dialogHighlightDY;
 	this.scrollbarHeight = null;
+	this.dialogIsDragged = false; // gijgo triggers false dragStops
 
 
 	this.undoArray = [];
@@ -132,7 +133,7 @@ var Edit = new function() {
 	
 		// The window has been resized 
     	$(window).on("resize", function() {
-    		if (!dialogBeingResized) { //{# If the dialog is being resized, it triggers this event and we must ignore it. #}
+    		if (!self.dialogBeingResized) { //{# If the dialog is being resized, it triggers this event and we must ignore it. #}
 	    		clearTimeout(resizeTimeout); //{# We don't want to respond until the window has finished resizing. #}
 	    		resizeTimeout = setTimeout(function() {
 					self.resizeContents();
@@ -264,11 +265,15 @@ var Edit = new function() {
     			self.updateDockingStatus(false);
     		},
     		dragStart: function (e) {
+    			this.dialogIsDragged = true;
     			self.updateDockingStatus(false);
     		},
-    		dragStop: function(e) {
-				self.dialogX = parseInt($("#correctModal").css("left"));
-				self.dialogY = parseInt($("#correctModal").css("top"));
+    		dragStop: function(e) { // this is triggered falsely when clicking the dock/undock button
+    			if (true === this.dialogIsDragged) {
+					self.dialogX = parseInt($("#correctModal").css("left"));
+					self.dialogY = parseInt($("#correctModal").css("top"));
+					this.dialogIsDragged = false;
+    			}
     		},
     		resizeStop: function (e) {
     			self.dialogWidth = parseInt(this.style.width, 10); // saving this... TODO Ask if this is to be saved? User opinions vary...!?
