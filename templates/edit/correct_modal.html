@@ -76,47 +76,4 @@
 	</div>
 </div>
 <script>
-	$("#correctModal").on("mouseenter", function(e) {
-		$("#correctModal").removeAttr("title"); {# Prevent the (awful?) title hack above from being shown as a tooltip. #}
-	});
-	{# TODO Refactor and move this elsewhere: #}
-	var checkForComposite = false;
-	var ctrlMeta;
-	$("#correctModal").on("keyup", function(e) {
-		ctrlMeta = false;
-		if (e.key === "Dead")  // we get ready to use the hidden from view input to get composite characters
-			checkForComposite = true;
-	});
-	$("#correctModal").on("keydown", function(e) {
-		if (ctrlMeta)
-			return; // let whatever happens with this shortcut happen
-		if (e.key.length > 1) {
-			ctrlMeta = e.ctrlKey || e.metaKey;
-			e.preventDefault();
-			editAction(e);
-		} 	else if (checkForComposite) {
-			$("#capture").focus(); // we want composite characters to go here since we can't get them from the key
-		} else {
-			e.preventDefault();
-			inputChar(e.key);
-		}
-	});
-	$("#capture").on("keyup", function(e) { // the normal situation with composite characters
-		if (checkForComposite) {
-			inputChar($(this).val());
-			$(this).val("");
-			checkForComposite = false;
-		} else
-			e.preventDefault();
-		restoreSelection();
-	});
-	$("#capture").on("keydown", function(e) { // a character is being held down and the first should be a composite
-		if (checkForComposite) {
-			inputChar($(this).val());
-			$(this).val("");
-			checkForComposite = false;
-		} else
-			e.preventDefault();
-		restoreSelection();	
-	});
 </script>

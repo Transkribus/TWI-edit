@@ -1,3 +1,4 @@
+/*
 var undoArray = [];
 var ctrlKey = false, metaKey = false, altKey = false;
 var caretOffsetInPixels = null;
@@ -6,12 +7,14 @@ var oldWidthForCaretCalc;
 var selectionData = [];
 var contentLineFontSize = parseInt($('.line-list').css("font-size"));
 var message_timeout;
+*/
 // these vars must be initialized when importing this JavaScript
 // surroundingCount, currentLineId, view, changed
 // these JavaScripts must also be imported
 // TODO Check which.
 // TODO Optimize by removing some unnecessary calls to getIndexFromLineId...
 
+/*
 function keydown(e) {
 	if ( e.key.length > 1 ) {
 		e.preventDefault();
@@ -274,6 +277,8 @@ function editAction(event) {
 		initializeCaretOffsetInPixels();
 	}
 }
+*/
+/*
 function undoAction() {
 	for (var i = 0; i < undoArray.length; i++) {
 		var undoId = undoArray[i][0];

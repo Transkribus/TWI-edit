@@ -131,6 +131,7 @@ $(document).ready(function(){
 		gotoPage(Number.MAX_SAFE_INTEGER);
 	});
 */
+/*
 	$('#correctModal').on('keydown', function(e) {
 		keydown(e);
 	});
@@ -149,6 +150,7 @@ $(document).ready(function(){
 	$("#correctModal").on("cut", function(e) {
 		cut(e);
 	});
+*/
 /*
 	$( ".add-line" ).on('click', function(e) {
 		surroundingCount++;

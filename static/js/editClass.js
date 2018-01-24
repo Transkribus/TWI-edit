@@ -67,6 +67,8 @@ var Edit = new function() {
 	this.contentLineFontSize = parseInt($('.line-list').css("font-size")); // self-explanatory
 	this.message_timeout;
 	
+	this.checkForComposite = false;
+	this.ctrlMeta;
 	//used by scroll event Handler
 	this.fixmeTop;
 
@@ -237,7 +239,9 @@ var Edit = new function() {
 			self.scrollToNextTop();
 		});
 */
-		//Zoom button event handlers	
+		//////////////////////////////
+		//Zoom button event handlers
+		/////////////////////////////	
 		$( ".zoom-in" ).on('click', function(e) {
 			self.setZoom(20);
 		});
@@ -250,6 +254,12 @@ var Edit = new function() {
 		$( ".fit-height" ).on('click', function(e) {
 			self.fitHeight();
 		});
+
+		////////////////////////////
+		// Dialog event handlers
+		///////////////////////////
+		
+		//Add or remove lines to the dialog
 		$( ".add-line" ).on('click', function(e) {
 			self.surroundingCount++;
 			self.buildLineList();
@@ -262,7 +272,8 @@ var Edit = new function() {
 				self.surroundingCount = 0;
 		});
 
-
+		
+		// Buttons to Change the text of the dialog
 		$( ".enlarge-text" ).on('click', function(e) {
 			self.resizeText(1);
 		});
@@ -287,6 +298,70 @@ var Edit = new function() {
 		$(".superscript-text").on("click", function(e) {
 			self.toggleTag("superscript");
 		});
+
+		// Act on key and mouse events in the dialog
+		$('#correctModal').on('keydown', function(e) {
+			self.keydown(e);
+		});
+		$('#correctModal').on('keyup', function(e) {
+			self.keyup(e);
+		});
+		$('#correctModal').on('mouseup', function(e) {
+			self.mouseup(e);
+		});
+		$("#correctModal").on("paste", function(e) {
+			self.paste(e);
+		});
+		$("#correctModal").on("drop", function(e) {
+			self.drop(e);
+		});
+		$("#correctModal").on("cut", function(e) {
+			self.cut(e);
+		});
+
+		$("#correctModal").on("mouseenter", function(e) {
+			$("#correctModal").removeAttr("title"); 
+			//{# Prevent the (awful?) title hack above from being shown as a tooltip. #}
+		});
+
+		$("#correctModal").on("keyup", function(e) {
+			self.ctrlMeta = false;
+			if (e.key === "Dead")  // we get ready to use the hidden from view input to get composite characters
+				self.checkForComposite = true;
+		});
+		$("#correctModal").on("keydown", function(e) {
+			if (self.ctrlMeta)
+				return; // let whatever happens with this shortcut happen
+			if (e.key.length > 1) {
+				self.ctrlMeta = e.ctrlKey || e.metaKey;
+				e.preventDefault();
+				self.editAction(e);
+			} 	else if (self.checkForComposite) {
+				$("#capture").focus(); // we want composite characters to go here since we can't get them from the key
+			} else {
+				e.preventDefault();
+				self.inputChar(e.key);
+			}
+		});
+		$("#capture").on("keyup", function(e) { // the normal situation with composite characters
+			if (self.checkForComposite) {
+				self.inputChar($(this).val());
+				$(this).val("");
+				self.checkForComposite = false;
+			} else
+				e.preventDefault();
+			self.restoreSelection();
+		});
+		$("#capture").on("keydown", function(e) { // a character is being held down and the first should be a composite
+			if (self.checkForComposite) {
+				self.inputChar($(this).val());
+				$(this).val("");
+				self.checkForComposite = false;
+			} else
+				e.preventDefault();
+			self.restoreSelection();	
+		});
+	
 
 
 	};
@@ -1074,7 +1149,7 @@ var Edit = new function() {
 		if (null == self.currentLineId) {
 			if (1 == arguments.length) // can this happen anymore?
 	   	         self.currentLineId = lineId;
-		   	var lineIdx = getIndexFromLineId(self.currentLineId);
+		   	var lineIdx = self.getIndexFromLineId(self.currentLineId);
 	        if ( self.contentArray[lineIdx] === undefined )
 	            return;
 	        var endOfLine = self.contentArray[lineIdx][1].length;
@@ -1103,8 +1178,8 @@ var Edit = new function() {
         	$("#correctModal").css("top",  self.dialogY + "px");
         	self.updateDocking(); // We restore the dialog to a docked state, if it was docked when closed
         	self.initializeCaretOffsetInPixels();
-        	self.dialogHighlightDX = self.dialogX + self.accumExtraX - self.contentArray[getIndexFromLineId(self.currentLineId)][2][0] * self.initialScale * self.zoomFactor;
-        	self.dialogHighlightDY = self.dialogY + self.accumExtraY - $(".transcript-div").offset().top -self. contentArray[getIndexFromLineId(self.currentLineId)][2][1] * self.initialScale * self.zoomFactor;// + $(".transcript-map-div").css("top");
+        	self.dialogHighlightDX = self.dialogX + self.accumExtraX - self.contentArray[self.getIndexFromLineId(self.currentLineId)][2][0] * self.initialScale * self.zoomFactor;
+        	self.dialogHighlightDY = self.dialogY + self.accumExtraY - $(".transcript-div").offset().top -self. contentArray[self.getIndexFromLineId(self.currentLineId)][2][1] * self.initialScale * self.zoomFactor;// + $(".transcript-map-div").css("top");
         	if (null === self.scrollbarHeight) {
             	$(".line-list-div").css("overflow-x", "scroll");
             	self.scrollbarHeight = parseInt($(".content-row").css("height"));
@@ -1113,13 +1188,13 @@ var Edit = new function() {
         	}
 		}else{
 			self.correctModal.open(); // TODO Redundantify correctModal.open() here. It's here for restoring the dialog after "visits" to other views...
-	        var oldDeltaX = self.contentArray[getIndexFromLineId(self.currentLineId)][2][0] * self.initialScale * self.zoomFactor - self.accumExtraX - $("#correctModal").offset().left;// TODO Replace with dialogX and dialogY?
-	        var oldDeltaY = self.contentArray[getIndexFromLineId(self.currentLineId)][2][1] * self.initialScale * self.zoomFactor - self.accumExtraY - $("#correctModal").offset().top;
+	        var oldDeltaX = self.contentArray[self.getIndexFromLineId(self.currentLineId)][2][0] * self.initialScale * self.zoomFactor - self.accumExtraX - $("#correctModal").offset().left;// TODO Replace with dialogX and dialogY?
+	        var oldDeltaY = self.contentArray[self.getIndexFromLineId(self.currentLineId)][2][1] * self.initialScale * self.zoomFactor - self.accumExtraY - $("#correctModal").offset().top;
 	        if (1 == arguments.length)
 	            self.currentLineId = lineId;
-	        var lineIdx = getIndexFromLineId(self.currentLineId);
-	        self.accumExtraX = self.contentArray[getIndexFromLineId(self.currentLineId)][2][0] * self.initialScale * self.zoomFactor - $("#correctModal").offset().left - oldDeltaX;
-	        self.accumExtraY = self.contentArray[getIndexFromLineId(self.currentLineId)][2][1] * self.initialScale * self.zoomFactor - $("#correctModal").offset().top - oldDeltaY;
+	        var lineIdx = self.getIndexFromLineId(self.currentLineId);
+	        self.accumExtraX = self.contentArray[self.getIndexFromLineId(self.currentLineId)][2][0] * self.initialScale * self.zoomFactor - $("#correctModal").offset().left - oldDeltaX;
+	        self.accumExtraY = self.contentArray[self.getIndexFromLineId(self.currentLineId)][2][1] * self.initialScale * self.zoomFactor - $("#correctModal").offset().top - oldDeltaY;
 	        $( ".transcript-map-div" ).css("transform",  "translate(" + -self.accumExtraX +"px, " + -self.accumExtraY+ "px) scale(" + self.zoomFactor + ")");// Note, the CSS is set to "transform-origin: 0px 0px"
 	        self.buildLineList();
 	        self.updateDocking();
@@ -1151,7 +1226,7 @@ var Edit = new function() {
 		var currentMinH = self.dialogAbsoluteMinHeight;
 		if ($(".transcript-div").is(":visible") && self.currentLineId !== undefined ) { // check if any line is longer than the absolute minimum
 			var longestLine = 0;
-			var currentIdx = getIndexFromLineId(self.currentLineId);
+			var currentIdx = self.getIndexFromLineId(self.currentLineId);
 			var showTo = Math.min(currentIdx + self.surroundingCount, self.contentArray.length - 1);
 			var index = Math.max(1, currentIdx - self.surroundingCount); // 1 because the first line is not real
 			//loop through lines to calculate the longest line and set dialogWidth accordingly
@@ -1192,22 +1267,12 @@ var Edit = new function() {
 			$("#line-list").css("min-height", (self.dialogHeight - self.dialogAbsoluteMinHeight) + "px"); 
 		}
 	};
-	this.resizeText = function(delta) {
-		var newFontSize = self.contentLineFontSize + delta;
-		if (newFontSize < 14 || newFontSize > 40)
-			return;
-		self.contentLineFontSize = newFontSize;
-		$('.line-list').css("font-size", self.contentLineFontSize+ 'px');
-		self.buildLineList();
-	};
 
-	this.undoAction = function() {
-		for (var i = 0; i < self.undoArray.length; i++) {
-			var undoId = self.undoArray[i][0];
-			self.contentArray[self.getIndexFromLineId(self.undoArray[i][0])] = self.undoArray[i];
-		}
-		self.buildLineList();
-	}
+	
+	/////////////////////////////////
+	// helper functions from text.js
+	//////////////////////////////////
+
 
 	// When passed a lineId return the index of that line in the contentArray
 	this.getIndexFromLineId = function(lineId) {
@@ -1236,9 +1301,286 @@ var Edit = new function() {
 			return self.contentArray[index - 1][0];
 	}
 	
-	//////////////////////////////////////////
-	// Code to manage the selection of text
-	//////////////////////////////////////////
+	this.resizeText = function(delta) {
+		var newFontSize = self.contentLineFontSize + delta;
+		if (newFontSize < 14 || newFontSize > 40)
+			return;
+		self.contentLineFontSize = newFontSize;
+		$('.line-list').css("font-size", self.contentLineFontSize+ 'px');
+		self.buildLineList();
+	};
+
+	////////////////////////////////////////////////////////
+	// Code to manage the input of text (from text.js)
+	////////////////////////////////////////////////////////
+
+	this.keydown = function(e) {
+		if ( e.key.length > 1 ) {
+			e.preventDefault();
+			self.editAction(e);
+		}
+		else if ( self.checkForComposite )
+			$("#capture").focus();// we want composite characters to go here since we can't get them from the key
+		else {
+			e.preventDefault();
+			self.inputChar(e.key);
+		}
+	};
+	this.keyup = function(e) {
+		self.ctrlMeta = false;
+		if ( e.key === "Dead" )// we get ready to use the hidden from view input to get composite characters
+			self.checkForComposite = true;
+	};
+	
+	this.mouseup = function(e) {
+		self.updateSelectionData();
+		self.initializeCaretOffsetInPixels();
+	}
+	this.drop = function(e) {
+		// Nobody needs to do this and this breaks things.
+		e.preventDefault();
+	}
+	this.cut = function(event) {
+		console.log("calling cut");
+		// TODO This! Maybe with zeroclipboard?
+		self.eraseSelected();
+	}
+	this.paste = function(event) {
+		var text = event.originalEvent.clipboardData.getData('text');
+		if (null === text || text.length == 0 || self.selectionData === undefined || self.selectionData[0] === undefined ) // is it necessary to check selectionData?
+			return; // TODO Place the caret at the end of the current line in this situation!?
+		if (!self.changed)
+			self.setMessage(self.transUnsavedChanges);
+		self.changed = true;
+		if (self.selectionData.length > 1 || (self.selectionData[0][1] != self.selectionData[0][2])) // do we have to erase a selection first?
+			self.eraseSelected();
+		text = text.replace(" ", "\u00A0");
+		var lineIndex = self.getIndexFromLineId(self.selectionData[0][0])
+		var charOffset;
+		if (self.contentArray[lineIndex][1].length ==  self.selectionData[0][1]) { // we only attempt a multi-line paste, if we can do it to the end of the line and we ignore tags in that case
+			var textArray = text.split("\n");
+			for (var i = 0; i < textArray.length; i++) {
+				// TODO undoArray.push(contentArray[lineIndex].slice());
+				self.contentArray[lineIndex][1] += textArray[i];
+				if (++lineIndex >= self.contentArray.length || self.contentArray[lineIndex][1] != "") {
+					lineIndex--;
+					while (i < textArray.length) {
+						self.contentArray[lineIndex][1] += textArray[i];
+						i++;
+					}
+					charOffset = self.contentArray[lineIndex][1].length;
+				}
+			}
+		} else {
+			// TODO undoArray.push(contentArray[lineIndex].slice());
+			text = text.replace("\n", "\u00A0");
+			// update tags
+			var customString = self.contentArray[lineIndex][4] + ' ';
+			var custom = customString.replace(/\s+/g, '').split('}');
+			var newCustom = customString.match(/readingOrder {index:\d+;}/);
+			var contentDelta = text.length;
+			// TODO undoArray.push(contentArray[lineIndex].slice()); // TODO Speed this up?
+			self.contentArray[lineIndex][4] = newCustom;
+			if ("None" != custom) {
+				custom.forEach(function(attribute) {
+					attribute = attribute.split('{');
+					if ("" != attribute && "readingOrder" != attribute[0] && attribute[1].indexOf("offset:") != -1 && attribute[1].indexOf(";length:") != -1) { // we have no use for readingOrder for now...
+						var split = attribute[1].split("offset:")[1].split(";length:");
+						var tagOffset = parseInt(split[0]);
+						var tagLength = parseInt(split[1]); // parseInt doesn't care about what comes after the first int (but we do and hence append it below to preserve whatever it is)
+						if (self.selectionData[0][1] <= tagOffset) { // this tag is after the pasted input
+							self.contentArray[lineIndex][4] += ' ' + attribute[0] + ' ' + '{offset: ' + (tagOffset + contentDelta) + ';length: ' + tagLength + split[1].substring(split[1].indexOf(";")) + '}';
+						} else if (self.selectionData[0][1] < (tagOffset + tagLength)) { // the input is within this tag
+							self.contentArray[lineIndex][4] += ' ' + attribute[0] + ' ' + '{offset: ' + tagOffset + ';length: ' + (tagLength + contentDelta) + split[1].substring(split[1].indexOf(";")) + '}';
+						} else { // tags before the edit
+							self.contentArray[lineIndex][4] += ' ' + attribute[0] + ' ' + ' {offset: ' + tagOffset + ';length: ' + tagLength + split[1].substring(split[1].indexOf(";")) + '}';
+						}
+					}
+				});
+			}
+			var lineUnicode = self.contentArray[lineIndex][1];
+			self.contentArray[lineIndex][1] = lineUnicode.substring(0, self.selectionData[0][1]) + text + lineUnicode.substring(self.selectionData[0][1]);
+			charOffset = self.selectionData[0][1] + text.length;
+		}
+		self.selectionData = [[self.contentArray[lineIndex][0], charOffset, charOffset]];
+		self.buildLineList();
+	}
+	this.inputChar = function(char) {
+		if ( self.selectionData === undefined || self.selectionData[0] === undefined )
+			return; // TODO Place the caret at the end of the current line in this situation!?
+		if (!self.changed)
+			self.setMessage(self.transUnsavedChanges);
+		self.changed = true;
+		var renderAll = false; // TODO Remove this flag and duplicate lots of code?
+		if (self.selectionData.length > 1) {// do we have to erase a selection first?
+			self.eraseSelected();
+			renderAll = true;
+		} else if (self.selectionData[0][1] != self.selectionData[0][2])
+			self.eraseSelected();
+		if (" " === char)
+			char = "\u00A0";
+		// update tags
+		var editedLineId = self.selectionData[0][0];
+		var charOffset = self.selectionData[0][1];
+		var lineIndex = self.getIndexFromLineId(editedLineId);
+		var customString = self.contentArray[lineIndex][4] + ' ';
+		var custom = customString.replace(/\s+/g, '').split('}');
+		var newCustom = customString.match(/readingOrder {index:\d+;}/);
+		// TODO undoArray.push(contentArray[lineIndex].slice()); // TODO Speed this up?
+		self.contentArray[lineIndex][4] = newCustom;
+		if ("None" != custom) {
+			custom.forEach(function(attribute) {
+				attribute = attribute.split('{');
+				if ("" != attribute && "readingOrder" != attribute[0] && attribute[1].indexOf("offset:") != -1 && attribute[1].indexOf(";length:") != -1) { // we have no use for readingOrder for now...
+					var split = attribute[1].split("offset:")[1].split(";length:");
+					var tagOffset = parseInt(split[0]);
+					// parseInt doesn't care about what comes after the 
+					// first int (but we do and hence append it below to
+					// preserve whatever it is)
+					var tagLength = parseInt(split[1]); 
+					if (charOffset <= tagOffset) { // this tag is after the character input
+						self.contentArray[lineIndex][4] += ' ' + attribute[0] + ' ' + '{offset: ' + (tagOffset + 1) + ';length: ' + tagLength + split[1].substring(split[1].indexOf(";")) + '}';
+					} else if (charOffset < (tagOffset + tagLength)) { // the input is within this tag
+						self.contentArray[lineIndex][4] += ' ' + attribute[0] + ' ' + '{offset: ' + tagOffset + ';length: ' + (tagLength + 1) + split[1].substring(split[1].indexOf(";")) + '}';
+					} else { // tags before the edit
+						self.contentArray[lineIndex][4] += ' ' + attribute[0] + ' ' + ' {offset: ' + tagOffset + ';length: ' + tagLength + split[1].substring(split[1].indexOf(";")) + '}';
+					}
+				}
+			});
+		}
+		// update text
+		var lineUnicode = self.contentArray[lineIndex][1];
+		self.contentArray[lineIndex][1] = lineUnicode.substring(0, charOffset) + char + lineUnicode.substring(charOffset);
+		self.selectionData = [[editedLineId, ++charOffset, charOffset]];
+		if (renderAll)
+			self.buildLineList();
+		else
+			self.updateLine(editedLineId);
+	}
+	this.eraseFrom = function(lineIndex, startOffset, endOffset) {
+		var contentDelta = startOffset - endOffset;
+		var customString = self.contentArray[lineIndex][4] + ' ';
+		var custom = customString.replace(/\s+/g, '').split('}');
+		self.contentArray[lineIndex][4] = customString.match(/readingOrder {index:\d+;}/);
+		//undoArray.push(contentArray[lineIndex].slice());
+		if ("None" != custom) {
+			custom.forEach(function(attribute) {
+				attribute = attribute.split('{');
+				if ("" != attribute && "readingOrder" != attribute[0] && attribute[1].indexOf("offset:") != -1 && attribute[1].indexOf(";length:") != -1) { // we have no use for readingOrder for now...
+					var split = attribute[1].split("offset:")[1].split(";length:");
+					var tagOffset = parseInt(split[0]);
+					var tagLength = parseInt(split[1]); // parseInt doesn't care about what comes after the first int (but we do and hence append it below to preserve whatever it is)
+					if (endOffset <= tagOffset) { // tags after the edit
+						self.contentArray[lineIndex][4] += ' ' + attribute[0] + ' ' + ' {offset: ' + (tagOffset + contentDelta) + ';length: ' + tagLength + split[1].substring(split[1].indexOf(";")) + '}';
+					} else if (tagOffset > startOffset && (tagOffset + tagLength) > endOffset) {
+						self.contentArray[lineIndex][4] += ' ' + attribute[0] + ' ' + ' {offset: ' + startOffset + ';length: ' + (tagLength - endOffset + tagOffset) + split[1].substring(split[1].indexOf(";")) + '}';
+					} else if ((tagOffset + tagLength) > startOffset) {
+						var tL = Math.max(tagLength + contentDelta, startOffset - tagOffset);
+						if (tL > 0) // part of the tag is still left?
+							self.contentArray[lineIndex][4] += ' ' + attribute[0] + ' ' + ' {offset: ' + tagOffset + ';length: ' + Math.max(tagLength + contentDelta, startOffset - tagOffset) + split[1].substring(split[1].indexOf(";")) + '}';
+					} else { // tags before the edit
+						self.contentArray[lineIndex][4] += ' ' + attribute[0] + ' ' + ' {offset: ' + tagOffset + ';length: ' + tagLength + split[1].substring(split[1].indexOf(";")) + '}';
+					}
+				}
+			});
+		}
+		// update text
+		var lineUnicode = self.contentArray[lineIndex][1];
+		self.contentArray[lineIndex][1] = lineUnicode.substring(0, startOffset) + lineUnicode.substring(endOffset);
+	}
+	this.eraseSelected = function() {
+		var sdLength = self.selectionData.length;
+		var lineIndex = self.getIndexFromLineId(self.selectionData[0][0]);
+		if (sdLength == 1) {
+			self.eraseFrom(lineIndex, self.selectionData[0][1], self.selectionData[0][2]);
+		} else {
+			self.eraseFrom(lineIndex, self.selectionData[0][1], self.contentArray[lineIndex][1].length);
+			sdLength--;
+			for (var i = 1; i < sdLength; i++) {
+				lineIndex = self.getIndexFromLineId(self.selectionData[i][0]);
+				self.eraseFrom(lineIndex, self.selectionData[i][1], self.contentArray[lineIndex][1].length);
+			}
+			lineIndex = self.getIndexFromLineId(self.selectionData[sdLength][0]);
+			self.eraseFrom(lineIndex, 0, self.selectionData[sdLength][2]);
+		}
+		self.selectionData = [[self.selectionData[0][0], self.selectionData[0][1], self.selectionData[0][1]]];
+	}
+	this.editAction = function(event) {
+		if (event.ctrlKey || event.altKey || event.metaKey) {
+			if (event.key == "z" || event.key == "Z")
+				self.undoAction();
+			return;
+		}
+		if ( self.selectionData == undefined || self.selectionData[0] === undefined ) {
+			return;
+		}
+		if (event.keyCode == 8) { // backspace?
+			// just a caret, no selection?
+			if (self.selectionData.length == 1 && (self.selectionData[0][1] == self.selectionData[0][2])) 
+				self.selectionData[0] = [self.selectionData[0][0], Math.max(0, self.selectionData[0][1] - 1), self.selectionData[0][2]]; // select the preceding character, if any
+			self.eraseSelected();
+			self.buildLineList();
+			self.initializeCaretOffsetInPixels();
+			//RM If we press backspace then we should assume that there has been a achange to the transcript
+			// (these globals must go)
+			if (!self.changed)
+				self.setMessage(transUnsavedChanges);
+			self.changed = true;
+		} else if (event.keyCode == 46) { // delete?
+			// just a caret, no selection?
+			if (self.selectionData.length == 1 && (self.selectionData[0][1] == self.selectionData[0][2])) 
+				self.selectionData[0] = [self.selectionData[0][0], self.selectionData[0][1], Math.min(self.selectionData[0][2] + 1, self.contentArray[self.getIndexFromLineId(self.selectionData[0][0])][1].length)]; // select the next character, if any
+			self.eraseSelected();
+			self.buildLineList();
+			self.initializeCaretOffsetInPixels();
+			//RM If we press delete then we should assume that there has been a achange to the transcript
+			// (these globals must go)
+			if (!self.changed)
+				self.setMessage(self.transUnsavedChanges);
+			self.changed = true;
+		} else if (event.key == "ArrowUp" && ("i" === ifc || "t" === ifc)) {
+			// TODO Move caret instead, if there's a line visible?
+			self.typewriterPrevious();
+		} else if ((event.key == "ArrowDown" || event.key == "Enter") && ("i" === ifc || "t" === ifc)) {
+			// TODO Move caret instead, if there's a line visible?
+			self.typewriterNext();
+		} else if (event.key == "Home") {// In some cases the "parent" is the LI which doesn't yield the right offset in updateSelection
+			self.selectionData = [[self.selectionData[0][0], 0, 0]];
+			self.savedCaretOffsetInPixels = null;
+			self.restoreSelection();
+			self.initializeCaretOffsetInPixels();
+		} else if (event.key == "End") { // same thing
+			var lineLength = self.contentArray[self.getIndexFromLineId(self.selectionData[0][0])][1].length;
+			self.selectionData = [[self.selectionData[0][0], lineLength, lineLength]];
+			self.savedCaretOffsetInPixels = null;
+			self.restoreSelection();
+			self.initializeCaretOffsetInPixels();
+		} else if (event.key == "ArrowLeft"){
+			var newIndex = Math.max(self.selectionData[0][1] - 1, 0);
+			self.selectionData = [[self.selectionData[0][0], newIndex, newIndex]];
+			self.savedCaretOffsetInPixels = null;
+			self.restoreSelection();
+			self.initializeCaretOffsetInPixels();
+		} else if (event.key == "ArrowRight"){
+			var newIndex = Math.min(self.selectionData[0][1] + 1, self.contentArray[self.getIndexFromLineId(selectionData[0][0])][1].length);
+			self.selectionData = [[self.selectionData[0][0], newIndex, newIndex]];
+			self.savedCaretOffsetInPixels = null;
+			self.restoreSelection();
+			self.initializeCaretOffsetInPixels();
+		}
+	}
+	
+	this.undoAction = function() {
+		for (var i = 0; i < self.undoArray.length; i++) {
+			var undoId = self.undoArray[i][0];
+			self.contentArray[self.getIndexFromLineId(self.undoArray[i][0])] = self.undoArray[i];
+		}
+		self.buildLineList();
+	}
+
+	////////////////////////////////////////////////////////
+	// Code to manage the selection of text (from text.js)
+	////////////////////////////////////////////////////////
 	
 	// set the selectiondata, endOffset is optional and if not given, it is set to startOffset
 	this.setSelectionData = function(lineId, startOffset, endOffset) { 
@@ -1282,7 +1624,7 @@ var Edit = new function() {
 			self.selectionData = [[self.contentArray[startIndex][0], startOffset, self.contentArray[startIndex++][1].length]];
 			while (startIndex < endIndex)
 				self.selectionData.push([self.contentArray[startIndex][0], 0, self.contentArray[startIndex++][1].length]);
-			self.selectionData.push([sel.contentArray[startIndex][0], 0, endOffset]);
+			self.selectionData.push([self.contentArray[startIndex][0], 0, endOffset]);
 		}
 	};
 
@@ -1351,7 +1693,6 @@ var Edit = new function() {
 		self.caretOffsetInPixels = parentElement.offsetLeft + $(hiddenCopy).outerWidth();
 		$(hiddenCopy).remove();
 	};
-
 
 /*
 //TODO this is for lbl
@@ -1555,7 +1896,7 @@ var Edit = new function() {
 			self.contentArray[lineIndex][1] = $("#text_" + lineId).text().replace(/\u200B/g,''); // remove the zero width space!!!
 	}
 
-	function updateLine(updatedLineId) { // TODO  Make this faster by skipping the if below?
+	this.updateLine = function(updatedLineId) { // TODO  Make this faster by skipping the if below?
 		if ( $(".transcript-div").is(":visible") && self.currentLineId !== undefined && self.correctModal.isOpen()) { // TODO A better test? This works but sbs below also has transcript-div :visible...
 			$("#text_" + updatedLineId).html(self.getLineLiWithTags(self.getIndexFromLineId(updatedLineId)));
 			self.updateDialogSize();
@@ -1569,7 +1910,7 @@ var Edit = new function() {
 		console.log("buildLineList");
 		var index;
 		if ( $(".transcript-div").is(":visible") && self.currentLineId !== undefined && self.correctModal.isOpen()) { 
-				var currentIdx = getIndexFromLineId(self.currentLineId);
+				var currentIdx = self.getIndexFromLineId(self.currentLineId);
 				var showTo = Math.min(currentIdx + self.surroundingCount, self.contentArray.length - 1);
 				index = Math.max(1, currentIdx - self.surroundingCount); // 1 because the first line is not real
 				$("#lineList").html("");
@@ -1610,7 +1951,7 @@ var Edit = new function() {
 		ctx.clearRect(coords[0], coords[1], coords[4] - coords[0], coords[5] - coords[1]);	 // TODO Four coordinate pairs are not needed for a rectangle...
 	};
 	this.highlightLineList = function() { // highlights the lines being shown in the dialog and places balls in front of them
-		var currentIdx = getIndexFromLineId(self.currentLineId);
+		var currentIdx = self.getIndexFromLineId(self.currentLineId);
 		var showTo = Math.min(currentIdx + self.surroundingCount, self.contentArray.length - 1);
 		var index = Math.max(1, currentIdx - self.surroundingCount); // 1 because the first line is not real
 		var lineCoords =  Array(8); // TODO Four coordinate pairs are not needed for a rectangle...
@@ -1685,7 +2026,7 @@ var Edit = new function() {
 					break;
 				cA = cB;
 			}
-			var cLength = contentArray[getIndexFromLineId(caretLineId)][1].length;
+			var cLength = self.contentArray[self.getIndexFromLineId(caretLineId)][1].length;
 			if (null == cLength)
 				cLength = 0;
 			var caretOffset = Math.min(t - 1 + parseInt($(span).attr("spanOffset")), cLength);
@@ -1739,8 +2080,8 @@ var Edit = new function() {
 		if ( self.correctModal !== undefined && self.correctModal.isOpen() ) {
 			self.dialogHighlightDX *= self.initialWidth / oldWidth;
 			self.dialogHighlightDY *= self.initialWidth / oldWidth;
-			self.dialogX = -self.accumExtraX + self.contentArray[getIndexFromLineId(self.currentLineId)][2][0] * self.initialScale * self.zoomFactor + self.dialogHighlightDX;
-			self.dialogY = -self.accumExtraY + $(".transcript-div").offset().top + self.contentArray[getIndexFromLineId(self.currentLineId)][2][1] * self.initialScale * self.zoomFactor + self.dialogHighlightDY;
+			self.dialogX = -self.accumExtraX + self.contentArray[self.getIndexFromLineId(self.currentLineId)][2][0] * self.initialScale * self.zoomFactor + self.dialogHighlightDX;
+			self.dialogY = -self.accumExtraY + $(".transcript-div").offset().top + self.contentArray[self.getIndexFromLineId(self.currentLineId)][2][1] * self.initialScale * self.zoomFactor + self.dialogHighlightDY;
 			$("#correctModal").css("left",  self.dialogX + "px");
 			$("#correctModal").css("top",  self.dialogY + "px");
 //			self.updateDialog(); // TODO Remove. should be redundant.
@@ -1803,7 +2144,7 @@ var Edit = new function() {
 		if (!self.removeTag(toggleTag)) // if the tag can be removed, we do that...
 			self.applyTag(toggleTag);// ...but otherwise we apply it
 		if (!changed)
-			self.setMessage(transUnsavedChanges, 'warning', false);
+			self.setMessage(self.transUnsavedChanges, 'warning', false);
 		self.changed = true;
 	};
 
@@ -1901,7 +2242,7 @@ var Edit = new function() {
 			if (length > 0) {
 				var tag = customTagArray[j].tag;
 				var textStyle = "";
-				if($.inArray(removeTag,["bold","italic","strikethrough","underlined","subscript","superscript"]) >= 0){
+				if($.inArray(self.removeTag,["bold","italic","strikethrough","underlined","subscript","superscript"]) >= 0){
 	//			if ( tag === "bold" || tag === "italic" || tag === "strikethrough" || tag === "underlined" || tag === "subscript" || tag === "superscript" ) {
 					textStyle = ";" + tag + ":true";
 					tag = "textStyle";
@@ -2019,7 +2360,7 @@ var Edit = new function() {
 				if (toTheLeft)
 					self.setSelectionData(lineId, 0); // beginning
 				else // only remaining possibility if we have a line but no span
-					self.setSelectionData(lineId, self.contentArray[getIndexFromLineId(lineId)][1].length);
+					self.setSelectionData(lineId, self.contentArray[self.getIndexFromLineId(lineId)][1].length);
 				self.restoreSelection();
 				return false;
 			}
