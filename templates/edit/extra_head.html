@@ -59,14 +59,15 @@
     // set this as a global here becuase we use the django builtin template tag to set it in the head in base.html
 	var csrf_token = "{{ csrf_token }}";
 
-	//Translation for javascript phrases # todo use javascrip/json catalog (allows pluralisation processing too)
-	var transUnsavedChanges = "{% trans "You have unsaved changes." %}";
-	var transSavingChanges = "{% trans "Saving changes..." %}";
-    var pageStatusNotAllowedTrans = "{% trans "You can not change the page status." %}";
-
 	
 	// We can collect params for the Edit object with a bunch of stuff gleaned by the edit.document_view
 	var d = {{ json_from_view|safe }};
+
+	//Translation for javascript phrases # todo use javascrip/json catalog (allows pluralisation processing too)
+	d.transUnsavedChanges = "{% trans "You have unsaved changes." %}";
+	d.transSavingChanges = "{% trans "Saving changes..." %}";
+    d.pageStatusNotAllowedTrans = "{% trans "You can not change the page status." %}";
+
 
 	// Set some init params for Edit from templatetags
 	d.pathWithoutPage = pathWithoutPage; //TODO direct from template tag when back-compat can be turned off
