@@ -1,3 +1,4 @@
+/*
 var pageNo, pathWithoutPage;
 var THUMBS_TO_SHOW = 10; // "constant" for playing around with the no. of thumbs to show
 var thumbCountOffset = 0;
@@ -99,3 +100,4 @@ function gotoPage(page) {
 	var dL = "&dL=" + (currentLineId ? currentLineId : + restoreDialogLine);
 	window.location.assign(pathWithoutPage + page + '?tco=' + thumbCountOffset + "&i=" + ifc + dL);// TODO Consider tco in situations in which the page to which we go isn't visible, set an appropriate value? If tco = NaN or outside...
 }
+*/

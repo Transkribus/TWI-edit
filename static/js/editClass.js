@@ -19,6 +19,14 @@ var Edit = new function() {
 	this.resizeTimeout;
 	this.zoomFactor = 1;
 	
+	//from thumbs.js
+	this.pageNo;
+	this.pathWithoutPage;
+	this.THUMBS_TO_SHOW = 10; // "constant" for playing around with the no. of thumbs to show
+	this.thumbCountOffset = 0;
+	this.thumbWidth;
+	this.toLoadCount;
+
 	// These ones are from correct.js
 	this.surroundingCount = 0;
 	this.currentLineId = null;
@@ -116,8 +124,22 @@ var Edit = new function() {
 			self.saveChanges(e);
        	 	self.setPageStatus("IN_PROGRESS", $(this).data("in-progress-label"));
 		});
-
-
+		///////////////////////////////////////
+		// Event handlers for the paging stuff
+		///////////////////////////////////////
+		$( ".previous-page" ).on('click', function(e) {
+			self.gotoPage(self.pageNo - 1);
+		});
+		$( ".next-page" ).on('click', function(e) {
+			self.gotoPage(self.pageNo * 1 + 1);
+		});
+		$( ".first-page" ).on('click', function(e) {
+			self.gotoPage(1);
+		});
+		$( ".last-page" ).on('click', function(e) {
+			self.gotoPage(Number.MAX_SAFE_INTEGER);
+		});
+	
 		/****************************************/
  		/* Event hadlers for image interface 	*/
  		/****************************************/
@@ -229,6 +251,44 @@ var Edit = new function() {
 		$( ".fit-height" ).on('click', function(e) {
 			self.fitHeight();
 		});
+		$( ".add-line" ).on('click', function(e) {
+			self.surroundingCount++;
+			self.buildLineList();
+		});
+		$( ".remove-line" ).on('click', function(e) {
+			self.surroundingCount--; //{# TODO A function instead? #}
+			if (self.surroundingCount >= 0)
+				self.buildLineList();
+			else
+				self.surroundingCount = 0;
+		});
+
+
+		$( ".enlarge-text" ).on('click', function(e) {
+			self.resizeText(1);
+		});
+		$( ".shrink-text" ).on('click', function(e) {
+			self.resizeText(-1);
+		});
+		$(".bold-text").on("click", function(e) {
+			self.toggleTag("bold");
+		});
+		$(".italic-text").on("click", function(e) {
+			self.toggleTag("italic");
+		});
+		$(".strikethrough-text").on("click", function(e) {
+			self.toggleTag("strikethrough");
+		});
+		$(".underline-text").on("click", function(e) {
+			self.toggleTag("underlined");
+		});
+		$(".subscript-text").on("click", function(e) {
+			self.toggleTag("subscript");
+		});
+		$(".superscript-text").on("click", function(e) {
+			self.toggleTag("superscript");
+		});
+
 
 	};
 
@@ -247,9 +307,9 @@ var Edit = new function() {
 		self.fitWidth();
 
 		// Show the current page number
-		checkPageNumberInput();
+		self.checkPageNumberInput();
 //		self.updateCanvas();
-		loadThumbs();
+		self.loadThumbs();
 
 		self.correctModal = $("#correctModal").dialog({
 			autoOpen: false,
@@ -283,6 +343,23 @@ var Edit = new function() {
     		}
         });
 
+        $.contextMenu({
+            selector: '.tag-menu',
+            zIndex: 2000,
+            build: function($trigger, e) {
+            	if (canOpenContextMenu) {
+	            	self.updateSelectionData(); // TODO What do we do in this case if we also want to have the feature below? #}
+	            	self.restoreSelection(); // TODO Request feedback. This solution has the advantage of allowing a selection to be made and the menu opened elsewhere in order not to cover the relevant text. #}
+					return tagMenu();
+				} else
+					return null;
+        	},
+       	    events: {
+				hide : function(){
+					self.selectionData = ""; // the old selection must be forgotten to avoid strange behaviour
+				}
+	       },
+		});
 
 		//TODO I'm sure this can be done better
         $("#toggleInterface_i").removeClass("disabled");
@@ -299,7 +376,8 @@ var Edit = new function() {
 		$(".next-page").removeClass("disabled");
 		$(".last-page").removeClass("disabled");
 		$("a[aria-controls='thumbDiv']").removeClass("disabled");
-		refreshOriginalVersion();
+		//why here?
+//		self.refreshOriginalVersion();
 //		$("#toggleInterface_" + self.i).click();// Change buttons
 		
 
@@ -508,6 +586,107 @@ var Edit = new function() {
 	  	
 	};
 
+	this.scrollThumbsLeft = function() {
+		self.thumbCountOffset += self.THUMBS_TO_SHOW;
+		self.thumbCountOffset = Math.min(self.thumbCountOffset, 0);
+		$(".thumbs" ).css("transition", "1s");
+		$(".thumbs" ).css("transform",  "translateX(" + self.thumbCountOffset * self.thumbWidth + "px)");
+		self.updateArrows();
+	};
+
+	this.scrollThumbsRight = function() {
+		self.thumbCountOffset -= self.THUMBS_TO_SHOW;
+		self.thumbCountOffset = Math.max(self.thumbCountOffset, -self.thumbArray.length + self.THUMBS_TO_SHOW);
+		$(".thumbs" ).css("transition", "1s");
+		$(".thumbs" ).css("transform",  "translateX(" + self.thumbCountOffset * self.thumbWidth + "px)");
+		self.updateArrows();
+	};
+	this.updateArrows = function() { // call to show and hide arrows depending on whether they're clickable
+		if (0 == self.thumbCountOffset)
+			$("#leftArrow").hide();
+		else
+			$("#leftArrow").show();
+		if (self.thumbCountOffset <= (-self.thumbArray.length + 10))
+			$("#rightArrow").hide();
+		else
+			$("#rightArrow").show();
+	};
+	this.loadThumbs = function() { // Loads all thumbs and shows the ones which are visible as soon as they've been loaded
+		var to = Math.min(self.THUMBS_TO_SHOW - self.thumbCountOffset, self.thumbArray.length);
+		self.toLoadCount = Math.min(self.THUMBS_TO_SHOW, to);
+		var tempImg;
+		for (var i = -self.thumbCountOffset; i < to; i++) {
+			if ( self.thumbArray[i] === undefined )
+				continue;
+			tempImg = new Image();
+			tempImg.src = thumbArray[i][0];
+			tempImg.onload = function() {
+				toLoadCount--; //  JavaScript is single-threaded...
+				if (0 == self.toLoadCount) {
+					self.generateThumbGrid();
+				}
+			};
+		}
+	};
+
+	this.generateThumbGrid = function() {
+		// 11 because we show 10 thumbs and each arrow will be half as wide as a thumbnail
+		self.thumbWidth = (window.innerWidth - 50) / 11;
+		var arrowWidth = self.thumbWidth / 2;
+		// This results in roughly 10 pixels with a maximized window on an HD screen if 10 thumbs are shown
+		var padding = 0.08 * self.thumbWidth; 
+		var thumbTDs = ''; // thumbTDs will become a string that's inserted into the <tr> with id thumbTR
+
+		if (self.thumbArray.length > 10) // do we need arrows?
+			thumbTDs += '<td style="min-width: ' + arrowWidth + 'px;"><a id="leftArrow" href="#" onclick="scrollThumbsLeft();"><svg width="' + arrowWidth + '" height="' + self.thumbWidth + '"><polygon points="' + (arrowWidth - padding) + ',' + padding + ' ' + padding + ',' + (arrowWidth) + ' '  + ' ' + (arrowWidth - padding) + ',' + (self.thumbWidth - padding) + '" style="fill: blue; stroke-width: 0;" /></svg></a>';
+		else // we don't need arrows but we need to "pad" the row from the left to center the thumbs we do show
+			thumbTDs += '<td style="min-width: ' + arrowWidth * (12 - self.thumbArray.length) + 'px;">'; // arrowWidth = half a thumb...
+		thumbTDs += '</td><td><div class="thumb-row" style="text-align: center;"><div class="thumbs"><table><tr>';
+
+		var i = 1;
+		// Before the current page:
+		while(i < self.pageNo) {
+			thumbTDs += '<td class="thumb" style="padding: ' + padding + 'px; min-width: ' + self.thumbWidth + 'px;"><a href="#" onclick="gotoPage(' + i + ')"><img style="max-width: "' + (self.thumbWidth - 2 * padding) + 'px;" class="thumb thumb-img ' + self.thumbArray[i - 1][1] + '" src="' + self.thumbArray[i - 1][0] + '"><br/><span style="color: white;">' + i +'</span></a></td>';
+			i++;
+		}
+		// Highlight current page:
+		thumbTDs += '<td class="thumb" style="padding: ' + padding + 'px; min-width: ' + self.thumbWidth + 'px;"><img style="max-width: "' + (self.thumbWidth - 2 * padding) + 'px;" class="thumb thumb-current" src="' + self.thumbArray[i - 1][0] + '"><br/><span style="color: white;">' + i +'</span></td>';
+		i++;
+		// After the current page:
+		while(i <= self.thumbArray.length) {
+			thumbTDs += '<td class="thumb" style="padding: ' + padding + 'px;  min-width: ' + self.thumbWidth + 'px;"><a href="#" onclick="gotoPage(' + i + ')"><img style="max-width: "' + (self.thumbWidth - 2 * padding) + 'px;" class="thumb thumb-img ' + self.thumbArray[i - 1][1] + '" src="' + self.thumbArray[i - 1][0] + '"><br/><span style="color: white;">' + i +'</span></a></td>';
+			i++;
+		}
+		thumbTDs += '</tr></table></div></div></td><td style="min-width: ' + arrowWidth + 'px;">';
+	
+		if (self.thumbArray.length > 10) // arrow?
+			thumbTDs += '<a id="rightArrow" href="#" onclick="scrollThumbsRight();"><svg width="' + arrowWidth + '" height="' + self.thumbWidth + '"><polygon points="' + padding + ',' + padding + ' ' + (arrowWidth - padding) + ',' + (arrowWidth) + ' '  + ' ' + padding + ',' + (self.thumbWidth - padding) + '" style="fill: blue; stroke-width: 0;" /></svg></a>';
+		thumbTDs += '</td>';
+		$("#thumbTR").html(thumbTDs); // insert it
+	
+		// Then we alter the CSS:
+		//$(".thumb").css("width", (self.thumbWidth - 2*padding) + "px");
+		$(".thumb-row").css("width", ((window.innerWidth - 50) - self.thumbWidth) + "px"); // THUMBS_TO_SHOW * self.thumbWidth + "px");
+		$(".thumb-img").css("width", (self.thumbWidth - 2 * padding)+ "px");
+		$(".thumb-current").css("width", (self.thumbWidth - 2 * padding)+ "px");
+		$(".thumbs" ).css("transition", "0s");
+		$(".thumbs" ).css("transform",  "translateX(" + self.thumbCountOffset * self.thumbWidth + "px)");
+		updateArrows();
+	};
+	
+	this.checkPageNumberInput = function() { // Tries to parse input to see if it's a valid page number to go to. If not, resets the contents to show the current page.
+		var value = parseInt($("#pageNumber").val());
+		if (value > 0 && value <= self.thumbArray.length)
+			gotoPage(value);
+		else // Reset to what it was
+			$("#pageNumber").val(self.pageNo + "/" + self.thumbArray.length);
+	};
+	this.gotoPage = function(page) {
+		page = Math.max(Math.min(page, self.thumbArray.length), 1);
+		var dL = "&dL=" + (self.currentLineId ? self.currentLineId : + self.restoreDialogLine);
+		window.location.assign(self.pathWithoutPage + page + '?tco=' + self.thumbCountOffset + "&i=" + self.i + dL);// TODO Consider tco in situations in which the page to which we go isn't visible, set an appropriate value? If tco = NaN or outside...
+	};
+
 	/**********************************/
 	/* Change the mode (edit or view) */
 	/**********************************/
@@ -671,8 +850,8 @@ var Edit = new function() {
 		self.thumbCountOffset = parseInt(search.substring(search.indexOf('tco=') + 4)); // "tco=".length = 4
 
 		// If the current page isn't among the thumbs first shown, we change the offset to make it so
-		self.thumbCountOffset = Math.max(thumbCountOffset, -pageNo + 1);
-		self.thumbCountOffset = Math.min(thumbCountOffset, -pageNo + THUMBS_TO_SHOW);
+		self.thumbCountOffset = Math.max(self.thumbCountOffset, -self.pageNo + 1);
+		self.thumbCountOffset = Math.min(self.thumbCountOffset, -self.pageNo + self.THUMBS_TO_SHOW);
 
 		// Getting this from the CSS file for now, set a variable instead?
 		self.contentLineFontSize = parseInt($('.line-list').css("font-size"), 10);
@@ -765,6 +944,7 @@ var Edit = new function() {
 	};
 	
 	// This function scrolls the image up as if it were dragged with the mouse.
+	/*
 	this.scrollToNextTop = function() { 
 
 		var currentTop = self.accumExtraY / (self.initialScale * (self.zoomFactor)) + 1;// +1 to ensure that a new top is obtained for every click
@@ -795,7 +975,7 @@ var Edit = new function() {
 		self.accumExtraY = newTop * self.initialScale * (self.zoomFactor);
 		$( ".transcript-map-div" ).css("transform",  "translate(" + -self.accumExtraX +"px, " + -self.accumExtraY+ "px) scale(" + (self.zoomFactor) + ")"); // Note, the CSS is set to "transform-origin: 0px 0px"
 	};
-
+	*/
 	// updateCanvas updates the canvas? This gets called *alot*
 	// set dimensions of canvas as per dimensions of transcriptImage
 	// Also refresh the highlightighting
@@ -899,7 +1079,7 @@ var Edit = new function() {
 	        if ( self.contentArray[lineIdx] === undefined )
 	            return;
 	        var endOfLine = self.contentArray[lineIdx][1].length;
-	        setSelectionData(self.currentLineId, endOfLine, endOfLine);
+	        self.setSelectionData(self.currentLineId, endOfLine, endOfLine);
 	        self.correctModal.open();
 	        self.buildLineList();
 	        self.accumExtraX = Math.min(self.initialScale * self.zoomFactor * self.contentArray[lineIdx][2][0]) - window.innerHeight / 5; // we move the image so that the dialog can be opened in a sensible place
@@ -923,7 +1103,7 @@ var Edit = new function() {
 			$("#correctModal").css("left",  self.dialogX + "px");
         	$("#correctModal").css("top",  self.dialogY + "px");
         	self.updateDocking(); // We restore the dialog to a docked state, if it was docked when closed
-        	initializeCaretOffsetInPixels();
+        	self.initializeCaretOffsetInPixels();
         	self.dialogHighlightDX = self.dialogX + self.accumExtraX - self.contentArray[getIndexFromLineId(self.currentLineId)][2][0] * self.initialScale * self.zoomFactor;
         	self.dialogHighlightDY = self.dialogY + self.accumExtraY - $(".transcript-div").offset().top -self. contentArray[getIndexFromLineId(self.currentLineId)][2][1] * self.initialScale * self.zoomFactor;// + $(".transcript-map-div").css("top");
         	if (null === self.scrollbarHeight) {
@@ -1013,6 +1193,167 @@ var Edit = new function() {
 			$("#line-list").css("min-height", (self.dialogHeight - self.dialogAbsoluteMinHeight) + "px"); 
 		}
 	};
+	this.resizeText = function(delta) {
+		var newFontSize = self.contentLineFontSize + delta;
+		if (newFontSize < 14 || newFontSize > 40)
+			return;
+		self.contentLineFontSize = newFontSize;
+		$('.line-list').css("font-size", self.contentLineFontSize+ 'px');
+		self.buildLineList();
+	};
+
+	this.undoAction = function() {
+		for (var i = 0; i < self.undoArray.length; i++) {
+			var undoId = self.undoArray[i][0];
+			self.contentArray[self.getIndexFromLineId(self.undoArray[i][0])] = self.undoArray[i];
+		}
+		self.buildLineList();
+	}
+
+	// When passed a lineId return the index of that line in the contentArray
+	this.getIndexFromLineId = function(lineId) {
+		var length = self.contentArray.length;
+		var index;
+		for (index = 0; index < length; index++) {
+			if (self.contentArray[index][0] == lineId)
+				return index;
+		}
+		return null;
+	};
+
+	this.getNextLineId = function(lineId) {
+		index = self.getIndexFromLineId(lineId);
+		if (self.contentArray.length == (index + 1))
+			return null;// If it's the last line, we don't have a next id.
+		else
+			return self.contentArray[index + 1][0];
+	};
+
+	this.getPreviousLineId = function(lineId) {
+		index = self.getIndexFromLineId(lineId);
+		if (1 == index)
+			return null; // If it's the first line, we don't have a previous id. Note: The first real line is [1] because the very first "line" in the array is "", i.e. not a line but the top of the page.
+		else
+			return self.contentArray[index - 1][0];
+	}
+	
+	//////////////////////////////////////////
+	// Code to manage the selection of text
+	//////////////////////////////////////////
+	
+	// set the selectiondata, endOffset is optional and if not given, it is set to startOffset
+	this.setSelectionData = function(lineId, startOffset, endOffset) { 
+		if (2 == arguments.length) {
+			endOffset  = startOffset;
+		}
+		self.selectionData = [[lineId, startOffset, endOffset]];
+	}
+
+	// call after user inputs to put selection information into a more usable format in a 
+	// 2D array [[lineId, selection start offset, selection end offset], [...]]
+	this.updateSelectionData = function() { 
+		var selection = window.getSelection();
+		if ( selection.anchorNode === null || selection.anchorNode.parentNode === null )
+			return;
+		var anchorParentNode = selection.anchorNode.parentNode;
+		var aPNtagLineId = anchorParentNode.getAttribute("tagLineId");
+		if (!aPNtagLineId) // this function can be triggered by clicks elsewhere than in just the text
+			return;
+		var focusParentNode = selection.focusNode.parentNode;
+		var anchorLineIndex = self.getIndexFromLineId(aPNtagLineId);
+		var focusLineIndex = self.getIndexFromLineId(focusParentNode.getAttribute("tagLineId"));
+		var totAnchorOffset = selection.anchorOffset + parseInt(anchorParentNode.getAttribute("spanOffset"));
+		var totFocusOffset = selection.focusOffset + parseInt(focusParentNode.getAttribute("spanOffset"));
+		var startOffset, endOffset;
+	
+		if (anchorLineIndex == focusLineIndex) {
+			startOffset = Math.min(totAnchorOffset, totFocusOffset);
+			endOffset = Math.max(totAnchorOffset, totFocusOffset);
+			self.selectionData = [[self.contentArray[anchorLineIndex][0], startOffset, endOffset]];
+		} else {
+			var startIndex = Math.min(anchorLineIndex, focusLineIndex);
+			var endIndex = Math.max(anchorLineIndex, focusLineIndex);
+			if (anchorLineIndex < focusLineIndex) {
+				startOffset = totAnchorOffset;
+				endOffset = totFocusOffset;
+			} else {
+				startOffset = totFocusOffset;
+				endOffset = totAnchorOffset;
+			}
+			self.selectionData = [[self.contentArray[startIndex][0], startOffset, self.contentArray[startIndex++][1].length]];
+			while (startIndex < endIndex)
+				self.selectionData.push([self.contentArray[startIndex][0], 0, self.contentArray[startIndex++][1].length]);
+			self.selectionData.push([sel.contentArray[startIndex][0], 0, endOffset]);
+		}
+	};
+
+	this.restoreSelection = function() {
+		if (self.selectionData.length === 0) { // the stuff below is necessary to restore the caret
+			var range = document.createRange();
+			var sel = window.getSelection();
+			sel.removeAllRanges();
+			sel.addRange(range);
+			return;
+		}
+		var charCount = 0;
+		var begCharCount = self.selectionData[0][1];
+		var endCharCount = self.selectionData[self.selectionData.length - 1][2];
+
+		var bElement, eElement;
+		$("[tagLineId='" + self.selectionData[0][0] + "']:visible").each(function () { // line where the selection begins
+			if ($(this).attr("spanoffset") > begCharCount)
+				return false; // bElement now = the span before the intended caret position
+			bElement = $(this);
+		});
+		$("[tagLineId='" + self.selectionData[self.selectionData.length - 1][0] + "']:visible").each(function () { // line where the selection ends
+			if ($(this).attr("spanoffset") > endCharCount)
+				return false; // eElement now = the span before the intended caret position
+			eElement = $(this);
+		});
+		if ( bElement === undefined || eElement === undefined )
+			return;
+		var range = document.createRange();
+		var test = bElement[0].firstChild === null ? bElement[0] : bElement[0].firstChild;
+		range.setStart(bElement[0].firstChild === null ? bElement[0] : bElement[0].firstChild, begCharCount - bElement.attr("spanoffset"));
+		range.setEnd(eElement[0].firstChild === null ? eElement[0] : eElement[0].firstChild, endCharCount - eElement.attr("spanoffset"));
+		var sel = window.getSelection();
+		sel.removeAllRanges();
+		sel.addRange(range);
+		eElement.focus(); // TODO Remove unless this solves the problem with loss of focus.
+	};
+
+	// returns the character index within the element 
+	// which best corresponds to the no. of pixels given
+	this.pixelsToCharOffset = function(element, pixels) { 
+		var hiddenCopy = $(element).clone();
+		var testText, previousWidth;
+		var width = $(element).outerWidth();
+		do {
+			previousWidth = width;
+			testText = $(hiddenCopy).text();
+			$(hiddenCopy).text(testText.substr(0, testText.length - 1));
+			$(hiddenCopy).appendTo(element);
+			width = $(hiddenCopy).outerWidth();
+			$(hiddenCopy).remove();
+		} while (pixels < width);
+		// also checking whether the click was closer to the left or to the right of the character
+		return testText.length - 1 + (pixels > ((width + previousWidth) / 2)); 
+	}
+
+	this.initializeCaretOffsetInPixels = function() {
+		var selection = window.getSelection();
+		if ( selection.anchorNode === null || selection.anchorNode.parentNode === null )
+			return;
+		var parentElement = selection.anchorNode.parentElement;
+		var hiddenCopy = $(parentElement).clone();
+		oldWidthForCaretCalc = $(parentElement).outerWidth();
+		$(hiddenCopy).text($(hiddenCopy).text().substr(0, selection.anchorOffset));
+		$(hiddenCopy).appendTo(parentElement);
+		self.caretOffsetInPixels = parentElement.offsetLeft + $(hiddenCopy).outerWidth();
+		$(hiddenCopy).remove();
+	};
+
+
 /*
 //TODO this is for lbl
 	this.drawLineImage = function(lineId, coordinates) {
@@ -1036,7 +1377,195 @@ var Edit = new function() {
 	};
 */
 
+	// generates a line with spans matching the tags and generates 
+	// and applies the relevant CSS/SVG to show them,  idPrefix is 
+	// an optional prefix added to each the ID of each LI, defaults 
+	// to "text" for compatibility reasons
 
+	this.getLineLiWithTags = function(tagLineIndex, idPrefix) { 	var prefix = "text";
+		var tagLineId = self.contentArray[tagLineIndex][0];
+		if (arguments.length == 2)
+			prefix = idPrefix;
+		// values for creating SVGs with the right height to be used as a background and a 1 px "long" line corresponding to each tag:
+		var lineY = Math.round(1.5 * self.contentLineFontSize);
+		var lineThickness = Math.round(lineY / 6);// TODO Test what looks good...
+		var thicknessAndSpacing = lineThickness + Math.round(lineY / 8);// TODO Test what looks good...
+		var svgRectsJSON = ''; // JSON-2-B with the rect for each line
+		var backgroundHeight = lineY; // enough for the first tag graphic
+		var tagGfxStack = [];
+		// "tags"-2-tags:
+		var tagLineIndex = self.getIndexFromLineId(tagLineId);
+		var lineUnicode = self.contentArray[tagLineIndex][1];
+		var highlightCurrent = "";
+		var lineNo = String(String(self.contentArray[tagLineIndex][4]).match(/readingOrder {index:\d+;}/)).match(/\d+/g);
+		if (!lineNo)
+			lineNo = tagLineIndex;
+		else
+			lineNo++; // readingOrder starts from 0, tagLineIndex is OK as is because of the "dummy line" in the beginning
+		if (tagLineId == self.currentLineId)
+			 highlightCurrent = ' style="color: green;" '; // A quick and dirty solution for highlighting the current line in each case below
+		if ("" == lineUnicode)
+			return '<li value="' + lineNo + '" id="' + prefix + '_' + tagLineId + '" spellcheck="false"' + highlightCurrent + '><div style="min-height: ' + backgroundHeight + 'px;"><span tagLineId="' + tagLineId + '" spanOffset="-1">&#8203;</span></div></li>'; // spanOffset -1 ensures that &#8203; is ignored when new text is entered
+		var customTagArray = self.getSortedCustomTagArray(tagLineIndex);
+		if (customTagArray.length > 0) {
+			customTagArray.forEach(function (tag) { // get a stack with all unique tags present
+				var notYetIn = true; // set to false if the tag is already found in the stack
+				for (var i = 0; notYetIn && i < tagGfxStack.length; i++) {
+					if (tagGfxStack[i] == tag.tag)
+						notYetIn = false;
+				}
+				if (notYetIn)
+					tagGfxStack.push(tag.tag);
+			});
+			// sort the stack and generate a graphical representation for each tag type (placement depends on order and total # of tags)
+			tagGfxStack.sort();
+			var gapTag = false;
+			nonHeightTags = 0;
+			tagGfxStack.forEach(function (gfxTag) { // we use initialWidth here and below since it's definitely long enough, except for the "gap" tag
+				if ( gfxTag === "gap" ) {// we exclude this special case
+					gapTag = true;
+					nonHeightTags++;
+				}
+				else if ( gfxTag === "bold" || gfxTag === "italic" || gfxTag === "strikethrough" || gfxTag === "underlined" || gfxTag === "changeFromOriginal" || gfxTag === "subscript" || gfxTag === "superscript" )
+					nonHeightTags++;
+				else {
+					svgRectsJSON += '"' + gfxTag + '":' + "\"<rect x=\\\\'0\\\\' y=\\\\'" + lineY + "\\\\' width=\\\\'" + self.initialWidth + "\\\\' height=\\\\'" + lineThickness + "\\\\' style=\\\\'fill: %23" + self.tagColors[gfxTag] + ";\\\\' />\""; // # must be %23 and yes \\\\ [sic!]
+					lineY +=thicknessAndSpacing;
+					svgRectsJSON += ',';
+				}
+			});
+			if (gapTag) // insert the "gap" tag, if necessary. This also ensures that we don't have a comma in the end before conversion...
+				svgRectsJSON += '"gap":' + "\"<line x1=\\\\'0\\\\' y1=\\\\'0\\\\' x2=\\\\'0\\\\' y2=\\\\'" + lineY + "\\\\' style=\\\\'stroke-width: " + lineThickness + "; stroke: %23" +  (self.tagColors["gap"]) + ";\\\\' />\""; // # must be %23 and yes \\\\ [sic!]
+			else
+				svgRectsJSON = svgRectsJSON.substring(0, svgRectsJSON.length - 1); // remove the comma in the end
+			svgRectsJSON = JSON.parse("{" +svgRectsJSON + "}");
+			// more graphics variables
+			var bottomPadding = (1 + (tagGfxStack.length - nonHeightTags)) * thicknessAndSpacing; // nonHeightTags must be subtracted from the count since it shouldn't affect the height
+			var backgroundHeight = lineY + bottomPadding;
+			// generate lines with spans showing the tags...
+			var tagStack = [];
+			var tagString = '<li value="' + lineNo + '" spanOffset="0" class="tag-menu ' + (window.location.href.indexOf("view") >= 0 ? 'context-menu-disabled' : '') + '" id="' + prefix + '_' + tagLineId + '" spellcheck="false"' + highlightCurrent
+										+ '><div style="padding-bottom: ' + bottomPadding + 'px; ' + 'min-height: ' + backgroundHeight + 'px;">';
+			var rangeBegin;
+			var keepOpenStack = [];
+			var previousTag;
+			var firstTagOffset = customTagArray[0].offset;
+			if (firstTagOffset > 0) {
+				var tagContent = lineUnicode.substring(0, firstTagOffset);
+				tagString += '<span tagLineId="' + tagLineId + '" spanOffset="0">' + tagContent + '</span>';
+				rangeBegin = firstTagOffset;
+			} else
+				rangeBegin = 0;
+			customTagArray.forEach(function (tag) {
+				var currentTag = tag.tag;
+				var offset = tag.offset;
+				var length = tag.length; // set this when opening for the first time ONLY, not when reopening (this is from Transkribus custom and has nothing to do with the string lengths between spans...)
+				if (offset != rangeBegin || currentTag != previousTag) { // has this tag already been temporarily closed when closing an outer tag? If so, we don't need to open it again, otherwise we must
+					var tagContent = lineUnicode.substring(rangeBegin, offset);
+					while (keepOpenStack.length > 0) {
+						var keepTag = keepOpenStack.pop();
+						var tagDecoration = "background-image: url('data:image/svg+xml; utf8, <svg xmlns=\\'http://www.w3.org/2000/svg\\' width=\\'" + initialWidth + "\\' height=\\'" + backgroundHeight + "\\'>" + svgRectsJSON[keepTag] + "</svg>');";
+						if ( keepTag.tag === "bold" )
+							tagDecoration = "font-weight: bold;";
+						else if ( keepTag.tag === "italic" )
+							tagDecoration = "font-style: italic;";
+						else if ( keepTag.tag === "strikethrough" )
+							tagDecoration = "text-decoration: line-through;";
+						else if ( keepTag.tag === "underlined" )
+							tagDecoration = "text-decoration: underline;";
+						else if (keepTag.tag === "changeFromOriginal")
+							tagDecoration = "color: blue;";
+						tagString += "<span tagLineId='" + tagLineId + "' spanOffset=\"" + rangeBegin + "\" "
+												+ "style=\"padding-bottom: " + bottomPadding + "px; " + tagDecoration + "\""
+												+ ">";// we use initialWidth here and below because it's guaranteed to be enough
+						if ( keepTag.tag === "subscript" )
+							tagString += "<sub>";
+						else if ( keepTag.tag === "superscript" )
+							tagString += "<sup>";
+						tagStack.push(keepTag);
+					};
+					tagString += '<span tagLineId="' + tagLineId + '" spanOffset="' + rangeBegin + '">' + tagContent + '</span>';// we always need the tagLineId
+					if (tag.open) { // if the new tag opens, just insert it and push it onto the stack
+						var tagDecoration = "background-image: url('data:image/svg+xml; utf8, <svg xmlns=\\'http://www.w3.org/2000/svg\\' width=\\'" + initialWidth + "\\' height=\\'" + backgroundHeight + "\\'>" + svgRectsJSON[currentTag] + "</svg>');";
+						if ( tag.tag === "bold" )
+							tagDecoration = "font-weight: bold;";
+						else if ( tag.tag === "italic" )
+							tagDecoration = "font-style: italic;";
+						else if ( tag.tag === "strikethrough" )
+							tagDecoration = "text-decoration: line-through;";
+						else if ( tag.tag === "underlined" )
+							tagDecoration = "text-decoration: underline;";
+						else if (tag.tag === "changeFromOriginal")
+							tagDecoration = "color: blue;";
+						tagString += "<span offset=\"" + offset + "\" spanOffset=\"" + offset + "\" tagLength=\"" + length +  "\" tagLineId='" + tagLineId + "' tag='" + currentTag + "' " //" // a "tag" = span with a tag attribute
+												+ "style=\"padding-bottom: " + bottomPadding + "px; " + tagDecoration + "\""
+												+ ">";
+						if ( tag.tag === "subscript" )
+							tagString += "<sub>";
+						else if ( tag.tag === "superscript" )
+							tagString += "<sup>";
+						tagStack.push(currentTag);
+					} else { // if the tag closes, we have to close all open tags until we reach the "original" opening tag
+						var precedingTag = tagStack.pop();
+						while (precedingTag && currentTag != precedingTag) {
+							keepOpenStack.push(precedingTag);
+							if ( precedingTag.tag === "subscript" )
+								tagString += "</sub></span>";
+							else if ( precedingTag.tag === "superscript" )
+								tagString += "</sup></span>";
+							else
+								tagString += "</span>"; // easy to close since we don't need to care about what the opening tag type was...
+							precedingTag = tagStack.pop();
+						}
+						if ( tag.tag === "subscript" )
+							tagString += "</sub></span>";
+						else if ( tag.tag === "superscript" )
+							tagString += "</sup></span>";
+						else
+							tagString += "</span>";
+					}
+				}
+				previousTag = currentTag;
+				rangeBegin = offset;
+			});
+			var remainder = lineUnicode.substring(rangeBegin);
+			tagString += '<span tagLineId="' + tagLineId + '" spanOffset="' + rangeBegin + '">' + remainder + '</span></div></li>';
+			return tagString;
+		} else
+			return '<li value="' + lineNo + '" class="tag-menu ' + (window.location.href.indexOf("view") >= 0 ? 'context-menu-disabled' : '') + '" id="' + prefix + '_' + tagLineId + '" spellcheck="false"' + highlightCurrent + '><div style="min-height: ' + backgroundHeight + 'px;"><span tagLineId="' + tagLineId + '" spanOffset="0">' + lineUnicode + '</span></div></li>';
+	};
+	
+// 	utils
+	this.contenteditableToArray = function(lineId, overwriteText) { // converts an editable line with tags as spans line into the original format, i.e. array with the text and custom attribute content. Optionally text content can be given.
+		var lineIndex = self.getIndexFromLineId(lineId);
+		var tagStack = []; // 2d array with tags:  [[tag, offset, length], ...]
+		$("[tagLineId='" + lineId + "']:visible").each(function () { // spans = tags
+			var tag = $(this).attr("tag");
+			if (tag)
+				tagStack.push([tag, $(this).attr("offset"), $(this).attr("tagLength")]);
+		});
+		// regexp to preserve the part of custom which isn't tags (just readingorder for now and when/if that changes things will break)
+		var custom = String(self.contentArray[self.getIndexFromLineId(lineId)][4]).match(/readingOrder {index:\d+;}/);
+		for (var j = 0; j < tagStack.length; j++)
+			custom += " " + tagStack[j][0] + " {offset:" + tagStack[j][1] + "; length:" + tagStack[j][2] + ";}";
+		self.contentArray[lineIndex][4] = custom;
+		if (2 == arguments.length) {
+			self.contentArray[lineIndex][1] = overwriteText;
+			//buildLineList(); // TODO Test more! This breaks deletions (and possibly other things) when executed here. Is it necessary in any scenario?
+		} else
+			self.contentArray[lineIndex][1] = $("#text_" + lineId).text().replace(/\u200B/g,''); // remove the zero width space!!!
+	}
+
+	function updateLine(updatedLineId) { // TODO  Make this faster by skipping the if below?
+		if ( $(".transcript-div").is(":visible") && self.currentLineId !== undefined && self.correctModal.isOpen()) { // TODO A better test? This works but sbs below also has transcript-div :visible...
+			$("#text_" + updatedLineId).html(self.getLineLiWithTags(self.getIndexFromLineId(updatedLineId)));
+			self.updateDialogSize();
+		}
+		if ( $(".interface-lbl").is(":visible") )
+			$("#line_" + updatedLineId).html(self.getLineLiWithTags(self.getIndexFromLineId(updatedLineId)));
+		self.restoreSelection();
+	}	
+	
 	this.buildLineList = function() {
 		console.log("buildLineList");
 		var index;
@@ -1046,7 +1575,7 @@ var Edit = new function() {
 				index = Math.max(1, currentIdx - self.surroundingCount); // 1 because the first line is not real
 				$("#lineList").html("");
 				while (index <= showTo)
-					$("#lineList").append(getLineLiWithTags(index++));
+					$("#lineList").append(self.getLineLiWithTags(index++));
 				self.highlightLineList();
 				self.updateDialogSize();
 		}
@@ -1073,7 +1602,7 @@ var Edit = new function() {
 			}
 		}
 		*/
-		restoreSelection();
+		self.restoreSelection();
 	};
 
 	this.highLightArea = function(coords) {
@@ -1128,17 +1657,17 @@ var Edit = new function() {
 	/* up while keeping thedialog in the same place. */
 	/*************************************************/
 	this.typewriterMove = function(newLineId, caretLineId) {
-		initializeCaretOffsetInPixels();
-		if (newLineId != null && selectionData !== undefined && selectionData[0] !== undefined ) {
-			if (null === savedCaretOffsetInPixels)
-				savedCaretOffsetInPixels = caretOffsetInPixels;
+		self.initializeCaretOffsetInPixels();
+		if (newLineId != null && self.selectionData !== undefined && self.selectionData[0] !== undefined ) {
+			if (null === self.savedCaretOffsetInPixels)
+				self.savedCaretOffsetInPixels = self.caretOffsetInPixels;
 			// TODO Move the caret down even when we cannot make the lines move anymore?
 			self.updateDialog(newLineId);
 			self.updateCanvas();
 			// get the closest span offset on the new line
 			var span, spanOffset;
 			$("[tagLineId=" + caretLineId + "]:visible").each(function() {
-				if (this.offsetLeft < savedCaretOffsetInPixels) {
+				if (this.offsetLeft < self.savedCaretOffsetInPixels) {
 					span = this;
 					spanOffset = this.offsetLeft;
 				}
@@ -1153,7 +1682,7 @@ var Edit = new function() {
 				$(hiddenCopy).appendTo(span);
 				cB = $(hiddenCopy).outerWidth();
 				$(hiddenCopy).remove();
-				if ((cB + cA) / 2 > (savedCaretOffsetInPixels - spanOffset)) // we want the offset which is closest to this
+				if ((cB + cA) / 2 > (self.savedCaretOffsetInPixels - spanOffset)) // we want the offset which is closest to this
 					break;
 				cA = cB;
 			}
@@ -1161,20 +1690,20 @@ var Edit = new function() {
 			if (null == cLength)
 				cLength = 0;
 			var caretOffset = Math.min(t - 1 + parseInt($(span).attr("spanOffset")), cLength);
-			selectionData = [[caretLineId, caretOffset, caretOffset]];
-			restoreSelection();
+			self.selectionData = [[caretLineId, caretOffset, caretOffset]];
+			self.restoreSelection();
 		}
 	};
 
 	this.typewriterNext = function() { // Aka. "press typewriter enter scroll". Changes the selected lines and the modal content.
 //		if ( ifc === "lbl" )
 //			$("#options_" + currentLineId).hide();
-		self.typewriterMove(getNextLineId(self.currentLineId), getNextLineId(selectionData[0][0])); // the caret will "remain in place" and the lines shifted around it
+		self.typewriterMove(self.getNextLineId(self.currentLineId), self.getNextLineId(self.selectionData[0][0])); // the caret will "remain in place" and the lines shifted around it
 	};
 	this.typewriterPrevious = function() {
 //		if ( ifc === "lbl" )
 //			$("#options_" + currentLineId).hide();
-		self.typewriterMove(getPreviousLineId(self.currentLineId), getPreviousLineId(selectionData[0][0])); // the caret will "remain in place" and the lines shifted around it
+		self.typewriterMove(self.getPreviousLineId(self.currentLineId), self.getPreviousLineId(self.selectionData[0][0])); // the caret will "remain in place" and the lines shifted around it
 	};
 
 
@@ -1205,7 +1734,7 @@ var Edit = new function() {
 
 		$(".transcript-map-div").css("transform",  "translate(" + -self.accumExtraX +"px, " + -self.accumExtraY+ "px) scale(" + self.zoomFactor + ")");// Note, the CSS is set to "transform-origin: 0px 0px"
 		self.calculateAreas();
-		generateThumbGrid();
+		self.generateThumbGrid();
 		self.updateCanvas();
 		// If the dialog is open, position it as before in relation the highlighted area but according to the current window size = new scale...
 		if ( self.correctModal !== undefined && self.correctModal.isOpen() ) {
@@ -1221,6 +1750,283 @@ var Edit = new function() {
 		
 	};
 
+	/*************************/
+	/* Tag related functions */
+	/*************************/
 
+	this.tagMenu = function() { // returns the tag list with tags in the selection highlighted, if any
+		var appliedTags = {}; // an array to be populated with all tags within the selection, may contain duplicates
+		var lastButOne = self.selectionData.length - 1;
+		var lineIndex = self.getIndexFromLineId(self.selectionData[0][0]);
+		var tagsOnLine = self.getSortedCustomTagArray(lineIndex);
+		var selStart = self.selectionData[0][1];
+		var selEnd;
+		if (self.selectionData.length == 1)
+			selEnd = self.selectionData[0][2];
+		else
+			selEnd = self.contentArray[lineIndex][1].length;
+		for (var i = 0; i < tagsOnLine.length; i++) {
+			var tagOffset = tagsOnLine[i].offset;
+			if ((tagOffset <= selStart && selStart < (tagOffset + tagsOnLine[i].length)) || (selStart < tagOffset && tagOffset <= selEnd)) {
+				var tag = tagsOnLine[i].tag;
+				if ( tag !== "bold" && tag !== "italic" && tag !== "strikethrough" && tag !== "underlined" && tag !== "subscript" && tag !== "superscript" )
+					appliedTags[tag] = {"name": "<span style=\"color: #" + self.tagColors[tag] + ";\">" + tag + "</span>", "type": "checkbox", "isHtmlName": true, "selected": true};
+			}
+		}
+		var j = 1;
+		while (j < lastButOne) {
+			lineIndex++; // we don't check if this goes out of bounds since such a selection shouldn't be possible...
+			tagsOnLine = self.getSortedCustomTagArray(lineIndex);
+			for (var k = 0; k < tagsOnLine.length; k++) {
+				var tag = tagsOnLine[k].tag;
+				if ( tag !== "bold" && tag !== "italic" && tag !== "strikethrough" && tag !== "underlined" && tag !== "subscript" && tag !== "superscript" )
+					appliedTags[tag] = {"name": "<span style=\"color: #" + self.tagColors[tag] + ";\">" + tag + "</span>", "type": "checkbox", "isHtmlName": true, "selected": true}; // the selection covers all tags on this line
+			}
+			j++;
+		}
+		if (self.selectionData.length > 1) {
+			lineIndex++;
+			tagsOnLine = self.getSortedCustomTagArray(lineIndex);
+			selEnd = self.selectionData[j][2];
+			selStart = 0;
+			for (var i = 0; i < tagsOnLine.length; i++) {
+				if (tagsOnLine[i].offset < selEnd) {
+					var tag = tagsOnLine[i].tag;
+					if ( tag !== "bold" && tag !== "italic" && tag !== "strikethrough" && tag !== "underlined" && tag !== "subscript" && tag !== "superscript" )
+						appliedTags[tag] = {"name": "<span style=\"color: #" + self.tagColors[tag] + ";\">" + tag + "</span>", "type": "checkbox", "isHtmlName": true, "selected": true};
+				}
+			}
+		}
+		return {"items": $.extend({}, tagItems, appliedTags)};
+	};
+
+	this.toggleTag = function(toggleTag) { // sets/removes the tag depending on whether the selection already has it
+		if (!self.removeTag(toggleTag)) // if the tag can be removed, we do that...
+			self.applyTag(toggleTag);// ...but otherwise we apply it
+		if (!changed)
+			self.setMessage(transUnsavedChanges, 'warning', false);
+		self.changed = true;
+	};
+
+	this.removeTag = function(removeTag, everywhere) { // Removes the given tag from the selection and everywhere, if the second parameter is true. Returns true if removals were made, otherwise false.
+		var tag = removeTag;
+		var removals = false;
+//		if ( removeTag === "bold" || removeTag === "italic" || removeTag === "strikethrough" || removeTag === "underlined" || removeTag === "subscript" || removeTag === "superscript" )
+		// Tags that don't draw anything under the line and have their rendering in HTML (aka textStyle)
+		if($.inArray(removeTag,["bold","italic","strikethrough","underlined","subscript","superscript"]) >= 0)
+			tag = "textStyle";
+		if (2 == arguments.length && everywhere) {
+			for (var k = 1; k < contentArray.length; k++)
+				self.contentArray[k][4] = String(self.contentArray[k][4]).replace(new RegExp("\\s" + tag + "[^}]*}", "g"), "");
+			return; // TODO Return true/false depending on result? Not needed at the moment but technically this is a bug.
+		}
+		var lastButOne = self.selectionData.length - 1;
+		var lineIndex = self.getIndexFromLineId(self.selectionData[0][0]);
+		var tagsOnLine = self.getSortedCustomTagArray(lineIndex, removeTag);
+		var selStart = self.selectionData[0][1];
+		var selEnd;
+		if (self.selectionData.length == 1)
+			selEnd = self.selectionData[0][2];
+		else
+			selEnd = self.contentArray[lineIndex][1].length;
+		for (var i = 0; i < tagsOnLine.length; i++) {
+			var tagOffset = tagsOnLine[i].offset;
+			if ((tagOffset <= selStart && selStart < (tagOffset + tagsOnLine[i].length)) || (selStart < tagOffset && tagOffset <= selEnd)) {
+				removals = true;
+				self.contentArray[lineIndex][4] = String(self.contentArray[lineIndex][4]).replace(new RegExp("\\s" + tag + "\\s+{offset:" + tagOffset + ";[^}]*}"), "");
+			}
+		}
+		var j = 1;
+		while (j < lastButOne) {
+			lineIndex++; // we don't check if this goes out of bounds since such a selection shouldn't be possible...
+				if (self.getSortedCustomTagArray(lineIndex, removeTag).length > 0) {
+					removals = true;
+					self.contentArray[lineIndex][4] = String(self.contentArray[lineIndex][4]).replace(new RegExp("\\s" + tag + "[^}]*}"), "");
+				}
+			j++;
+		}
+		if (self.selectionData.length > 1) {
+			lineIndex++;
+			tagsOnLine = self.getSortedCustomTagArray(lineIndex, removeTag);
+			selEnd = self.selectionData[j][2];
+			selStart = 0;
+			for (var i = 0; i < tagsOnLine.length; i++) {
+				var tagOffset = tagsOnLine[i].offset;
+				if (tagOffset < selEnd) {
+					removals = true;
+					self.contentArray[lineIndex][4] = String(self.contentArray[lineIndex][4]).replace(new RegExp("\\s" + tag + "\\s+{offset:" + tagOffset + ";[^}]*}"), "");
+				}
+			}
+		}
+		self.buildLineList();
+		return removals;
+	};
+	// applies the tag from start to end on the line the index of 
+	// which is given, adds "continued:true", if given and true
+	this.applyTagTo = function(applyTag, lineId, start, end, continued) { 
+		var lineIndex = self.getIndexFromLineId(lineId);
+		var customTagArray = self.getSortedCustomTagArray(lineIndex);
+		var isContinued = false;
+		if (5 == arguments.length)
+			continued = continued;
+
+		var t = 0;
+		while (t < customTagArray.length) // remove all tags from the array except those which are of the same type as the applied one
+			if (customTagArray[t].tag != applyTag)
+				customTagArray.splice(t, 1);
+			else
+				t++;
+
+		var i = 0;
+		while (i < customTagArray.length) { // look for overlapping tags
+			var existingOpenOffset = customTagArray[i].offset;
+			var existingCloseOffset = customTagArray[i + 1].offset; // TODO Remove redundant variables...
+			if (start <= existingCloseOffset && existingOpenOffset <= end)  { // do we have overlap? If so, merge...
+				start = Math.min(start, existingOpenOffset);
+				end = Math.max(end, existingCloseOffset);
+				customTagArray.splice(i, 2); // ...and remove the old tag
+			} else
+				i += 2;
+		}
+		customTagArray.push({"offset": start, "tag": applyTag, "open": true, "length": (end - start)});
+		customTagArray.push({"offset": end, "tag": applyTag, "open": false, "length": 0});
+
+		// get everything in custom EXCEPT the applied tag
+		if ( applyTag === "bold" || applyTag === "italic" || applyTag === "strikethrough" || applyTag === "underlined" || applyTag === "subscript" || applyTag === "superscript" )
+			var removalExp = new RegExp("textStyle\s+[^\}]*" + applyTag + ":true(.(?!\}))*.{1}\}", "g");
+		else
+			var removalExp = new RegExp(applyTag + "\\s+(.(?!\}))*.{1}\}", "g");
+		var custom = String(contentArray[lineIndex][4]).replace(removalExp, "");
+		for (j = 0; j < customTagArray.length; j += 2) {
+			var length = customTagArray[j].length;
+			if (length > 0) {
+				var tag = customTagArray[j].tag;
+				var textStyle = "";
+				if($.inArray(removeTag,["bold","italic","strikethrough","underlined","subscript","superscript"]) >= 0){
+	//			if ( tag === "bold" || tag === "italic" || tag === "strikethrough" || tag === "underlined" || tag === "subscript" || tag === "superscript" ) {
+					textStyle = ";" + tag + ":true";
+					tag = "textStyle";
+				}
+				custom += " " + tag + " {offset:" + customTagArray[j].offset + "; length:" + length + textStyle + ";";
+				if (isContinued)
+					custom += " continued:true;";
+				custom += "}";
+			}
+		}
+		self.contentArray[lineIndex][4] = custom;
+	};
+	this.applyTag = function(applyTag) {
+		if ( self.selectionData === undefined || self.selectionData[0] === undefined )
+			return;
+		// use selectionData to apply the tag
+		if ("gap" == applyTag) // this tag is an exception
+			self.applyTagTo(applyTag, self.selectionData[0][0], self.selectionData[0][1], self.selectionData[0][1] + 1);
+		else if (self.selectionData.length == 1) {
+			if (self.selectionData[0][1] != self.selectionData[0][2]) // beginning and end must be different
+				self.applyTagTo(applyTag, self.selectionData[0][0], self.selectionData[0][1], self.selectionData[0][2]);
+		} else {
+			var lastButOne = self.selectionData.length - 1;
+			var i = 0;
+			while (i < lastButOne)
+				self.applyTagTo(applyTag, self.selectionData[i][0], self.selectionData[i][1], self.selectionData[i++][2], true);
+			self.applyTagTo(applyTag, self.selectionData[i][0], self.selectionData[i][1], self.selectionData[i][2]); // this tag is not continued on the next line
+		}
+		self.buildLineList();
+	};
+	// returns an array with Transkribus "custom" tags in the format 
+	// below, if a filterTag is given, only tags of that type are included
+	this.getSortedCustomTagArray = function(tagLineIndex, filterTag) { 
+		var filter = false;
+		if (2 == arguments.length) {
+			filter = filterTag;
+		}
+		var custom = (self.contentArray[tagLineIndex][4] + ' ').replace(/\s+/g, '').split('}');
+		var customTagArray = [];
+		if ("None" != custom) {
+			custom.forEach(function(attribute) { // turn "tags" into something closer to actual tags (=spans)
+				attribute = attribute.split('{');
+				if ("" != attribute && "readingOrder" != attribute[0] && attribute[1].indexOf("offset:") != -1 && attribute[1].indexOf(";length:") != -1) { // we have no use for readingOrder for now...
+					var split = attribute[1].split("offset:")[1].split(";length:");
+					var start = parseInt(split[0]);
+					var length = parseInt(split[1]); // parseInt doesn't care about what comes after the first int
+					var end = start + length;
+					var tag = attribute[0];
+					if ( split[1].indexOf("bold:true") !== -1 )
+						tag = "bold";
+						else if ( split[1].indexOf("italic:true") !== -1 )
+						tag = "italic";
+					else if ( split[1].indexOf("strikethrough:true") !== -1 )
+						tag = "strikethrough";
+					else if ( split[1].indexOf("underlined:true") !== -1 )
+						tag = "underlined";
+					else if ( split[1].indexOf("subscript:true") !== -1 )
+						tag = "subscript";
+					else if ( split[1].indexOf("superscript:true") !== -1 )
+						tag = "superscript";
+						if (!filter || filter == tag) {
+						customTagArray.push({"offset": start, "tag": tag, "open": true, "length": length});
+						customTagArray.push({"offset": end, "tag": tag, "open": false, "length": 0});
+					}
+				}
+			});
+		}
+		customTagArray.sort(function (tagA, tagB) {
+			return tagA.offset - tagB.offset;
+		});
+		return customTagArray;
+	}
+
+	this.contextMenuOpenable = function(contextMenuEvent) { // ensures that the caret is also moved when the user clicks the right mouse button unless the tag menu should be opened to set tags to a new selection, sets the contextMenuOk flag
+		if ("" != self.selectionData && (self.selectionData.length > 1 || (self.selectionData[0][1] != self.selectionData[0][2]))) // have we got a non-zero length selection? if so, the user wants to set tags to the selection and we thus don't move the caret
+			return true;
+		if ( window.location.href.indexOf("view") >= 0 )
+			return false;
+		var line;
+		$("[id^='text_']").each(function() { // first find the line on which the click was
+			var y = 0, testElement = this;
+			do {
+				y += testElement.offsetTop;
+				testElement = testElement.offsetParent;
+			} while (testElement != null);
+			if (y < contextMenuEvent.pageY && contextMenuEvent.pageY < (y + this.offsetHeight)) {
+				line = this;
+				return false;
+			}
+		});
+		if (line) { // if we have a line, find the correct span, if any
+			var span, spanOffset, toTheLeft = false;
+			var lineId = line.getAttribute("id").substr(5); // "text_".length is 5...
+			$("[tagLineId=" + lineId + "]").each(function() {
+				var x = 0, testElement = this;
+				do {
+					x += testElement.offsetLeft;
+					testElement = testElement.offsetParent;
+				} while (testElement != null);
+				if (contextMenuEvent.pageX < x) { // if the click is outside the first span, we quit and set the caret to the beginning of that line
+					toTheLeft = true;
+					return false;
+				}
+				if (x < contextMenuEvent.pageX && contextMenuEvent.pageX < (x + this.offsetWidth)) {
+					span = this;
+					spanOffset = x;
+				}
+				// we don't break because in case there are nested spans, we want the innermost one TODO Check if this is correct? It could be completely wrong even if it works....
+			});
+			if (span) {
+				self.setSelectionData(lineId, parseInt(span.getAttribute("spanOffset")) +self. pixelsToCharOffset(span, contextMenuEvent.pageX - spanOffset));
+				self.restoreSelection();
+				return true;
+			} else { // set the caret to the end/beginning of the line for consistent behaviour compared with left clicks
+				if (toTheLeft)
+					self.setSelectionData(lineId, 0); // beginning
+				else // only remaining possibility if we have a line but no span
+					self.setSelectionData(lineId, self.contentArray[getIndexFromLineId(lineId)][1].length);
+				self.restoreSelection();
+				return false;
+			}
+   	 	}	
+		return false;
+	};
+	
 }//End declarion of Edit 'Class'
 			

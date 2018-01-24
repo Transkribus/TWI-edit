@@ -1,3 +1,4 @@
+/*
 function refreshOriginalVersion() {
 	$("#originalVersion").html("");
 	for (var index = 1; index <= contentArray.length - 1; index++){
@@ -22,3 +23,4 @@ function refreshYourVersion() { // call to highlight changes made to the origina
 	buildLineList();
 	removeTag("changeFromOriginal", true);
 }
+*/

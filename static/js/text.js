@@ -396,6 +396,7 @@ function pixelsToCharOffset(element, pixels) { // returns the character index wi
 }
 
 // text rendering
+/*
 function getLineLiWithTags(tagLineIndex, idPrefix) { // generates a line with spans matching the tags and generates and applies the relevant CSS/SVG to show them,  idPrefix is an optional prefix added to each the ID of each LI, defaults to "text" for compatibility reasons
 	var prefix = "text";
 	var tagLineId = contentArray[tagLineIndex][0];
@@ -579,6 +580,8 @@ function updateLine(updatedLineId) { // TODO  Make this faster by skipping the i
 		$("#line_" + updatedLineId).html(getLineLiWithTags(getIndexFromLineId(updatedLineId)));
 	restoreSelection();
 }
+*/
+/*
 function buildLineList() {
 	console.log("building line list!");
 	var index;
@@ -617,8 +620,9 @@ function buildLineList() {
 	}
 	restoreSelection();
 }
-
+*/
 // UX actions
+/*
 function resizeText(delta) {
 	var newFontSize = contentLineFontSize + delta;
 	if (newFontSize < 14 || newFontSize > 40)
@@ -627,6 +631,7 @@ function resizeText(delta) {
 	$('.line-list').css("font-size", contentLineFontSize+ 'px');
 	buildLineList();
 }
+*/
 function setMessage(message, type, timeout) {
 	if(timeout==undefined) timeout = true;
 	clearTimeout(message_timeout);

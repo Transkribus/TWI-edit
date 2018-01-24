@@ -117,7 +117,7 @@ $(document).ready(function(){
 	//	if (changed)
 	//		return '{% trans "You have unsaved changes. Are you sure you want to leave?" %}'; // custom messages aren't supported by all browsers now, this is for those that do show them
 	});
-
+/*
 	$( ".previous-page" ).on('click', function(e) {
 		gotoPage(pageNo - 1);
 	});
@@ -130,6 +130,7 @@ $(document).ready(function(){
 	$( ".last-page" ).on('click', function(e) {
 		gotoPage(Number.MAX_SAFE_INTEGER);
 	});
+*/
 	$('#correctModal').on('keydown', function(e) {
 		keydown(e);
 	});
@@ -148,10 +149,12 @@ $(document).ready(function(){
 	$("#correctModal").on("cut", function(e) {
 		cut(e);
 	});
+/*
 	$( ".add-line" ).on('click', function(e) {
 		surroundingCount++;
 		buildLineList();
 	});
+
 	$( ".enlarge-text" ).on('click', function(e) {
 		resizeText(1);
 	});
@@ -183,6 +186,7 @@ $(document).ready(function(){
 		else
 			surroundingCount = 0;
 	});
+*/
 	$( ".thumbs-left" ).on('click', function(e) {
 		scrollThumbsLeft();
 	});

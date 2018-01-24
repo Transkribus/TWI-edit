@@ -74,6 +74,15 @@
 	d.can_edit = can_edit; //TODO direct from template tag when back-compat can be turned off
 	d.tags = tags;
 	
+	d.tagItems = {
+		{% for tag in tags %}"{{tag.name}}": {name: "<span href=\"#\" style=\"color: #{{tag.color}};\">{{tag.name}}</span>", type: "checkbox", isHtmlName: true} {% if not forloop.last %}, {% endif %}
+		{% endfor %}
+    };
+	d.tagColors = {
+		{% for tag in tags %}"{{tag.name}}": "{{tag.color}}" {% if not forloop.last %}, {% endif %}
+		{% endfor %}
+	};
+
 	$(document).ready(function(){	
 		Edit.init_config(d);
 		Edit.setEventHandlers();
@@ -91,14 +100,6 @@
 	//I suggest defining an array of tags and css clases with a 
 	//derivative name that we cn use to set colours an so on
 	//TODO we can define a tag menu function to build the menu with jquery...
-	var tagItems = {
-		{% for tag in tags %}"{{tag.name}}": {name: "<span href=\"#\" style=\"color: #{{tag.color}};\">{{tag.name}}</span>", type: "checkbox", isHtmlName: true} {% if not forloop.last %}, {% endif %}
-		{% endfor %}
-    };
-	var tagColors = {
-		{% for tag in tags %}"{{tag.name}}": "{{tag.color}}" {% if not forloop.last %}, {% endif %}
-		{% endfor %}
-	};
 
 </script>
 

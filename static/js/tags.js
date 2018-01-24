@@ -3,7 +3,7 @@ var tagItems, tagColors;
 // selectionData, changed
 // these JavaScripts must also be imported
 // TODO List
-
+/*
 function tagMenu() { // returns the tag list with tags in the selection highlighted, if any
 	var appliedTags = {}; // an array to be populated with all tags within the selection, may contain duplicates
 	var lastButOne = selectionData.length - 1;
@@ -267,3 +267,4 @@ function contextMenuOpenable(contextMenuEvent) { // ensures that the caret is al
     }
 	return false;
 }
+*/
