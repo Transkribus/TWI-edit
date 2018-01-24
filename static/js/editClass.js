@@ -12,12 +12,12 @@ var Edit = new function() {
 	// a "semaphore" to avoid false resize events (resizing the 
 	// dialog triggers such events and we only want those 
 	// triggered by the window)
-	this.dialogBeingResized = false;
-	this.canOpenContextMenu = false;
-	this.ignoreLeave = false;
-	this.isDragged = false;
-	this.resizeTimeout;
-	this.zoomFactor = 1;
+	this.dialogBeingResized = false; // we need this because resizing the dialog falsely triggers window resize events
+	this.canOpenContextMenu = false; // ensures that the tag menu is only opened when the caret is in a location which makes sense or can be placed there
+	this.ignoreLeave = false; // makes sure that the line which has been clicked on to open the editing dialog remains highlighted when the mouse is moved away
+	this.isDragged = false; // set so that dragging the image is possible without having such a click open the editing dialog
+	this.resizeTimeout; // we don't resize the window contents until the user has finished resizing the window
+	this.zoomFactor = 1; // should be self-explanatory
 	
 	//from thumbs.js
 	this.pageNo;
@@ -28,44 +28,43 @@ var Edit = new function() {
 	this.toLoadCount;
 
 	// These ones are from correct.js
-	this.surroundingCount = 0;
-	this.currentLineId = null;
+	this.surroundingCount = 0; // the number of lines shown in the dialog (and highlighted) before and after the current line (except when such lines don't exist in the beginning or end of a page) 
+	this.currentLineId = null; // the id of the line highlighted and shown in the dialog, possibly surrounded by other lines per surroundingCount
 	this.zoomFactor = 0;//TODO This one contradicts the zoomFactor previously set in the embedded script tag from the template
-	this.accumExtraX = 0;
-	this.accumExtraY = 0;
-	this.accumExtra;
-	this.initialWidth;
-	this.initialHeight;
-	this.initialScale;
-	this.naturalWidth;
-	this.previousInnerWidth = window.innerWidth;
-	this.correctModal;
-	this.changed = false;
+	this.accumExtraX = 0; // offset for the image position, dragging, zooming and changing from one line to another changes this in a "cumulative fashion"
+	this.accumExtraY = 0; // offset for the image position, dragging, zooming and changing from one line to another changes this in a "cumulative fashion"
+	this.initialWidth; // used in many places where the initial scale of the image must be known (when e.g. the window is resized)
+	this.initialHeight; // used in many places where the initial scale of the image must be known (when e.g. the window is resized)
+	this.initialScale; // how the image has been scaled from its natural size by the browser, useful when working with region data
+	this.naturalWidth; // the natural width of the image, TODO Remove? Pretty redundant.
+	this.correctModal; // the edit dialog, TODO Make the naming consistent. In ancient times this was a modal but the implementation now doesn't really resemble that.
+	this.changed = false; // set to true if the user changes anything which makes the page different from the saved version
 
 	// These are from dialog.js
 	this.dialogWidth = Number.MAX_SAFE_INTEGER, dialogHeight = 0; // Math.min( and max( are involved in setting these when the dialog is first opened
-	this.dialogX;
-	this.dialogY;
-	this.dialogAbsoluteMinWidth = null;
-	this.dialogAbsoluteMinHeight = null;
-	this.docked = false;
-	this.dockedHeight = 250;// TODO Decide how to calculate this.
-	this.restoreDialogLine;
-	this.dialogHighlightDX;
-	this.dialogHighlightDY;
-	this.scrollbarHeight = null;
+	this.dialogX; // dialog position
+	this.dialogY; // dialog position
+	this.dialogAbsoluteMinWidth = null; // The width below which the dialog is never allowed to shrink (to ensure that it remains usable)
+	this.dialogAbsoluteMinHeight = null; // The height below which the dialog is never allowed to shrink (to ensure that it remains usable)
+	this.docked = false; // Dialog docked or not?
+	this.dockedHeight = 250;// TODO Decide how to calculate this. It's the height of the dialog when it's docked.
+	this.restoreDialogLine; // to "remember" which line was open if the user goes to another page and returns
+	this.dialogHighlightDX; // distance between the dialog and the highlighted current line
+	this.dialogHighlightDY; // distance between the dialog and the highlighted current line
+	this.scrollbarHeight = null; // the scrollbar height is needed in some cases and since it must be calculated we save it
 	this.dialogIsDragged = false; // gijgo triggers false dragStops
 
 
-	this.undoArray = [];
-	this.ctrlKey = false;
-	this.metaKey = false;
-	this.altKey = false;
-	this.caretOffsetInPixels = null;
-	this.savedCaretOffsetInPixels = null;
-	this.oldWidthForCaretCalc;
-	this.selectionData = [];
-	this.contentLineFontSize = parseInt($('.line-list').css("font-size"));
+	this.undoArray = []; // array to which lines are copied (with ids) when the user changes them
+	this.ctrlKey = false; // is this key down?
+	this.metaKey = false; // is this key down?
+	this.altKey = false; // is this key down?
+	this.caretOffsetInPixels = null; // self-explanatory
+	this.savedCaretOffsetInPixels = null; // we save the offset which the caret had when the user began to move it up or down so that lines which are too short to allow placing the caret with that original offset don't reset that original offset (i.e. normal text editor behaviour)
+	this.oldWidthForCaretCalc; // TODO Remove? Probably not in use anymore.
+	this.selectionData = []; // what the user has selected in the dialog, a *2* dimensional array with the format: [[line id, selection start offset, selection end offset (same as start if we just have the caret and no selection)]] 
+	// Note: The selectionData array has *TWO* dimensions because if multiple lines are selected, their ids are in the array as above and the start offset for completely selected ones is 0 and end is the line length - 1. 
+	this.contentLineFontSize = parseInt($('.line-list').css("font-size")); // self-explanatory
 	this.message_timeout;
 	
 	//used by scroll event Handler
