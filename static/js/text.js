@@ -632,7 +632,10 @@ function typewriterMove(newLineId, caretLineId) {
 		if (null === savedCaretOffsetInPixels)
 			savedCaretOffsetInPixels = caretOffsetInPixels;
 		// TODO Move the caret down even when we cannot make the lines move anymore?
-		updateDialog(newLineId);
+		if ( ifc === "i" )
+		    updateDialog(newLineId);
+		else if ( ifc === "lbl" )
+		    $("#options_" + newLineId).show();
 		updateCanvas();
 		// get the closest span offset on the new line
 		var span, spanOffset;
@@ -662,6 +665,7 @@ function typewriterMove(newLineId, caretLineId) {
 		var caretOffset = Math.min(t - 1 + parseInt($(span).attr("spanOffset")), cLength);
 		selectionData = [[caretLineId, caretOffset, caretOffset]];
 		restoreSelection();
+		currentLineId = newLineId;
 	}
 }
 function typewriterNext() { // Aka. "press typewriter enter scroll". Changes the selected lines and the modal content.
