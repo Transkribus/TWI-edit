@@ -44,8 +44,10 @@ var Edit = new function() {
 	this.dialogWidth = Number.MAX_SAFE_INTEGER, dialogHeight = 0; // Math.min( and max( are involved in setting these when the dialog is first opened
 	this.dialogX; // dialog position
 	this.dialogY; // dialog position
-	this.dialogAbsoluteMinWidth = null; // The width below which the dialog is never allowed to shrink (to ensure that it remains usable)
-	this.dialogAbsoluteMinHeight = null; // The height below which the dialog is never allowed to shrink (to ensure that it remains usable)
+	this.dialogAbsoluteMinWidth = null; // The width below which the dialog is never allowed to shrink (to ensure that it remains usable space for the controls is always reserved)
+	this.dialogAbsoluteMinHeight = null; // The height below which the dialog is never allowed to shrink (to ensure that it remains usable space for the controls is always reserved)
+	this.dialogWidth; // self-explanatory
+	this.dialogHeight = 0; // self-explanatory, 0 to avoid a NaN at first
 	this.docked = false; // Dialog docked or not?
 	this.dockedHeight = 250;// TODO Decide how to calculate this. It's the height of the dialog when it's docked.
 	this.restoreDialogLine; // to "remember" which line was open if the user goes to another page and returns
