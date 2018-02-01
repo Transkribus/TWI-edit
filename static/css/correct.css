@@ -57,7 +57,7 @@
 .thumb-img {
     padding: 3%;
 }
-/* Thumbs should reflect page transcription status. */ 
+/* Thumbs should reflect page transcription status. */
 .no-segmentation {
 	background-color: red;
 }
@@ -104,14 +104,8 @@ li {
 
 .option-box {
     display: none;
-    z-index: 1999;
-    overflow: hidden;
     background: white;
     padding: 1px;
-    position: absolute;
     margin: 0;
-    border: 1px solid black;
-    -webkit-box-shadow: 10px 5px 10px 0px rgba(0,0,0,0.75);
-    -moz-box-shadow: 10px 5px 10px 0px rgba(0,0,0,0.75);
-    box-shadow: 10px 5px 10px 0px rgba(0,0,0,0.75);
+    margin-bottom: 5px;
 }

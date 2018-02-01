@@ -237,10 +237,10 @@ function editAction(event) {
 		if (!changed)
 			setMessage(transUnsavedChanges);
 		changed = true;
-	} else if (event.key == "ArrowUp" && ("i" === ifc || "t" === ifc)) {
+	} else if (event.key == "ArrowUp" && ("i" === ifc  || "lbl" === ifc || "t" === ifc)) {
 		// TODO Move caret instead, if there's a line visible?
 		typewriterPrevious();
-	} else if ((event.key == "ArrowDown" || event.key == "Enter") && ("i" === ifc || "t" === ifc)) {
+	} else if ((event.key == "ArrowDown" || event.key == "Enter") && ("i" === ifc || "lbl" === ifc || "t" === ifc)) {
 		// TODO Move caret instead, if there's a line visible?
 		typewriterNext();
 	} else if (event.key == "Home") {// In some cases the "parent" is the LI which doesn't yield the right offset in updateSelection
@@ -659,14 +659,24 @@ function typewriterMove(newLineId, caretLineId) {
 				break;
 			cA = cB;
 		}
-		var cLength = contentArray[getIndexFromLineId(caretLineId)][1].length;
-		if (null == cLength)
-			cLength = 0;
-		var caretOffset = Math.min(t - 1 + parseInt($(span).attr("spanOffset")), cLength);
+		if ( contentArray[getIndexFromLineId(caretLineId)] !== undefined ) {
+			var cLength = contentArray[getIndexFromLineId(caretLineId)][1].length;
+			if (null == cLength)
+				cLength = 0;
+			var caretOffset = Math.min(t - 1 + parseInt($(span).attr("spanOffset")), cLength);
+		}
+		else
+			caretOffset = 0;
 		selectionData = [[caretLineId, caretOffset, caretOffset]];
-		restoreSelection();
 		currentLineId = newLineId;
+		restoreSelection();
+		if ( ifc === "lbl" ) {
+			buildLineList();
+			updateCanvas();
+		}
 	}
+	else if ( newLineId === null && ifc === "lbl" )
+		$("#options_" + currentLineId).show();
 }
 function typewriterNext() { // Aka. "press typewriter enter scroll". Changes the selected lines and the modal content.
 	if ( ifc === "lbl" )

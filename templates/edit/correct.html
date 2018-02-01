@@ -251,7 +251,7 @@
 							$("#options_{{ line|get_item:"@id" }}").show();
 					});
 					$("#line_{{ line|get_item:"@id" }}").on("blur", function() {
-						if ( !$("#options_{{ line|get_item:"@id" }}").is(":hover") || currentLineId !== "{{ line|get_item:"@id" }}" )
+						if ( currentLineId !== "{{ line|get_item:"@id" }}" )
 							$("#options_{{ line|get_item:"@id" }}").hide();
 					});
                     $("#canvas_{{ line|get_item:"@id" }}").draggable({
