@@ -72,6 +72,7 @@ function saveChanges(e) {
 	$.post(window.location.href, {content: getContent(), csrfmiddlewaretoken: csrf_token}, function( data ) {
 		setMessage(data,"success");
 		changed = false;
+		$("a[data-target='#saveChanges']").addClass("disabled");
 	});
 	// TODO Handle failures here or are we happy with the current solution?
 }

@@ -246,14 +246,6 @@
 						else
 							e.preventDefault();
 					});
-					$("#line_{{ line|get_item:"@id" }}").on("focus", function() {
-						if ( window.location.href.indexOf('edit') >= 0 )
-							$("#options_{{ line|get_item:"@id" }}").show();
-					});
-					$("#line_{{ line|get_item:"@id" }}").on("blur", function() {
-						if ( currentLineId !== "{{ line|get_item:"@id" }}" )
-							$("#options_{{ line|get_item:"@id" }}").hide();
-					});
                     $("#canvas_{{ line|get_item:"@id" }}").draggable({
                         stop: function(e, ui) {
                             {# We prefer to keep it simple and let accumExtra* contain the offsets regardless of how they were created (i.e. also when the user has dragged the image): #}
@@ -478,6 +470,10 @@
         if ( $(".interface-lbl").is(":visible") ) {
             contentArray.forEach(function(obj, i) {
                 drawLineImage(obj[0], obj[2]);
+                if ( window.location.href.indexOf("view") !== -1 )
+                    $("#options_" + obj[0]).hide();
+                else if ( window.location.href.indexOf("edit") !== -1 )
+                    $("#options_" + obj[0]).show();
                 if ( $(".lines-div").is(":visible") ) {
                     currentLineId = obj[0];
                     buildLineList();
@@ -658,11 +654,9 @@
             {% if lines %}
                 if ( hasEditPermission("{{ role }}") && "{{ pageStatus }}" !== "GT" ) {
                     $("#editToggle").removeClass("disabled");
-                    $("a[data-target='#saveChanges']").removeClass("disabled");
                     $("#page_status").removeClass("disabled");
                 }else{
                     $("#editToggle").addClass("disabled");
-                    $("a[data-target='#saveChanges']").addClass("disabled");
                     $("#page_status").addClass("disabled");
 		}
             {% endif %}
@@ -684,11 +678,9 @@
             {% if lines %}
                 if ( hasEditPermission("{{ role }}") && "{{ pageStatus }}" !== "GT" )  {
                     $("#editToggle").removeClass("disabled");
-                    $("a[data-target='#saveChanges']").removeClass("disabled");
                     $("#page_status").removeClass("disabled");
                 }else{
                     $("#editToggle").addClass("disabled");
-                    $("a[data-target='#saveChanges']").addClass("disabled");
                     $("#page_status").addClass("disabled");
 		}
             {% endif %}
@@ -712,16 +704,13 @@
             $(".fit-width").removeClass("disabled");
             $(".fit-height").removeClass("disabled");
             $("#editToggle").addClass("disabled");
-            $("a[data-target='#saveChanges']").addClass("disabled");
             $("#page_status").addClass("disabled");
             {% if lines %}
                 /*if ( hasEditPermission("{{ role }}") && "{{ pageStatus }}" !== "GT" )  {
                     $("#editToggle").removeClass("disabled");
-                    $("a[data-target='#saveChanges']").removeClass("disabled");
                     $("#page_status").removeClass("disabled");
                 }else{
                     $("#editToggle").addClass("disabled");
-                    $("a[data-target='#saveChanges']").addClass("disabled");
                     $("#page_status").addClass("disabled");
 		}*/
             {% endif %}
@@ -742,16 +731,13 @@
             $(".fit-width").addClass("disabled");
             $(".fit-height").addClass("disabled");
             $("#editToggle").addClass("disabled");
-            $("a[data-target='#saveChanges']").addClass("disabled");
             $("#page_status").addClass("disabled");
             {% if lines %}
                 /*if ( hasEditPermission("{{ role }}") && "{{ pageStatus }}" !== "GT" )  {
                     $("#editToggle").removeClass("disabled");
-                    $("a[data-target='#saveChanges']").removeClass("disabled");
                     $("#page_status").removeClass("disabled");
                 }else{
                     $("#editToggle").addClass("disabled");
-                    $("a[data-target='#saveChanges']").addClass("disabled");
                     $("#page_status").addClass("disabled");
 		}*/
             {% endif %}
@@ -768,7 +754,6 @@
             $(".fit-height").addClass("disabled");
             {% if lines %}
                 $("#editToggle").addClass("disabled");
-                $("a[data-target='#saveChanges']").addClass("disabled");
                 $("#page_status").addClass("disabled");
             {% endif %}
         }
@@ -790,6 +775,10 @@
             if ( $(".interface-lbl").is(":visible") ) {
                 currentLineId = obj[0];
                 buildLineList();
+                if ( window.location.href.indexOf("view") !== -1 )
+                    $("#options_" + obj[0]).hide();
+                else if ( window.location.href.indexOf("edit") !== -1 )
+                    $("#options_" + obj[0]).show();
             }
             if ( $(".interface-t").is(":visible") ) {
                 $("line_" + obj[0]).html("");
@@ -899,7 +888,6 @@
         {% if lines %}
             if ( hasEditPermission("{{ role }}") || "{{ pageStatus }}" !== "GT" )  {
                 $("#editToggle").removeClass("disabled");
-                $("a[data-target='#saveChanges']").removeClass("disabled");
                 $("#page_status").removeClass("disabled");
             }
         {% endif %}

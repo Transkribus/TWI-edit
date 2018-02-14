@@ -60,9 +60,10 @@ function paste(event) {
 	var text = event.originalEvent.clipboardData.getData('text');
 	if (null === text || text.length == 0 || selectionData === undefined || selectionData[0] === undefined ) // is it necessary to check selectionData?
 		return; // TODO Place the caret at the end of the current line in this situation!?
-	if (!changed)
+	if ( !changed )
 		setMessage(transUnsavedChanges);
 	changed = true;
+	$("a[data-target='#saveChanges']").removeClass("disabled");
 	if (selectionData.length > 1 || (selectionData[0][1] != selectionData[0][2])) // do we have to erase a selection first?
 		eraseSelected();
 	text = text.replace(" ", "\u00A0");
@@ -118,9 +119,10 @@ function paste(event) {
 function inputChar(char) {
 	if ( selectionData === undefined || selectionData[0] === undefined )
 		return; // TODO Place the caret at the end of the current line in this situation!?
-	if (!changed)
+	if ( !changed )
 		setMessage(transUnsavedChanges);
 	changed = true;
+	$("a[data-target='#saveChanges']").removeClass("disabled");
 	var renderAll = false; // TODO Remove this flag and duplicate lots of code?
 	if (selectionData.length > 1) {// do we have to erase a selection first?
 		eraseSelected();
@@ -223,9 +225,10 @@ function editAction(event) {
 		initializeCaretOffsetInPixels();
 		//RM If we press backspace then we should assume that there has been a achange to the transcript
 		// (these globals must go)
-		if (!changed)
+		if ( !changed )
 			setMessage(transUnsavedChanges);
 		changed = true;
+		$("a[data-target='#saveChanges']").removeClass("disabled");
 	} else if (event.keyCode == 46) { // delete?
 		if (selectionData.length == 1 && (selectionData[0][1] == selectionData[0][2])) // just a caret, no selection?
 			selectionData[0] = [selectionData[0][0], selectionData[0][1], Math.min(selectionData[0][2] + 1, contentArray[getIndexFromLineId(selectionData[0][0])][1].length)]; // select the next character, if any
@@ -234,9 +237,10 @@ function editAction(event) {
 		initializeCaretOffsetInPixels();
 		//RM If we press delete then we should assume that there has been a achange to the transcript
 		// (these globals must go)
-		if (!changed)
+		if ( !changed )
 			setMessage(transUnsavedChanges);
 		changed = true;
+		$("a[data-target='#saveChanges']").removeClass("disabled");
 	} else if (event.key == "ArrowUp" && ("i" === ifc  || "lbl" === ifc || "t" === ifc)) {
 		// TODO Move caret instead, if there's a line visible?
 		typewriterPrevious();
@@ -634,8 +638,6 @@ function typewriterMove(newLineId, caretLineId) {
 		// TODO Move the caret down even when we cannot make the lines move anymore?
 		if ( ifc === "i" )
 		    updateDialog(newLineId);
-		else if ( ifc === "lbl" )
-		    $("#options_" + newLineId).show();
 		updateCanvas();
 		// get the closest span offset on the new line
 		var span, spanOffset;
@@ -673,19 +675,17 @@ function typewriterMove(newLineId, caretLineId) {
 		if ( ifc === "lbl" ) {
 			buildLineList();
 			updateCanvas();
+			console.log($("div[lineId='" + currentLineId + "']").offset().top);
+			$("html, body").animate({
+			    scrollTop: ($("div[lineId='" + currentLineId + "']").offset().top - 100)
+			}, 500);
 		}
 	}
-	else if ( newLineId === null && ifc === "lbl" )
-		$("#options_" + currentLineId).show();
 }
 function typewriterNext() { // Aka. "press typewriter enter scroll". Changes the selected lines and the modal content.
-	if ( ifc === "lbl" )
-		$("#options_" + currentLineId).hide();
 	typewriterMove(getNextLineId(currentLineId), getNextLineId(selectionData[0][0])); // the caret will "remain in place" and the lines shifted around it
 }
 function typewriterPrevious() {
-	if ( ifc === "lbl" )
-		$("#options_" + currentLineId).hide();
 	typewriterMove(getPreviousLineId(currentLineId), getPreviousLineId(selectionData[0][0])); // the caret will "remain in place" and the lines shifted around it
 }
 function setMessage(message, type, timeout) {
