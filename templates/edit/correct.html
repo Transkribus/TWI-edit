@@ -229,10 +229,9 @@
 						}
 					});
 					$("#line_{{ line|get_item:"@id" }}").on("paste", function(e) {
+                        e.preventDefault();
 						if ( window.location.href.indexOf('edit') >= 0 )
 							paste(e);
-						else
-							e.preventDefault();
 					});
 					$("#line_{{ line|get_item:"@id" }}").on("drop", function(e) {
 						if ( window.location.href.indexOf('edit') >= 0 )

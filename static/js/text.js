@@ -14,20 +14,27 @@ var message_timeout;
 // TODO Optimize by removing some unnecessary calls to getIndexFromLineId...
 
 function keydown(e) {
-	if ( e.key.length > 1 ) {
+	if (ctrlMeta) { // are we getting a keyboard shortcut?
+		if (e.key == "z" || e.key == "Z") // if it's undo we have to handle it but otherwise we let the browser handle it
+			undoAction();
+		return;
+	}
+	if (e.key.length > 1) {
+		if (e.ctrlKey || e.metaKey || e.altKey)
+			ctrlMeta = true;
 		e.preventDefault();
 		editAction(e);
-	}
-	else if ( checkForComposite )
-		$("#capture").focus();// we want composite characters to go here since we can't get them from the key
-	else {
+	} 	else if (checkForComposite) {
+		$("#capture").focus(); // we want composite characters to go here since we can't get them from the key
+	} else {
 		e.preventDefault();
 		inputChar(e.key);
 	}
 }
 function keyup(e) {
-	ctrlMeta = false;
-	if ( e.key === "Dead" )// we get ready to use the hidden from view input to get composite characters
+	if (e.key === "Control" || e.key === "Alt" || e.key === "Meta") // TODO Multiple meta keys at the same time will cause problems. Also note that "Meta" has NOT BEEN TESTED.
+		ctrlMeta = false;
+	if (e.key === "Dead") // we get ready to use the hidden from view input to get composite characters
 		checkForComposite = true;
 }
 

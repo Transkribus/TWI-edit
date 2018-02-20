@@ -169,7 +169,7 @@ def correct(request, collId, docId, page=None, transcriptId=None):# TODO Decide 
                 if r_text_equiv is None:
                     r_text_equiv = ElementTree.SubElement(text_region,'{http://schema.primaresearch.org/PAGE/gts/pagecontent/2013-07-15}TextEquiv')
                     ElementTree.SubElement(r_text_equiv,'{http://schema.primaresearch.org/PAGE/gts/pagecontent/2013-07-15}Unicode')
-    
+
                 r_text_equiv.find('{http://schema.primaresearch.org/PAGE/gts/pagecontent/2013-07-15}Unicode').text = regionTextEquiv
             t.save_transcript(request, ElementTree.tostring(transcript_root), collId, docId, page, transcriptId)
             current_transcript = t.current_transcript(request, collId, docId, page)# We want the updated transcript now.
@@ -242,7 +242,7 @@ def correct(request, collId, docId, page=None, transcriptId=None):# TODO Decide 
                     thumb_urls.append("['" + escape(thumb_page.get("thumbUrl")).replace("&amp;", "&") + "', 'only-segmented']")# The JavaScript must get the strings like this.
             else:
                 thumb_urls.append("['" + escape(thumb_page.get("thumbUrl")).replace("&amp;", "&") + "', 'no-segmentation']")# The JavaScript must get the strings like this.
-                
+
         pageStatus = document.get('pageList').get('pages')[int(page) - 1].get("tsList").get('transcripts')[0].get('status')
         if pageStatus == 'GT' and 'edit' in request.path:
             t_log('Redirect user back to view mode since page status is GT. [from: %s to: %s]' % (request.get_full_path(), request.get_full_path().replace('edit', 'view')))
