@@ -55,6 +55,7 @@ function toggleTag(toggleTag) { // sets/removes the tag depending on whether the
 	if (!changed)
 		setMessage(transUnsavedChanges, 'warning', false);
 	changed = true;
+	$("a[data-target='#saveChanges']").removeClass("disabled");
 }
 function removeTag(removeTag, everywhere) { // Removes the given tag from the selection and everywhere, if the second parameter is true. Returns true if removals were made, otherwise false.
 	var tag = removeTag;
