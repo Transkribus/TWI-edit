@@ -198,13 +198,13 @@ def correct(request, collId, docId, page=None, transcriptId=None):# TODO Decide 
                 if lines:
                     if isinstance(lines, dict):
                         lines['regionWidth'] = region_width
-                        lines['@id'] = x.get("@id") + lines['@id'] # TODO Figure out why this results in region_blah_region_blah_line instead of just region_blah_line_
+                        lines['@id'] = x.get("@id") + lines['@id'] # TODO Figure out why this results in region_blah_region_blah_line instead of just region_blah_line_, the transcript already has the duplicate region_blah for each line
                         lineList.extend([lines])
                         #regionData.extend([x.get("@id"), 1])
                     else: # Assume that lines is a list of lines
                         for line in lines:
                             line['regionWidth'] = region_width
-                            line['@id'] = x.get("@id") + line['@id'] # TODO Figure out why this results in region_blah_region_blah_line instead of just region_blah_line_
+                            line['@id'] = x.get("@id") + line['@id'] # TODO Figure out why this results in region_blah_region_blah_line instead of just region_blah_line_, the transcript already has the duplicate region_blah for each line
                             lineList.extend([line])
                         #regionData.extend([x.get("@id"), len(lines)])
         content_dict = {}
