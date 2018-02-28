@@ -73,7 +73,9 @@ function saveChanges(e) {
 		setMessage(data,"success");
 		changed = false;
 		$("a[data-target='#saveChanges']").addClass("disabled");
-	});
+	}).fail(function() {
+		setMessage(transErrorSavingChanges, "danger");
+  	});
 	// TODO Handle failures here or are we happy with the current solution?
 }
 function hasEditPermission(role) {
