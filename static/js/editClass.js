@@ -41,13 +41,12 @@ var Edit = new function() {
 	this.changed = false; // set to true if the user changes anything which makes the page different from the saved version
 
 	// These are from dialog.js
-	this.dialogWidth = Number.MAX_SAFE_INTEGER, dialogHeight = 0; // Math.min( and max( are involved in setting these when the dialog is first opened
+	this.dialogWidth = Number.MAX_SAFE_INTEGER; // self-explanatory
+	this.dialogHeight = 0; // self-explanatory, 0 to avoid a NaN at first
 	this.dialogX; // dialog position
 	this.dialogY; // dialog position
-	this.dialogAbsoluteMinWidth = null; // The width below which the dialog is never allowed to shrink (to ensure that it remains usable space for the controls is always reserved)
-	this.dialogAbsoluteMinHeight = null; // The height below which the dialog is never allowed to shrink (to ensure that it remains usable space for the controls is always reserved)
-	this.dialogWidth; // self-explanatory
-	this.dialogHeight = 0; // self-explanatory, 0 to avoid a NaN at first
+	this.dialogAbsoluteMinWidth = null; // The width below which the dialog is never allowed to shrink (to ensure that it remains usable)
+	this.dialogAbsoluteMinHeight = null; // The height below which the dialog is never allowed to shrink (to ensure that it remains usable)
 	this.docked = false; // Dialog docked or not?
 	this.dockedHeight = 250;// TODO Decide how to calculate this. It's the height of the dialog when it's docked.
 	this.restoreDialogLine; // to "remember" which line was open if the user goes to another page and returns
@@ -143,6 +142,13 @@ var Edit = new function() {
 			self.gotoPage(Number.MAX_SAFE_INTEGER);
 		});
 	
+		$("#pageNumber").on("focus", function() {
+   			$(this).select();
+		});
+		$("#pageNumber").on("change", function() {
+   			self.checkPageNumberInput();
+		});
+
 		/****************************************/
  		/* Event hadlers for image interface 	*/
  		/****************************************/
@@ -206,8 +212,27 @@ var Edit = new function() {
 		/**********************************/
 		/* Event handlers for the dialog  */
 		/**********************************/
+		
+		////////////
+		// tag menu
+		///////////
 
-		//key down event handler (for ctrl+s to save)
+		// if we get a right click within the line list, we have 
+		// to place the caret where the click was unless we already 
+		// have a non-zero length selection
+		$(".line-list").bind('contextmenu', function(e) {	
+			self.canOpenContextMenu = self.contextMenuOpenable(e);
+		});
+    
+		$(document.body).on("click", ".context-menu-input", function(e) { // TODO Place this somewhere else....
+    		if (e.target.nodeName != "INPUT") // multiple clicks can be triggered, some of which are label or span...
+    			return;
+			toggleTag($(e.target).prop("name").substr(19)); // "context-menu-input-".length is 19
+		});
+
+		/////////////////////
+		// ctrl+s to save
+		///////////////////
 		$(window).on("keydown", function(e) {
         	if ( e.ctrlKey || e.metaKey ) {
             		if ( String.fromCharCode(e.which).toLowerCase() === "s" ) {
@@ -220,12 +245,19 @@ var Edit = new function() {
                 	self.ctrlKey = true;
         	}
     	});
+		////////////////////////////////////
 		//unsetting ctrlKey flag when keyup 
+		///////////////////////////////////
     	$(window).on("keyup", function(e) {
         	if ( e.which == 17 || e.which == 112 || e.which == 111 )
             	self.ctrlKey = false;
     	});
-		// The dialog buttons to move the image up and work on the next line down
+
+		///////////////////////////////
+		// The dialog buttons to move 
+		// the image up and work on the 
+		// next line down
+		///////////////////////////////
 		$( ".typewriter-previous" ).on('click', function(e) {
 			self.typewriterPrevious();
 		});
@@ -233,7 +265,7 @@ var Edit = new function() {
 			self.typewriterNext();
 		});
 /*
-//TODO what are these for?
+//TODO what are these for? //matti says they are old
 		$( ".scroll-up" ).on('click', function(e) {
 			self.scrollToPreviousTop();
 		});
@@ -423,10 +455,10 @@ var Edit = new function() {
             selector: '.tag-menu',
             zIndex: 2000,
             build: function($trigger, e) {
-            	if (canOpenContextMenu) {
+            	if (self.canOpenContextMenu) {
 	            	self.updateSelectionData(); // TODO What do we do in this case if we also want to have the feature below? #}
 	            	self.restoreSelection(); // TODO Request feedback. This solution has the advantage of allowing a selection to be made and the menu opened elsewhere in order not to cover the relevant text. #}
-					return tagMenu();
+					return self.tagMenu();
 				} else
 					return null;
         	},
@@ -753,7 +785,7 @@ var Edit = new function() {
 	this.checkPageNumberInput = function() { // Tries to parse input to see if it's a valid page number to go to. If not, resets the contents to show the current page.
 		var value = parseInt($("#pageNumber").val());
 		if (value > 0 && value <= self.thumbArray.length)
-			gotoPage(value);
+			self.gotoPage(value);
 		else // Reset to what it was
 			$("#pageNumber").val(self.pageNo + "/" + self.thumbArray.length);
 	};
