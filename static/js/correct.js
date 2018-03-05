@@ -89,7 +89,7 @@ function setPageStatus(role, newStatus, newStatusTrans) {
         $("#page_status").html(newStatusTrans);
         pageStatus = newStatus;
     }
-    else if ( "{{ role }}" === "Editor" || "{{ role }}" === "Owner" || "{{ role }}" === "Admin" ) {
+    else if ( role === "Editor" || role === "Owner" || role === "Admin" ) {
         $("#page_status").html(newStatusTrans + "<span class=\"caret\"></span>");
         pageStatus = newStatus;
     }
