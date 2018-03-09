@@ -16,9 +16,9 @@ urlpatterns = [
     url(r'd/(?P<docId>[0-9]+)/(?P<pageNr>[0-9]+)/$', views.document_view),
     url(r'd/(?P<docId>[0-9]+)/$', views.document_view),
     #but in reality we will be using these for the forseeable
-    url(r'(?P<collId>[0-9]+)/(?P<docId>[0-9]+)/(?P<pageNr>[0-9]+)/(?P<transcriptId>[0-9]+)/$', views.document_view),
-    url(r'(?P<collId>[0-9]+)/(?P<docId>[0-9]+)/(?P<pageNr>[0-9]+)/$', views.document_view),
-    url(r'(?P<collId>[0-9]+)/(?P<docId>[0-9]+)/$', views.document_view),
+    url(r'(?P<collId>[0-9]+)/(?P<docId>[0-9]+)/(?P<pageNr>[0-9]+)/(?P<transcriptId>[0-9]+)/$', views.document_view, name='document-view'),
+    url(r'(?P<collId>[0-9]+)/(?P<docId>[0-9]+)/(?P<pageNr>[0-9]+)/$', views.document_view, name='document-view'),
+    url(r'(?P<collId>[0-9]+)/(?P<docId>[0-9]+)/$', views.document_view, name="document-view"),
 
     # back comapat for refs to edit:correct (the irony is too much to bear)
     # TODO update these various refs
