@@ -5,7 +5,7 @@
 
 {% block breadcrumb %}
 	<a href="{% url 'index' %}" class="navbar-brand">{% trans "My Collections" %}</a>
-    <a class="navbar-brand" href="{% url "library:collection" collId %}">/ {{ collName }} <small>{{ collId }}</small></a></li>
+    <a class="navbar-brand" href="{% url "library:document-list" collId %}">/ {{ collName }} <small>{{ collId }}</small></a></li>
     <a class="navbar-brand" href="{% url "edit:correct" collId docId %}"><b>/ {{ title }} <small>{{ docId }}</small></b></a>
 {% endblock %}
 
