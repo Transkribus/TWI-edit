@@ -70,11 +70,9 @@ $(document).ready(function(){
 			mouseZoom = -20;
 		else
 			mouseZoom = 20;
-    		setZoom(mouseZoom, e.originalEvent.pageX - $( ".transcript-map-div" ).offset().left, e.originalEvent.pageY - $( ".transcript-map-div" ).offset().top);
+    		Edit.setZoom(mouseZoom, e.originalEvent.pageX - $( ".transcript-map-div" ).offset().left, e.originalEvent.pageY - $( ".transcript-map-div" ).offset().top);
     	});
 
-
-/*
 	$(function() { //{# TODO Solution for people using broken computers that don't have more than one mouse button. Issues: z-index (or overflow?) and selections getting deselected... #}
         	$.contextMenu({
 		    selector: '.tag-menu',
@@ -94,7 +92,7 @@ $(document).ready(function(){
 		    	}
 		    },
 		});
-   	});
+    });
 	
 	$(".line-list").bind('contextmenu', function(e) {	// if we get a right click within the line list, we have to place the caret where the click was unless we already have a non-zero length selection
 		canOpenContextMenu = contextMenuOpenable(e);
@@ -105,7 +103,7 @@ $(document).ready(function(){
     			return;
 		toggleTag($(e.target).prop("name").substr(19)); // "context-menu-input-".length is 19
 	});
-*/
+
 	$(window).on('beforeunload', function(){
 		//TODO put this message in the template and access it from the DOM
 	//	if (changed)

@@ -41,7 +41,7 @@ var Edit = new function() {
 	this.changed = false; // set to true if the user changes anything which makes the page different from the saved version
 
 	// These are from dialog.js
-	this.dialogWidth = Number.MAX_SAFE_INTEGER; // self-explanatory
+	this.dialogWidth = Number.MAX_SAFE_INTEGER; // Math.min( and max( are involved in setting these when the dialog is first opened
 	this.dialogHeight = 0; // self-explanatory, 0 to avoid a NaN at first
 	this.dialogX; // dialog position
 	this.dialogY; // dialog position
@@ -407,6 +407,7 @@ var Edit = new function() {
 	////////////////////////////////////////////////////////
 	this.initPage = function(){
 		console.log("initPage");
+		$(".transcript-div").height(window.innerHeight - 200);
 
 		//set fixmeTop (used by the scroll event handler
 		self.fixmeTop = $(".fix_scroll_top").offset().top;
