@@ -2371,6 +2371,8 @@ var Edit = new function() {
 		if (line) { // if we have a line, find the correct span, if any
 			var span, spanOffset, toTheLeft = false;
 			var lineId = line.getAttribute("id").substr(5); // "text_".length is 5...
+			if (line.textContent.replace(/(\s+|\u200B)/,"").length == 0) // any content? Otherwise we can't show the tag menu.
+				return false;
 			$("[tagLineId=" + lineId + "]").each(function() {
 				var x = 0, testElement = this;
 				do {
