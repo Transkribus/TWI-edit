@@ -29,8 +29,10 @@ function updateArrows() { // call to show and hide arrows depending on whether t
 		$("#rightArrow").show();
 }
 function loadThumbs() { // Loads all thumbs and shows the ones which are visible as soon as they've been loaded
-	var to = Math.min(THUMBS_TO_SHOW - thumbCountOffset, thumbArray.length);
-	toLoadCount = Math.min(THUMBS_TO_SHOW, to);
+  return
+	// var to = Math.min(THUMBS_TO_SHOW - thumbCountOffset, thumbArray.length);
+  var to = 1;
+  toLoadCount = 1; // Math.min(THUMBS_TO_SHOW, to);
 	var tempImg;
 	for (var i = -thumbCountOffset; i < to; i++) {
 		if ( thumbArray[i] === undefined )
@@ -40,12 +42,14 @@ function loadThumbs() { // Loads all thumbs and shows the ones which are visible
 		tempImg.onload = function() {
 			toLoadCount--; //  JavaScript is single-threaded...
 			if (0 == toLoadCount) {
+
 				generateThumbGrid();
 			}
 		};
 	}
 }
 function generateThumbGrid() {
+  return;
 	thumbWidth = (window.innerWidth - 50) / 11;// 11 because we show 10 thumbs and each arrow will be half as wide as a thumbnail
 	var arrowWidth = thumbWidth / 2;
 	var padding = 0.08 * thumbWidth; // This results in roughly 10 pixels with a maximized window on an HD screen if 10 thumbs are shown
