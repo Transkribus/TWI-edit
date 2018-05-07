@@ -26,20 +26,6 @@
     {% block scripts %}{% endblock %}
   </head>
   <body>
-    <nav class="navbar navbar-inverse navbar-static-top" id="ts-top-nav">
-      <div class="container-fluid">
-        <div class="collapse navbar-collapse" id="ts-menu">
-          <ul class="nav navbar-nav">
-            <!--
-                 <li class="active"><a href="{% url 'index' %}">My Collections <span class="sr-only">(current)</span></a></li>
-                 <li><a href="http://127.0.0.1:8004" onclick="return false;" class="link_disabled">Published collections</a></li>
-                 <li><a href="http://127.0.0.1:8005" onclick="return false;" class="link_disabled">Transcription training</a></li>
-                 <li><a href="http://127.0.0.1:8006" onclick="return false;" class="link_disabled">Crowd-sourcing</a></li> -->
-          </ul>
-          <div class="nav navbar-header navbar-brand pull-right"><small>This is version {{version}} ({{deploy_time}}). <a href="{% url 'release_notes' %}">Release notes</a></small><!-- <a href="https://github.com/Transkribus/TWI-mc/milestone/{{milestone}}" target="_new">View milestone on <img src="{% static 'images/GitHub_Logo.png' %}" width="52px"/></a>. <a href="https://goo.gl/forms/vDvR4NFKuxrrYwas2" target="_new">Report a bug</a>. <a href="https://goo.gl/forms/Uo07gyIM2ZhlisaG2" target="_new">Request a feature</a>.--></div>
-        </div>	
-      </div>
-    </nav>
     {% block content %}
     {% endblock content%}
     {% block footer %}
