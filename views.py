@@ -19,8 +19,18 @@ from django.template.loader import render_to_string
 from django.utils.html import escape
 
 from compat import navigation
+from compat import utils
+from compat import templatetags
+
 from compat.services import *
-from compat.utils.utils import crop
+from compat.utils import crop
+
+def remove_prefix(data):
+    keys = tuple(data.keys())
+    for key in keys:
+        if key.startswith('@'):
+            data[key[1:]] = data[key]
+    return data
 
 @login_required
 def proofread(request, collId, docId, page, transcriptId=None):# TODO Decide whether to select which transcript to work with unless it should always be the newest?
@@ -80,19 +90,30 @@ def proofread(request, collId, docId, page, transcriptId=None):# TODO Decide whe
         # TODO Use "readingorder"?
         if lineList:
             for line in lineList:
-                line['crop'] = crop(line.get("Coords").get("@points"))#,True)
-                line['id'] = line.get("@id")
-                line['Unicode'] = line.get('TextEquiv').get('Unicode')
+
+                line = remove_prefix(line)
+
+                line['crop'] = crop(line.get("Coords").get("points"))#,True)
+
+                line['coords_for_imagemap'] = templatetags.coords_for_imagemap(line['crop'])
+                line['id'] = line['id']
+                line['Unicode'] = line.get('TextEquiv').get('Unicode') or ''
 
     #RM need to test whether this has been successful
     document = t.document(request, collId, docId, -1)
     if isinstance(document,HttpResponse):
         return apps.utils.views.error_view(request,document)
 
+    if len(lineList) > 0:
+        first_line = line_list[0]
+    else:
+        first_line = None
+
     return render(request, 'edit/proofread.html', {
         'imageUrl': document.get('pageList').get('pages')[int(page) - 1].get("url"),
-        'lines': lineList
-        })
+        'lines': lineList,
+        'first_line': first_line
+    })
 
 @login_required
 def correct(request, collId, docId, page=None, transcriptId=None):# TODO Decide whether to select which transcript to work with unless it should always be the newest?
@@ -105,7 +126,7 @@ def correct(request, collId, docId, page=None, transcriptId=None):# TODO Decide 
         page = 1
 
     #Use this to get the role of the current user untils such time as it is available from t.collection
-    role = apps.utils.utils.get_role(request,collId)
+    role = utils.get_role(request,collId)
     if 'edit' in request.path and not (role == 'Editor' or role == 'Owner' or role == 'Admin' or role == 'CrowdTranscriber' or role == 'Transcriber'):
         t_log('Redirect user due to insufficient role access. [from: %s to: %s]' % (request.get_full_path(), request.get_full_path().replace('edit', 'view')))
         return HttpResponseRedirect(request.get_full_path().replace('edit', 'view'))
@@ -200,8 +221,20 @@ def correct(request, collId, docId, page=None, transcriptId=None):# TODO Decide 
         # TODO Unmessify this, the loop below might be better placed inside the one above
         if lineList:
             for line in lineList:
-                line_crop = crop(line.get("Coords").get("@points"))
-                line['crop'] = line_crop
+
+                line = remove_prefix(line)
+
+                # line_crop = crop(line.get("Coords").get("@points"))
+                # line['crop'] = line_crop
+
+                remove_prefix(line['Coords'])
+
+                line['crop'] = crop(line.get("Coords").get("points"))#,True)
+
+                line['coords_for_imagemap'] = templatetags.coords_for_imagemap(line['crop'])
+                line['id'] = line['id']
+                line['Unicode'] = line.get('TextEquiv').get('Unicode') or ''
+
                 textEquiv = line.get("TextEquiv")
                 if textEquiv:
                     unicode = textEquiv.get("Unicode")

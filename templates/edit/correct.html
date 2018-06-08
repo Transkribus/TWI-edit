@@ -1,4 +1,4 @@
-{% extends "navi_base.html" %}
+{% extends "edit/navi_base.html" %}
 {% load i18n %}
 
 {% load staticfiles %}
@@ -31,11 +31,21 @@
 <script src="https://swisnl.github.io/jQuery-contextMenu/js/main.js" type="text/javascript"></script>
 <!-- gijgo js can't be included here, it must come after everything else -->
 <script>
-	var contentArray= [[0, '', [0, 0, 0, 0, 0, 0, 0, 0], 0, '']
-		{% for line in lines %}
-			,['{{ line|get_item:"@id"}}', '{{line|get_item:"Unicode"|default_if_none:""}}', [{{line|get_item:"crop"|coords_for_imagemap}}], {{line|get_item:"regionWidth"}}, "{{line|get_item:"@custom"}}"]
-		{% endfor %}
-	];
+ var contentArray= [[0, '', [0, 0, 0, 0, 0, 0, 0, 0], 0, ''],
+   {% for line in lines %}
+   {# ['{{ line|get_item:"@id"}}', '{{line|get_item:"Unicode"|default_if_none:""}}', [{{line|get_item:"crop"|coords_for_imagemap}}], {{line|get_item:"regionWidth"}}, "{{line|get_item:"@custom"}}"] #}
+   [
+     '{{ line.id }}',
+     '{{line.Unicode }}',
+     [{{ line.coords_for_imagemap }}],
+     {{ line.regionWidth }},
+     "{{ line.custom }}"
+   ],
+   {% endfor %}
+ ];
+
+ console.debug('contentArray', contentArray);
+
 	// TODO Clean...
 	var thumbArray = {{ thumbArray | safe }}; {# We assume that this is safe because each url is escape()d in the for loop in the view #}
 	 {# var regionData = {{ regionData | safe }}; We don't need this yet, after all, but lets leave it here for now.  #}
@@ -62,7 +72,7 @@
 		{% endfor %}
 	};
     var accumExtra = {
-        {% for line in lines %}"{{ line|get_item:"@id" }}": {"x": 0, "y": 0, "factor": 1}, {% endfor %}
+        {% for line in lines %}"{{ line.id }}": {"x": 0, "y": 0, "factor": 1}, {% endfor %}
     };
 </script>
 
@@ -159,7 +169,7 @@
 			<div class="transcript-map-div">
 				<map name="transcriptMap" id="transcriptMap">
 					{% for line in lines %}
-							<area line-key="{{ line|get_item:"@id"}}" id="{{ line|get_item:"@id"}}"  href="{{ line|get_item:"@id"}}"  shape="poly"  style="cursor: default;">
+							<area line-key="{{ line.id}}" id="{{ line.id}}"  href="{{ line.id}}"  shape="poly"  style="cursor: default;">
 					{% endfor %}
 				</map>
 				<canvas id="transcriptCanvas" style="position: absolute; z-index: 998; pointer-events: none;"></canvas>
@@ -193,70 +203,70 @@
             }
         </script>
 		{% for line in lines %}
-			<div lineId="{{ line|get_item:"@id" }}" style="margin-bottom: 10px;">
-                <div id="canvas_wrapper_{{ line|get_item:"@id" }}" class="line-div" style="border: 1px solid #d3d3d3; width: 800px; height: 100px;">
-    				<canvas id="canvas_{{ line|get_item:"@id" }}" width="800" height="100">
+			<div lineId="{{ line.id }}" style="margin-bottom: 10px;">
+                <div id="canvas_wrapper_{{ line.id }}" class="line-div" style="border: 1px solid #d3d3d3; width: 800px; height: 100px;">
+    				<canvas id="canvas_{{ line.id }}" width="800" height="100">
     					{% trans "Your browser does not support the HTML5 canvas tag." %}
     				</canvas>
                 </div>
-				<ol id="line_{{ line|get_item:"@id" }}" class="line-list" contenteditable="true" style="margin-top: 3px; margin-bottom: 0;">
+				<ol id="line_{{ line.id }}" class="line-list" contenteditable="true" style="margin-top: 3px; margin-bottom: 0;">
 				</ol>
-				<div id="options_{{ line|get_item:"@id" }}" class="option-box">
+				<div id="options_{{ line.id }}" class="option-box">
 					{% include "edit/option_box.html" %}
 				</div>
 				<script type="text/javascript">
 				    $(function() {
-				    	drawLineImage("{{ line|get_item:"@id" }}", "{{ line|get_item:"crop"|coords_for_imagemap }}");
+				    	drawLineImage("{{ line.id }}", "{{ line.coords_for_imagemap }}");
 				    });
-				    $("#line_{{ line|get_item:"@id" }}").on("keydown", function(e) {
+				    $("#line_{{ line.id }}").on("keydown", function(e) {
 				    	if ( window.location.href.indexOf('edit') >= 0 )
                             keydown(e);
 						else
 							e.preventDefault();
 					});
-					$("#line_{{ line|get_item:"@id" }}").on("keyup", function(e) {
+					$("#line_{{ line.id }}").on("keyup", function(e) {
 						if ( window.location.href.indexOf('edit') >= 0 )
 							keyup(e);
 						else
 							e.preventDefault();
 					});
-					$("#line_{{ line|get_item:"@id" }}").on("mouseup", function(e) {
+					$("#line_{{ line.id }}").on("mouseup", function(e) {
 						if ( window.location.href.indexOf('edit') >= 0 ) {
-							if ( currentLineId !== "{{ line|get_item:"@id" }}" )
-								currentLineId = "{{ line|get_item:"@id" }}";
+							if ( currentLineId !== "{{ line.id }}" )
+								currentLineId = "{{ line.id }}";
 							mouseup(e);
                             updateCanvas();
                             buildLineList();
 						}
 					});
-					$("#line_{{ line|get_item:"@id" }}").on("paste", function(e) {
+					$("#line_{{ line.id }}").on("paste", function(e) {
                         e.preventDefault();
 						if ( window.location.href.indexOf('edit') >= 0 )
 							paste(e);
 					});
-					$("#line_{{ line|get_item:"@id" }}").on("drop", function(e) {
+					$("#line_{{ line.id }}").on("drop", function(e) {
 						if ( window.location.href.indexOf('edit') >= 0 )
 							drop(e);
 						else
 							e.preventDefault();
 					});
-					$("#line_{{ line|get_item:"@id" }}").on("cut", function(e) {
+					$("#line_{{ line.id }}").on("cut", function(e) {
 						if ( window.location.href.indexOf('edit') >= 0 )
 							cut(e);
 						else
 							e.preventDefault();
 					});
-                    $("#canvas_{{ line|get_item:"@id" }}").draggable({
+                    $("#canvas_{{ line.id }}").draggable({
                         stop: function(e, ui) {
                             {# We prefer to keep it simple and let accumExtra* contain the offsets regardless of how they were created (i.e. also when the user has dragged the image): #}
-                            accumExtra["{{ line|get_item:"@id" }}"]["x"] -= ui.position.left;
-                            accumExtra["{{ line|get_item:"@id" }}"]["y"] -= ui.position.top;
-                            $("#canvas_{{ line|get_item:"@id" }}").css("top", "0px");
-                            $("#canvas_{{ line|get_item:"@id" }}").css("left", "0px");
-                            $("#canvas_{{ line|get_item:"@id" }}").css("transform", "translate(" + -accumExtra["{{ line|get_item:"@id" }}"]["x"] +"px, " + -accumExtra["{{ line|get_item:"@id" }}"]["y"]+ "px) scale(" + accumExtra["{{ line|get_item:"@id" }}"]["factor"] + ")");// Note, the CSS is set to "transform-origin: 0px 0px"
+                            accumExtra["{{ line.id }}"]["x"] -= ui.position.left;
+                            accumExtra["{{ line.id }}"]["y"] -= ui.position.top;
+                            $("#canvas_{{ line.id }}").css("top", "0px");
+                            $("#canvas_{{ line.id }}").css("left", "0px");
+                            $("#canvas_{{ line.id }}").css("transform", "translate(" + -accumExtra["{{ line.id }}"]["x"] +"px, " + -accumExtra["{{ line.id }}"]["y"]+ "px) scale(" + accumExtra["{{ line.id }}"]["factor"] + ")");// Note, the CSS is set to "transform-origin: 0px 0px"
                         }
                     });
-                    $("#canvas_wrapper_{{ line|get_item:"@id" }}").on("mousewheel DOMMouseScroll", function(e) {
+                    $("#canvas_wrapper_{{ line.id }}").on("mousewheel DOMMouseScroll", function(e) {
                         if ( ctrlKey ) {
                             e.preventDefault();
                             var mouseZoom;
@@ -264,7 +274,7 @@
                                 mouseZoom = -20;
                             else
                                 mouseZoom = 20;
-                            setZoom(mouseZoom, e.originalEvent.pageX - $("#canvas_wrapper_{{ line|get_item:"@id" }}").offset().left, e.originalEvent.pageY - $("#canvas_wrapper_{{ line|get_item:"@id" }}").offset().top);
+                            setZoom(mouseZoom, e.originalEvent.pageX - $("#canvas_wrapper_{{ line.id }}").offset().left, e.originalEvent.pageY - $("#canvas_wrapper_{{ line.id }}").offset().top);
                         }
                     });
 				</script>
@@ -371,12 +381,14 @@
         </div>
         <div class="modal-body">
 	<dl>
-	     {% for item in metadata %}
-		{% if item != 'collectionList' %}
-		<dt>{{item}}</dt>
-		<dd>{{ metadata|get_item:item }}</dd>
-		{% endif %}
-	     {% endfor %}
+          {% comment %}
+	  {% for item in metadata %}
+	  {% if item != 'collectionList' %}
+	  <dt>{{item}}</dt>
+	  <dd>{{ metadata.item }}</dd>
+	  {% endif %}
+	  {% endfor %}
+          {% endcomment %}
 	</dl>
         </div>
       </div>
@@ -388,9 +400,11 @@
 <div class="modal">
 
 	<ul>
-     {% for item in metadata %}
-	<li>{{ item }} - {{ metadata|get_item:item }}</li>
-     {% endfor %}
+          {% comment %}
+          {% for item in metadata %}
+	  <li>{{ item }} - {{ metadata.item }}</li>
+          {% endfor %}
+          {% endcomment %}
 	</ul>
 </div>
 
@@ -465,7 +479,8 @@
     	$("#editToggle").html(newButtonText);
     	$("area").css("cursor", "pointer");
         if ( window.location.href.indexOf("view") === -1 && "i" === ifc )
-            updateDialog({% if lines %}"{{ lines|index:0|get_item:"@id" }}"{% endif %});
+          {# updateDialog({% if lines %}"{{ lines|index:0|get_item:"@id" }}"{% endif %}); #}
+          updateDialog({% if lines %}"{{ first_line.id }}"{% endif %});
         updateCanvas();
         if ( $(".interface-lbl").is(":visible") ) {
             contentArray.forEach(function(obj, i) {

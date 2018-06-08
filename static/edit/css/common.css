@@ -1,0 +1,43 @@
+.alert-auto {display:inline-block;}
+.version-status {float: right; margin-bottom: 0px;}
+a.link_disabled {cursor: default;}
+.navbar-inverse .navbar-nav > li > a.link_disabled:focus {color: #9d9d9d;}
+.navbar-inverse .navbar-nav > li > a.link_disabled:hover {color: #9d9d9d;}
+
+#imagemodal .modal-dialog {
+  width: 90%;
+  height: 90%;
+  padding: 0;
+}
+
+#imagemodal .modal-content {
+    height: auto;
+    min-height: 90%;
+}
+
+.cs-flow-demo {
+	font-size: 300%;
+}
+.cs-howto div.row {
+	margin-bottom: 2%;
+}
+
+.transkribus_nav_bar { display: none; }
+.breadcrumb_arrow {
+
+	width: 30px;
+	-webkit-transform :rotate(180deg) scaleX(-1);
+   	-moz-transform: rotate(180deg) scaleX(-1);
+    	-ms-transform: rotate(180deg) scaleX(-1);
+    	-o-transform: rotate(180deg) scaleX(-1);
+    	transform: rotate(180deg) scaleX(-1);
+	position: relative;
+	top: -7px;
+	margin-left: 50px;
+}
+.container {
+	min-height: 600px;
+}
+#global-message {
+	margin-top: 0.7em;
+}
