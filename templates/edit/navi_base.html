@@ -1,0 +1,97 @@
+{% extends "base.html" %}
+{% load i18n %}
+{% load bootstrap3 %}
+{% load staticfiles %}
+{% block body_content %}
+
+<!-- divs for modals.... -->
+<div class="changed-jobs-modal"></div>
+
+<nav class="navbar navbar-default subnav" id="ts-dashboard-nav">
+	<div class="container-fluid">
+		<div class="navbar-header">
+			<button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#ts-app-menu" aria-expanded="false">
+				<span class="sr-only">Toggle navigation</span>
+				<span class="icon-bar"></span>
+				<span class="icon-bar"></span>
+				<span class="icon-bar"></span>
+			</button>
+
+			<ul class="nav navbar-nav">
+				{% block breadcrumb %}{% endblock %}
+			</ul>
+		</div>
+
+		<div class="collapse navbar-collapse" id="ts-app-menu">
+			<ul class="nav navbar-nav navbar-right">
+				{%comment%} For Messages displayed in nav bar. See SetGlobalMessage() {%endcomment%}
+				<li><span id="global-message" class="btn btn-sm pull-right"></span></li>
+				<span id="browser-compat-text" style="display: none;">{% trans "Browser not supported. Some features may not work as well. Please consult the " %}<a href="{# {%url "browser_compat"%} #}">{% trans "browser compatibility page" %}</a></span>
+				{% if user.is_authenticated %}
+					<li role="presentation" class="dropdown">
+						<a class="dropdown-toggle" data-toggle="dropdown" href="#" role="button" aria-haspopup="true" aria-expanded="false">
+							<span class="glyphicon glyphicon-user"></span>
+							<span class="caret"></span>
+						</a>
+						<ul class="dropdown-menu">
+							<li>
+								<a href="#">{%if user.first_name%}{{user.first_name}}{%endif%} {%if user.last_name%}{{user.last_name}}{%endif%}{%if not user.first_name and not user.last_name %}{{user.username}}{%endif%}</a>
+							</li>
+							<li>
+								<a href="{# {% url 'logout' %}?next={{request.path}} #}">{% trans "Logout" %}</a>
+							</li>
+							<!--	
+	       <form action="{# {% url 'set_language' %} #}" method="post">{% csrf_token %}
+									<input name="next" type="hidden" value="{{ redirect_to }}" />
+									<select name="language">
+										{% get_current_language as LANGUAGE_CODE %}
+										{% get_available_languages as LANGUAGES %}
+										{% get_language_info_list for LANGUAGES as languages %}
+										{% for language in languages %}
+											<option value="{{ language.code }}"{% if language.code == LANGUAGE_CODE %} selected{% endif %}>
+												{{ language.name_local }} ({{ language.code }})
+											</option>
+										{% endfor %}
+									</select>
+									<input type="submit" value="Go" />
+								</form>
+							-->
+<!--
+							{% get_current_language as LANGUAGE_CODE %}
+							{% get_available_languages as LANGUAGES %}
+							{% get_language_info_list for LANGUAGES as languages %}
+							{% for language in languages %}
+								<li>
+								<a class="language_switcher" href="{# {% url 'set_language' %} #}" data-language="{{ language.code }}">{% if language.code == LANGUAGE_CODE %}*{% endif %}{{ language.name_local }} ({{ language.code }})</a>
+								</li>
+							{% endfor %}
+-->
+						</ul>
+					</li>
+
+				{% else %}
+					{% if 'login' not in request.path %}
+						<li>
+							<a href="{% url 'login' %}?next={{request.path}}">{% trans "Login" %}</a>
+						</li>
+					{% endif %}
+					<li>
+						<a href="{# {% url 'register' %} #}">{% trans "Register" %}</a>
+					</li>
+				{% endif %}
+			</ul>
+		</div>
+	</div>
+</nav>
+
+<div id="page-content-wrapper"><!-- Page Content -->
+	<div class="container-fluid" style="padding: 0;">
+		<div class="row">
+			<div class="col-lg-12" style="padding: 0;">
+				 {% block content %}{% endblock %}
+			</div>
+		</div>
+	</div>
+</div>
+
+{% endblock body_content %}

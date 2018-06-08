@@ -1,0 +1,135 @@
+{% load staticfiles %}
+{% load i18n %}
+
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="">
+    <meta name="author" content="">
+
+    <title>READ Web UI</title>
+
+    <!-- Bootstrap Core CSS -->
+    <link href="{{ "bootstrap_css"|load_lib }}" rel="stylesheet"/>
+    <!-- FancyTree CSS -->
+<!--    <link href="{% static "edit/css/ui.fancytree.css" %}" rel="stylesheet"/> -->
+    <!-- Sidebar CSS -->
+<!--  not used  <link href="{% static "edit/css/simple-sidebar.css" %}" rel="stylesheet"/> -->
+    <!-- Flag CSS -->
+    <link href="{% static "edit/css/flag-icon.css" %}" rel="stylesheet"/>
+    <!-- Carousel CSS (needed?) -->
+<!-- not used   <link href="{% static "edit/css/carousel.css" %}" rel="stylesheet"/> -->
+
+    <link href="{{ "datatables_css"|load_lib  }}" rel="stylesheet"/>
+    <link href="{{ "jquery_ui_css"|load_lib  }}" rel="stylesheet"/>
+    <link href="{{ "bootstrap_notify_css"|load_lib  }}" rel="stylesheet"/>
+
+    <!-- Local CSS -->
+    <link href="{% static "edit/css/read.css" %}" rel="stylesheet"/>
+    <link href="{% static "edit/css/common.css" %}" rel="stylesheet"/>
+
+
+
+    <!-- recaptcha -->
+   <!-- <script src="https://www.google.com/recaptcha/api.js" async defer></script> -->
+
+    <!-- jQuery -->
+    <script src="{{ "jquery"|load_lib }}"></script>
+    <script src="{{ "jquery_ui"|load_lib }}"></script>
+
+    <!-- Bootstrap Core JavaScript -->
+<!--    <script src="{% static "edit/js/bootstrap.min.js" %}"></script> -->
+    <script src="{{ "bootstrap_js"|load_lib }}"></script>
+
+    <!-- Fancytree -->
+<!-- not used 
+    <script src="{% static "edit/js/jquery.fancytree-all.min.js" %}"></script>
+-->
+    <!-- Data tables -->
+    <script src="{{ "datatables_js"|load_lib }}"></script>
+    <!-- Chart.js -->
+    <script src="{{ "chart_js"|load_lib }}"></script>
+    <!-- Bootstrap-notify -->
+    <script src="{{ "bootstrap_notify_js"|load_lib }}"></script>
+
+    <!-- Local JS -->
+	<script language="javascript">
+		var static_url = "{{ STATIC_URL|escapejs }}";
+		var current_userid = "{{ user.tsdata.userId }}";
+	</script>
+    <script src="{% static "edit/js/img_display.js" %}"></script>
+    <script src="{% static "edit/js/read.js" %}"></script>
+
+    {%comment%}  apphead == appname+'/extra_head.html' so if the app has an 
+	extra_head.html template they can include code for <head></head>,
+	deftaults to empty file in projecy template
+    {%endcomment%}
+	{% include apphead %}
+
+{% comment %}
+<!-- #TODO the modal stuff is dependent on the library app being looaded so this should be executed in an app template or on the condition that the library app is loaded -->
+	<!--- Only needed when logged in -->
+	{% if user.is_authenticated %}
+	    <script>
+	    	var changed_jobs_modal = "{% url 'changed_jobs_modal' %}";
+	    	var jobs_list_compact = "{% url 'jobs_list_compact' %}";
+	    	var job_count_url = "{% url 'job_count' %}";
+    	</script>
+ 	<!-- //TODO stop this filling up the console.... -->
+    	<!-- <script src="{% static "edit/js/jobs.js" %}"></script> -->
+	{% endif %}
+{% endcomment %}
+    <!-- HTML5 Shim and Respond.js IE8 support of HTML5 elements and media queries -->
+    <!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
+    <!--[if lt IE 9]>
+        <script src="https://oss.maxcdn.com/libs/html5shiv/3.7.0/html5shiv.js"></script>
+        <script src="https://oss.maxcdn.com/libs/respond.js/1.4.2/respond.min.js"></script>
+    <![endif]-->
+
+</head>
+<body>
+<nav class="navbar navbar-inverse navbar-static-top" id="ts-top-nav">
+  <div class="container-fluid">
+    <div class="navbar-header">
+      <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#ts-menu" aria-expanded="false">
+        <span class="sr-only">Toggle navigation</span>
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+      </button>
+      <a class="navbar-brand" href="{# {% url 'index' %} #}">Transkribus-web</a>
+    </div>
+
+    <div class="collapse navbar-collapse" id="ts-menu">
+      <ul class="nav navbar-nav">
+	      {% comment %}
+<!--
+        <li class="active"><a href="{% url 'index' %}">My Collections <span class="sr-only">(current)</span></a></li>
+        <li><a href="http://127.0.0.1:8004" onclick="return false;" class="link_disabled">Published collections</a></li>
+        <li><a href="http://127.0.0.1:8005" onclick="return false;" class="link_disabled">Transcription training</a></li>
+        <li><a href="http://127.0.0.1:8006" onclick="return false;" class="link_disabled">Crowd-sourcing</a></li> -->
+	{% endcomment %}
+      </ul>
+      <div class="nav navbar-header navbar-brand pull-right"><small>This is version {{version}} ({{deploy_time}}). <a href="{# {% url 'release_notes' %} #}">Release notes</a></small><!-- <a href="https://github.com/Transkribus/TWI-mc/milestone/{{milestone}}" target="_new">View milestone on <img src="{% static 'edit/images/GitHub_Logo.png' %}" width="52px"/></a>. <a href="https://goo.gl/forms/vDvR4NFKuxrrYwas2" target="_new">Report a bug</a>. <a href="https://goo.gl/forms/Uo07gyIM2ZhlisaG2" target="_new">Request a feature</a>.--></div>
+    </div>	
+  </div>
+</nav>
+
+    {% block body_content %}{% endblock %}
+
+<footer>
+	<div class="row">
+		<div class="col-lg-12">
+		    <a href="http://transkribus.eu"><img style="float:left;height:25px;" src="//transkribus.eu/Transkribus/img/read_135x135.png"></a>
+		    <img style="float:left;height:25px;" src="//transkribus.eu/Transkribus/img/jaune.jpg">
+		    <p>{% trans "Transkribus is part of the "%}<a href="http://read.transkribus.eu/" target="_blank">{% trans "READ project"%}</a>{% trans " and has received funding from the European Union’s Horizon 2020 Research and Innovation programme under grant agreement no. 674943." %}</p>
+		</div>
+	</div>
+</footer>
+</body>
+</html>

@@ -4,28 +4,28 @@
 {% load staticfiles %}
 
 {% block breadcrumb %}
-	<a href="{% url 'index' %}" class="navbar-brand">{% trans "My Collections" %}</a>
-    <a class="navbar-brand" href="{% url "library:collection" collId %}">/ {{ collName }} <small>{{ collId }}</small></a></li>
+	<a href="{# {% url 'index' %} #}" class="navbar-brand">{% trans "My Collections" %}</a>
+    <a class="navbar-brand" href="{# {% url "library:collection" collId %} #}">/ {{ collName }} <small>{{ collId }}</small></a></li>
     <a class="navbar-brand" href="{% url "edit:correct" collId docId %}"><b>/ {{ title }} <small>{{ docId }}</small></b></a>
 {% endblock %}
 
 {% block content %}
 
 <link rel="stylesheet" href="https://swisnl.github.io/jQuery-contextMenu/css/screen.css" type="text/css"/>
-<link href="{% static "css/correct.css" %}" rel="stylesheet">
-<link href="{% static "css/gijgo.min.css" %}" rel="stylesheet">
+<link href="{% static "edit/css/correct.css" %}" rel="stylesheet">
+<link href="{% static "edit/css/gijgo.min.css" %}" rel="stylesheet">
 <!-- <link rel="stylesheet" href="https://swisnl.github.io/jQuery-contextMenu/css/theme.css" type="text/css"/>-->
 <link rel="stylesheet" href="https://swisnl.github.io/jQuery-contextMenu/css/theme-fixes.css" type="text/css"/>
 <link href="https://swisnl.github.io/jQuery-contextMenu/dist/jquery.contextMenu.css" rel="stylesheet" type="text/css" />
 
-<script src="{% static "js/correct.js" %}"></script>
-<script src="{% static "js/thumbs.js" %}"></script>
-<script src="{% static "js/image.js" %}"></script>
-<script src="{% static "js/tags.js" %}"></script>
-<script src="{% static "js/dialog.js" %}"></script>
-<script src="{% static "js/text.js" %}"></script>
-<script src="{% static "js/diff.js" %}"></script>
-<script src="{% static "js/proofread.js" %}"></script>
+<script src="{% static "edit/js/correct.js" %}"></script>
+<script src="{% static "edit/js/thumbs.js" %}"></script>
+<script src="{% static "edit/js/image.js" %}"></script>
+<script src="{% static "edit/js/tags.js" %}"></script>
+<script src="{% static "edit/js/dialog.js" %}"></script>
+<script src="{% static "edit/js/text.js" %}"></script>
+<script src="{% static "edit/js/diff.js" %}"></script>
+<script src="{% static "edit/js/proofread.js" %}"></script>
 <script src="https://swisnl.github.io/jQuery-contextMenu/dist/jquery.contextMenu.js" type="text/javascript"></script>
 <!--<script src="https://swisnl.github.io/jQuery-contextMenu/dist/jquery.ui.position.min.js" type="text/javascript"></script>-->
 <script src="https://swisnl.github.io/jQuery-contextMenu/js/main.js" type="text/javascript"></script>
@@ -401,7 +401,7 @@
 	}
 </style>
 
-<script src="{% static "js/btn-toggle.js" %}"></script>
+<script src="{% static "edit/js/btn-toggle.js" %}"></script>
 <script>
 	// TODO Clean...
 
@@ -931,6 +931,6 @@
     });
 </script>
 
-<script src="{% static "js/gijgo.min.js" %}"></script>
+<script src="{% static "edit/js/gijgo.min.js" %}"></script>
 
 {% endblock %}
