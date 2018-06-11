@@ -289,7 +289,7 @@ def correct(request, collId, docId, page=None, transcriptId=None):
                 line['coords_for_imagemap'] = templatetags.coords_for_imagemap(
                     line['crop'])
                 line['id'] = line['id']
-                line['Unicode'] = line.get('TextEquiv').get('Unicode') or ''
+                line['Unicode'] = line.get('TextEquiv', {'Unicode': ''}).get('Unicode', '')
 
                 textEquiv = line.get("TextEquiv")
                 if textEquiv:
